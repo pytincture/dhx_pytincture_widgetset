@@ -1,0 +1,4 @@
+recursive-include dhx_pytincture_widgetset/dhxpyt/widgetsets/dhxsrc/ *
+recursive-include dhx_pytincture_widgetset/dhxpyt/ *.html
+recursive-include dhx_pytincture_widgetset/dhxpyt/ *.js
+recursive-include dhx_pytincture_widgetset/dhxpyt/ *.css

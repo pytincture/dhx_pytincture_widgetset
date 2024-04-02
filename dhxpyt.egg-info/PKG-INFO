@@ -1,0 +1,9 @@
+Metadata-Version: 2.1
+Name: dhxpyt
+Version: 0.4.2
+Summary: DHTMLX widgetset
+Home-page: https://github.com/pytincture/dhx_pytincture_widgetset
+Description-Content-Type: text/markdown
+Requires-Dist: pyodide-py==0.25.0
+
+##DHTMLX PyTincture Widgetset
