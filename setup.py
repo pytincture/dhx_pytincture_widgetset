@@ -16,7 +16,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name='dhxpyt',
-    version='0.4.3',
+    version='0.4.4',
     description=(
         'DHTMLX widgetset'
     ),
