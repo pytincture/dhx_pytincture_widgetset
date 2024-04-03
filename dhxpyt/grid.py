@@ -271,7 +271,8 @@ class Grid:
             col_data.append(Column(**col).config)
         self.widget_config["columns"] = col_data
         self.grid = self.grid.new(None, js.JSON.parse(json.dumps(self.widget_config))) 
-        self.grid.data.load(data_url)
+        if data_url:
+            self.grid.data.load(data_url)
         self.initialized = False
 
     """ Grid methods """
