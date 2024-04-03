@@ -1,1 +1,1 @@
-pyodide-py==0.25.0
+pyodide-py==0.25.1
