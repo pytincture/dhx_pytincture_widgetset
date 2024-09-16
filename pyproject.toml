@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dhxpyt"
+version = "0.4.7"
+description = "DHTMLX widgetset"
+readme = "README.md"
+requires-python = ">=3.6"
+keywords = ["DHTMLX", "widgetset"]
+license = { text = "GNU General Public License v2" }
+homepage = "https://github.com/pytincture/dhx_pytincture_widgetset"
+
+[project.urls]
+"Homepage" = "https://github.com/pytincture/dhx_pytincture_widgetset"
+
+[project.dependencies]
+pyodide-py = "==0.26.1"
+
+[tool.setuptools]
+packages = ["find:"]
+include-package-data = true
