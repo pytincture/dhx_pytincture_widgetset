@@ -10,7 +10,6 @@ readme = "README.md"
 requires-python = ">=3.6"
 keywords = ["DHTMLX", "widgetset"]
 license = { text = "GNU General Public License v2" }
-homepage = "https://github.com/pytincture/dhx_pytincture_widgetset"
 dependencies = [
     "pyodide-py==0.26.2"
 ]
