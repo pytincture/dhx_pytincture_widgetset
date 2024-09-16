@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -19,5 +19,5 @@ dependencies = [
 
 
 [tool.setuptools]
-packages = ["find:"]
+find = {}
 include-package-data = true
