@@ -17,3 +17,5 @@ dist/*.whl
 *.zip
 *.pyt
 .DS_Store
+dhxpyt.egg-info/*
+dhxpyt.egg-info/*.*
