@@ -265,7 +265,7 @@ class Layout:
 class MainWindow(Layout):
     def __init__(self) -> None:
         """Initialize the Main Window layout."""
-        super().__init__(mainwindow=True)
+        super().__init__(mainwindow=True, config=LayoutConfig())
         self.initialized = True
 
     def set_theme(self, theme: str) -> None:
