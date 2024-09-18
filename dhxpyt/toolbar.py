@@ -11,10 +11,10 @@ from pyodide.ffi import create_proxy
 
 
 class Toolbar:
-    def __init__(self, widget_config: Dict[str, Any]) -> None:
+    def __init__(self, config: Dict[str, Any]) -> None:
         self.toolbar = js.dhx.Toolbar
-        self.widget_config = widget_config
-        self.toolbar = self.toolbar.new(None, js.JSON.parse(json.dumps(widget_config)))
+        self.config = config
+        self.toolbar = self.toolbar.new(None, js.JSON.parse(json.dumps(config)))
         
     def destructor(self) -> None:
         """

@@ -15,10 +15,10 @@ class Sidebar:
     Sidebar widget
     """
 
-    def __init__(self, widget_config: Dict[str, Any]) -> None:
+    def __init__(self, config: Dict[str, Any]) -> None:
         self.sidebar = js.dhx.Sidebar
-        self.widget_config = widget_config
-        self.sidebar = self.sidebar.new(None, js.JSON.parse(json.dumps(widget_config)))
+        self.config = config
+        self.sidebar = self.sidebar.new(None, js.JSON.parse(json.dumps(config)))
 
     def collapse(self) -> None:
         """

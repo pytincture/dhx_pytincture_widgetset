@@ -786,10 +786,10 @@ class FormTypes:
 
 
 class Form:
-    def __init__(self, widget_config: Dict[str, Any]) -> None:
+    def __init__(self, config: Dict[str, Any]) -> None:
         self.toolbar = js.dhx.Window
-        self.widget_config = widget_config
-        self.window = self.toolbar.new(None, js.JSON.parse(json.dumps(widget_config)))
+        self.config = config
+        self.window = self.toolbar.new(None, js.JSON.parse(json.dumps(config)))
 
     def blur(self, name: str) -> None:
         """

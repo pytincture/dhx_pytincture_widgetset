@@ -15,10 +15,10 @@ from pyodide.ffi import create_proxy
 
 
 class Window:
-    def __init__(self, widget_config: Dict[str, Any]) -> None:
+    def __init__(self, config: Dict[str, Any]) -> None:
         self.toolbar = js.dhx.Window
-        self.widget_config = widget_config
-        self.window = self.toolbar.new(js.JSON.parse(json.dumps(widget_config)))
+        self.config = config
+        self.window = self.toolbar.new(js.JSON.parse(json.dumps(config)))
     
     def attach(self, name: str, config: Optional[Dict[str, Any]] = None) -> None:
         """
@@ -49,14 +49,14 @@ class Window:
     def add_layout(self, layout_config: Dict[str, Any] = {}) -> Layout:
         """ adds a Layout into a Layout cell """
         layout_widget = Layout(
-            widget_config=layout_config
+            config=layout_config
         )
         self.window.attach(layout_widget.layout)
         return layout_widget
     
     def add_toolbar(self, toolbar_config: Dict[str, Any] = {}, data: Dict[str, Any] = None) -> Toolbar:
         """ adds a Toolbar into a Layout cell """
-        toolbar_widget = Toolbar(widget_config=toolbar_config)
+        toolbar_widget = Toolbar(config=toolbar_config)
         self.window.attach(toolbar_widget.toolbar)
         if data:
             dparse = js.JSON.parse(json.dumps(data))
@@ -65,7 +65,7 @@ class Window:
     
     def add_sidebar(self, sidebar_config: Dict[str, Any] = {}, data: Dict[str, Any] = None) -> Sidebar:
         """ adds a Sidebar into a Layout cell """
-        sidebar_widget = Sidebar(widget_config=sidebar_config)
+        sidebar_widget = Sidebar(config=sidebar_config)
         self.window.attach(sidebar_widget.sidebar)
         if data:
             dparse = js.JSON.parse(json.dumps(data))

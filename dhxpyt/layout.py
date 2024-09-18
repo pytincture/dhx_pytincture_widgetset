@@ -34,31 +34,31 @@ class Layout:
 
     def add_grid(self, id: str, grid_config: Dict[str, Any] = {}) -> Grid:
         """Adds a Grid widget into a Layout cell."""
-        grid_widget = Grid(widget_config=grid_config)
+        grid_widget = Grid(config=grid_config)
         self.layout.getCell(id).attach(grid_widget.grid)
         return grid_widget
     
     def add_layout(self, id, layout_config: Dict[str, Any] = {}) -> TLayout:
         """ Adds a Layout into a Layout cell """
-        layout_widget = Layout(widget_config=layout_config)
+        layout_widget = Layout(config=layout_config)
         self.layout.getCell(id).attach(layout_widget.layout)
         return layout_widget
 
     def add_toolbar(self, id: str, toolbar_config: Dict[str, Any] = {}) -> Toolbar:
         """Adds a Toolbar widget into a Layout cell."""
-        toolbar_widget = Toolbar(widget_config=toolbar_config)
+        toolbar_widget = Toolbar(config=toolbar_config)
         self.layout.getCell(id).attach(toolbar_widget.toolbar)
         return toolbar_widget
 
     def add_sidebar(self, id: str, sidebar_config: Dict[str, Any] = {}) -> Sidebar:
         """Adds a Sidebar widget into a Layout cell."""
-        sidebar_widget = Sidebar(widget_config=sidebar_config)
+        sidebar_widget = Sidebar(config=sidebar_config)
         self.layout.getCell(id).attach(sidebar_widget.sidebar)
         return sidebar_widget
 
     def add_form(self, id: str, form_config: Dict[str, Any] = {}) -> Form:
         """Adds a Form widget into a Layout cell."""
-        form_widget = Form(widget_config=form_config)
+        form_widget = Form(config=form_config)
         self.layout.getCell(id).attach(form_widget.form)
         return form_widget
         

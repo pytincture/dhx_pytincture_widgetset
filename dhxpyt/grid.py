@@ -263,14 +263,14 @@ class Column:
 
 class Grid:
     "Grid widget implemenataion"
-    def __init__(self, widget_config: Dict[str, Any], columns: List[Dict[str, Any]], data_url: str, **kwargs) -> None:
+    def __init__(self, config: Dict[str, Any], columns: List[Dict[str, Any]], data_url: str, **kwargs) -> None:
         self.grid = js.dhx.Grid
-        self.widget_config = widget_config
+        self.config = config
         col_data = []
         for col in columns:
             col_data.append(Column(**col).config)
-        self.widget_config["columns"] = col_data
-        self.grid = self.grid.new(None, js.JSON.parse(json.dumps(self.widget_config))) 
+        self.config["columns"] = col_data
+        self.grid = self.grid.new(None, js.JSON.parse(json.dumps(self.config))) 
         if data_url:
             self.grid.data.load(data_url)
         self.initialized = False
