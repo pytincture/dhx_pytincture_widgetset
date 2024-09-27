@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dhxpyt"
-version = "0.5.1"
-description = "DHTMLX widgetset"
+version = "0.6.0"
+description = "Python wrapper for DHTMLX widgets"
 readme = "README.md"
 requires-python = ">=3.6"
 keywords = ["DHTMLX", "widgetset"]
