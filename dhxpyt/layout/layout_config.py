@@ -64,7 +64,7 @@ class LayoutConfig:
         Converts the LayoutConfig into a dictionary format that can be
         passed into the layout constructor. Handles nested rows and cols.
         """
-        config_dict = super().to_dict()
+        config_dict = {k: v for k, v in self.__dict__.items() if v is not None}
 
         # Convert rows and columns to dictionaries using nested to_dict calls
         if self.rows:

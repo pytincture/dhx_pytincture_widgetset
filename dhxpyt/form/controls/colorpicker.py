@@ -6,7 +6,7 @@ import json
 from typing import Any, Callable, Dict, Union
 import json
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .colorpicker_config import ColorpickerConfig
 
@@ -17,7 +17,7 @@ class Colorpicker:
         if config is None:
             config = ColorPickerConfig()
         config_dict = config.to_dict()
-        self.colorpicker = js.dhx.FormControl.new(js.JSON.parse(json.dumps(config_dict)))
+        self.colorpicker = js.dhx.FormControl.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
     """ ColorPicker API Functions """
 

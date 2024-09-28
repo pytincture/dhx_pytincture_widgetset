@@ -5,7 +5,7 @@ Popup widget implementation
 from typing import Any, Callable, Dict, Optional, Union
 import json
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .popup_config import PopupConfig, PopupShowConfig
 
@@ -21,7 +21,7 @@ class Popup:
             config = PopupConfig()
         config_dict = config.to_dict()
         # Create the Popup instance
-        self.popup = js.dhx.Popup.new(js.JSON.parse(json.dumps(config_dict)))
+        self.popup = js.dhx.Popup.new(None, js.JSON.parse(json.dumps(config_dict)))
 
     """ Popup API Functions """
 

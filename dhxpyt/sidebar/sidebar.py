@@ -5,7 +5,7 @@ Sidebar widget implementation
 from typing import Any, Callable, Dict, List, Optional, Union
 import json
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .sidebar_config import SidebarConfig
 
@@ -22,10 +22,7 @@ class Sidebar:
             config = SidebarConfig()
         config_dict = config.to_dict()
         # Create the Sidebar instance
-        self.sidebar = js.dhx.Sidebar.new(js.JSON.parse(json.dumps(config_dict)))
-        if widget_parent:
-            container = js.document.getElementById(widget_parent)
-            self.sidebar.mount(container)
+        self.sidebar = js.dhx.Sidebar.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
     """ Sidebar API Functions """
 

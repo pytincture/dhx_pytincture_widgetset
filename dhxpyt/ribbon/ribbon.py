@@ -5,7 +5,7 @@ Ribbon widget implementation
 from typing import Any, Callable, Dict, List, Optional, Union
 import json
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .ribbon_config import RibbonConfig
 
@@ -22,10 +22,7 @@ class Ribbon:
             config = RibbonConfig()
         config_dict = config.to_dict()
         # Create the Ribbon instance
-        self.ribbon = js.dhx.Ribbon.new(js.JSON.parse(json.dumps(config_dict)))
-        if widget_parent:
-            container = js.document.getElementById(widget_parent)
-            self.ribbon.mount(container)
+        self.ribbon = js.dhx.Ribbon.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
     """ Ribbon API Functions """
 

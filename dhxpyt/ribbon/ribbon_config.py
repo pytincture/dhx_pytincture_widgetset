@@ -27,7 +27,7 @@ class BlockConfig(ControlConfig):
         self.hidden = hidden
 
     def to_dict(self) -> Dict[str, Any]:
-        config = super().to_dict()
+        config = {k: v for k, v in self.__dict__.items() if v is not None}
         # Convert items to dicts if they are present
         if self.items:
             config['items'] = [item.to_dict() for item in self.items]
@@ -85,7 +85,7 @@ class ButtonConfig(ControlConfig):
         self.hidden = hidden
 
     def to_dict(self) -> Dict[str, Any]:
-        config = super().to_dict()
+        config = {k: v for k, v in self.__dict__.items() if v is not None}
         if self.items:
             config['items'] = [item.to_dict() for item in self.items]
         return config
@@ -253,7 +253,7 @@ class NavItemConfig(ControlConfig):
         self.hidden = hidden
 
     def to_dict(self) -> Dict[str, Any]:
-        config = super().to_dict()
+        config = {k: v for k, v in self.__dict__.items() if v is not None}
         if self.items:
             config['items'] = [item.to_dict() for item in self.items]
         return config
@@ -288,7 +288,7 @@ class SelectButtonConfig(ControlConfig):
         self.hidden = hidden
 
     def to_dict(self) -> Dict[str, Any]:
-        config = super().to_dict()
+        config = {k: v for k, v in self.__dict__.items() if v is not None}
         if self.items:
             config['items'] = [item.to_dict() for item in self.items]
         return config

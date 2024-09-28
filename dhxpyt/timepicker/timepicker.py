@@ -5,7 +5,7 @@ TimePicker widget implementation
 from typing import Any, Callable, Dict, Optional, Union
 import json
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .timepicker_config import TimepickerConfig
 
@@ -23,11 +23,8 @@ class Timepicker:
         config_dict = config.to_dict()
 
         # Create the TimePicker instance
-        self.timepicker = js.dhx.TimePicker.new(js.JSON.parse(json.dumps(config_dict)))
+        self.timepicker = js.dhx.TimePicker.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
-        if widget_parent:
-            container = js.document.getElementById(widget_parent)
-            self.timepicker.mount(container)
 
     """ TimePicker API Functions """
 

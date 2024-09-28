@@ -2,10 +2,10 @@
 Toolbar widget implementation
 """
 
-from typing import Any, Callable, List, Union
+from typing import Any, Callable, List, Union, Optional
 import json
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .toolbar_config import ToolbarConfig
 
@@ -22,10 +22,7 @@ class Toolbar:
             config = ToolbarConfig()
         config_dict = config.to_dict()
         # Create the Toolbar instance
-        self.toolbar = js.dhx.Toolbar.new(js.JSON.parse(json.dumps(config_dict)))
-        if widget_parent:
-            container = js.document.getElementById(widget_parent)
-            self.toolbar.mount(container)
+        self.toolbar = js.dhx.Toolbar.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
     """ Toolbar API Functions """
 

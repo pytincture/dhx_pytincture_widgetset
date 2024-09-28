@@ -5,7 +5,7 @@ Toggle control implementation for the Form widget
 from typing import Any, Callable, Dict, Union
 import json
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .toggle_config import ToggleConfig
 
@@ -16,7 +16,7 @@ class Toggle:
         if config is None:
             config = ToggleConfig()
         config_dict = config.to_dict()
-        self.toggle = js.dhx.FormControl.new(js.JSON.parse(json.dumps(config_dict)))
+        self.toggle = js.dhx.FormControl.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
     """ Toggle API Functions """
 

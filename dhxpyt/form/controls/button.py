@@ -5,7 +5,7 @@ pyTincture Button control implementation
 from typing import Any, Callable, Dict, Union
 import json
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .button_config import ButtonConfig
 
@@ -16,7 +16,7 @@ class Button:
         if config is None:
             config = ButtonConfig()
         config_dict = config.to_dict()
-        self.button = js.dhx.FormControl.new(js.JSON.parse(json.dumps(config_dict)))
+        self.button = js.dhx.FormControl.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
     """ Button API Functions """
 

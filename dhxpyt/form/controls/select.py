@@ -5,7 +5,7 @@ Select control implementation for the Form widget
 from typing import Any, Callable, Dict, Union, List
 import json
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .select_config import SelectConfig
 
@@ -16,7 +16,7 @@ class Select:
         if config is None:
             config = SelectConfig()
         config_dict = config.to_dict()
-        self.select = js.dhx.FormControl.new(js.JSON.parse(json.dumps(config_dict)))
+        self.select = js.dhx.FormControl.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
     """ Select API Functions """
 

@@ -5,7 +5,7 @@ Window widget implementation
 from typing import Any, Callable, Dict, Optional, Union
 import json
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .window_config import WindowConfig
 
@@ -22,10 +22,7 @@ class Window:
             config = WindowConfig()
         config_dict = config.to_dict()
         # Create the Window instance
-        self.window = js.dhx.Window.new(js.JSON.parse(json.dumps(config_dict)))
-        if widget_parent:
-            container = js.document.getElementById(widget_parent)
-            self.window.mount(container)
+        self.window = js.dhx.Window.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
     """ Window API Functions """
 

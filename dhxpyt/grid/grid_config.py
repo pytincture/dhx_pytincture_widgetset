@@ -248,6 +248,9 @@ class GridConfig:
         # Remove None values
         config_dict = {k: v for k, v in config_dict.items() if v is not None}
 
+        if self.columns:
+            config_dict['columns'] = [column.to_dict() for column in self.columns]
+
         # Handle functions (e.g., rowCss)
         if 'rowCss' in config_dict and callable(config_dict['rowCss']):
             # Assuming rowCss is a JavaScript function

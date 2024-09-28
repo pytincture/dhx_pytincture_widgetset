@@ -5,7 +5,7 @@ pyTincture Avatar control implementation
 from typing import Any, Callable, Dict, List, Union
 import json
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .avatar_config import AvatarConfig
 
@@ -16,7 +16,7 @@ class Avatar:
         if config is None:
             config = AvatarConfig()
         config_dict = config.to_dict()
-        self.avatar = js.dhx.FormControl.new(js.JSON.parse(json.dumps(config_dict)))
+        self.avatar = js.dhx.FormControl.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
     """ Avatar API Functions """
 

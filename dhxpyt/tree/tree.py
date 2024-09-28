@@ -5,7 +5,7 @@ Tree widget implementation
 from typing import Any, Callable, Dict, List, Optional, Union
 import json
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .tree_config import TreeConfig
 
@@ -22,10 +22,7 @@ class Tree:
             config = TreeConfig()
         config_dict = config.to_dict()
         # Create the Tree instance
-        self.tree = js.dhx.Tree.new(js.JSON.parse(json.dumps(config_dict)))
-        if widget_parent:
-            container = js.document.getElementById(widget_parent)
-            self.tree.mount(container)
+        self.tree = js.dhx.Tree.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
     """ Tree API Functions """
 

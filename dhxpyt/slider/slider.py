@@ -5,7 +5,7 @@ Slider widget implementation
 from typing import Any, Callable, Dict, List, Optional, Union
 import json
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .slider_config import SliderConfig
 
@@ -28,14 +28,10 @@ class Slider:
             config_dict['tickTemplate'] = create_proxy(tick_template)
 
         # Create the Slider instance
-        self.slider = js.dhx.Slider.new(js.JSON.parse(json.dumps(config_dict)))
+        self.slider = js.dhx.Slider.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
         if tick_template:
             # Assign the tickTemplate function
             self.slider.config.tickTemplate = config_dict['tickTemplate']
-
-        if widget_parent:
-            container = js.document.getElementById(widget_parent)
-            self.slider.mount(container)
 
     """ Slider API Functions """
 

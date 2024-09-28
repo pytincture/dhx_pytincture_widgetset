@@ -200,7 +200,7 @@ class MenuItemConfig(ControlConfig):
         self.hidden = hidden
 
     def to_dict(self) -> Dict[str, Any]:
-        config = super().to_dict()
+        config = {k: v for k, v in self.__dict__.items() if v is not None}
         if self.items:
             config['items'] = [item.to_dict() for item in self.items]
         return config

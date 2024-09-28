@@ -5,7 +5,7 @@ Container control implementation for the Form widget
 from typing import Any, Callable, Dict, Union
 import json
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .container_config import ContainerConfig
 
@@ -16,7 +16,7 @@ class Container:
         if config is None:
             config = ContainerConfig()
         config_dict = config.to_dict()
-        self.container = js.dhx.FormControl.new(js.JSON.parse(json.dumps(config_dict)))
+        self.container = js.dhx.FormControl.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
     """ Container API Functions """
 

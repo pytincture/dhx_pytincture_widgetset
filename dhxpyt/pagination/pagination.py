@@ -5,7 +5,7 @@ Pagination widget implementation
 from typing import Any, Callable
 import json
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .pagination_config import PaginationConfig
 
@@ -26,10 +26,7 @@ class Pagination:
         # For now, we will pass the data collection directly
 
         # Create the Pagination instance
-        self.pagination = js.dhx.Pagination.new(js.JSON.parse(json.dumps(config_dict)))
-        if widget_parent:
-            container = js.document.getElementById(widget_parent)
-            self.pagination.mount(container)
+        self.pagination = js.dhx.Pagination.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
     """ Pagination API Functions """
 

@@ -5,7 +5,7 @@ Checkbox control implementation for the Form widget
 import json
 from typing import Any, Callable, Dict, Union
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .checkbox_config import CheckboxConfig
 
@@ -16,7 +16,7 @@ class Checkbox:
         if config is None:
             config = CheckboxConfig()
         config_dict = config.to_dict()
-        self.checkbox = js.dhx.FormControl.new(js.JSON.parse(json.dumps(config_dict)))
+        self.checkbox = js.dhx.FormControl.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
     """ Checkbox API Functions """
 

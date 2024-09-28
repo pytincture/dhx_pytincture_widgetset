@@ -1,6 +1,5 @@
 from typing import List, Union, Dict, Any
 
-from ..config.base_config import BaseConfig
 
 class ChartConfig:
     """Configuration class for Chart."""

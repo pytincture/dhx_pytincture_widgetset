@@ -5,7 +5,7 @@ Spacer control implementation for the Form widget
 from typing import Any, Callable, Dict, Union
 import json
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .spacer_config import SpacerConfig
 
@@ -16,7 +16,7 @@ class Spacer:
         if config is None:
             config = SpacerConfig()
         config_dict = config.to_dict()
-        self.spacer = js.dhx.FormControl.new(js.JSON.parse(json.dumps(config_dict)))
+        self.spacer = js.dhx.FormControl.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
     """ Spacer API Functions """
 

@@ -5,7 +5,7 @@ Grid widget implementation
 from typing import Any, Callable, Dict, List, Union
 import json
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .grid_config import GridConfig
 
@@ -21,10 +21,7 @@ class Grid:
         if config is None:
             config = GridConfig()
         config_dict = config.to_dict()
-        self.grid = js.dhx.Grid.new(js.JSON.parse(json.dumps(config_dict)))
-        if widget_parent:
-            container = js.document.getElementById(widget_parent)
-            self.grid.mount(container)
+        self.grid = js.dhx.Grid.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
     """ Grid API Functions """
 

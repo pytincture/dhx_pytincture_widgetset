@@ -5,7 +5,7 @@ Slider control implementation for the Form widget
 from typing import Any, Callable, Dict, List, Union
 import json
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .slider_config import SliderConfig
 
@@ -16,7 +16,7 @@ class Slider:
         if config is None:
             config = SliderConfig()
         config_dict = config.to_dict()
-        self.slider = js.dhx.FormControl.new(js.JSON.parse(json.dumps(config_dict)))
+        self.slider = js.dhx.FormControl.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
     """ Slider API Functions """
 

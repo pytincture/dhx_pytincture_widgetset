@@ -5,7 +5,7 @@ TimePicker control implementation for the Form widget
 from typing import Any, Callable, Dict, Union
 import json
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .timepicker_config import TimepickerConfig
 
@@ -16,7 +16,7 @@ class Timepicker:
         if config is None:
             config = TimepickerConfig()
         config_dict = config.to_dict()
-        self.timepicker = js.dhx.FormControl.new(js.JSON.parse(json.dumps(config_dict)))
+        self.timepicker = js.dhx.FormControl.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
     """ TimePicker API Functions """
 

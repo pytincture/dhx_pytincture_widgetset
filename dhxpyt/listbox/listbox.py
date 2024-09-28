@@ -5,7 +5,7 @@ ListBox widget implementation
 from typing import Any, Callable, Dict, List, Union
 import json
 from pyodide.ffi import create_proxy
-from pyodide import js
+import js
 
 from .listbox_config import ListboxConfig
 
@@ -21,10 +21,7 @@ class Listbox:
         if config is None:
             config = ListboxConfig()
         config_dict = config.to_dict()
-        self.listbox = js.dhx.List.new(js.JSON.parse(json.dumps(config_dict)))
-        if widget_parent:
-            container = js.document.getElementById(widget_parent)
-            self.listbox.mount(container)
+        self.listbox = js.dhx.List.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
     """ ListBox API Functions """
 

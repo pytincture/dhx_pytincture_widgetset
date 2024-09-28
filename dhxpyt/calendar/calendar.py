@@ -3,7 +3,10 @@ import js
 import json
 from pyodide.ffi import create_proxy
 
-from calendar_config import CalendarConfig
+from .calendar_config import CalendarConfig
+
+str = None
+str = None
 
 class Calendar:
     def __init__(self, config: CalendarConfig, widget_parent: Any = None):
@@ -24,7 +27,7 @@ class Calendar:
         """Returns the current mode of displaying the Calendar."""
         return self.calendar.getCurrentMode()
 
-    def get_value(self, as_date_obj: bool = False) -> Union[Union[str, List[str]], Union[js.Date, List[js.Date]]]:
+    def get_value(self, as_date_obj: bool = False) -> Union[Union[str, List[str]], Union[str, List[str]]]:
         """Returns the selected date(s)."""
         return self.calendar.getValue(as_date_obj)
 
@@ -36,11 +39,11 @@ class Calendar:
         """Repaints the calendar on a page."""
         self.calendar.paint()
 
-    def set_value(self, value: Union[js.Date, List[js.Date], str, List[str]]) -> bool:
+    def set_value(self, value: Union[str, List[str], str, List[str]]) -> bool:
         """Selects a date in the calendar."""
         return self.calendar.setValue(value)
 
-    def show_date(self, date: Union[js.Date, str] = None, mode: str = "calendar") -> None:
+    def show_date(self, date: Union[str, str] = None, mode: str = "calendar") -> None:
         """Shows a specified date and/or opens the calendar in one of the available modes."""
         self.calendar.showDate(date, mode)
 
@@ -51,7 +54,7 @@ class Calendar:
         event_proxy = create_proxy(handler)
         self.calendar.events[event_name] = event_proxy
 
-    def before_change(self, handler: Callable[[js.Date, js.Date, bool], Union[bool, None]]) -> None:
+    def before_change(self, handler: Callable[[str, str, bool], Union[bool, None]]) -> None:
         """Fires before the change of date selection."""
         self.add_event_handler('beforeChange', handler)
 
@@ -59,11 +62,11 @@ class Calendar:
         """Fires when the user clicks on the 'Cancel' control."""
         self.add_event_handler('cancelClick', handler)
 
-    def change(self, handler: Callable[[js.Date, js.Date, bool], None]) -> None:
+    def change(self, handler: Callable[[str, str, bool], None]) -> None:
         """Fires on change of date selection."""
         self.add_event_handler('change', handler)
 
-    def date_mouse_over(self, handler: Callable[[js.Date, js.MouseEvent], None]) -> None:
+    def date_mouse_over(self, handler: Callable[[str, str], None]) -> None:
         """Fires when the mouse pointer is over a date."""
         self.add_event_handler('dateMouseOver', handler)
 
@@ -91,12 +94,12 @@ class Calendar:
         self.calendar.css = value
 
     @property
-    def date(self) -> Union[js.Date, str]:
+    def date(self) -> Union[str, str]:
         """Optional. Defines the date that will be opened when the calendar is created."""
         return self.calendar.date
 
     @date.setter
-    def date(self, value: Union[js.Date, str]) -> None:
+    def date(self, value: Union[str, str]) -> None:
         self.calendar.date = value
 
     @property
@@ -109,21 +112,21 @@ class Calendar:
         self.calendar.dateFormat = value
 
     @property
-    def disabled_dates(self) -> Callable[[js.Date], bool]:
+    def disabled_dates(self) -> Callable[[str], bool]:
         """Optional. Allows disabling some date intervals."""
         return self.calendar.disabledDates
 
     @disabled_dates.setter
-    def disabled_dates(self, value: Callable[[js.Date], bool]) -> None:
+    def disabled_dates(self, value: Callable[[str], bool]) -> None:
         self.calendar.disabledDates = value
 
     @property
-    def mark(self) -> Callable[[js.Date], str]:
+    def mark(self) -> Callable[[str], str]:
         """Optional. Adds a CSS class to specific days."""
         return self.calendar.mark
 
     @mark.setter
-    def mark(self, value: Callable[[js.Date], str]) -> None:
+    def mark(self, value: Callable[[str], str]) -> None:
         self.calendar.mark = value
 
     @property
@@ -172,12 +175,12 @@ class Calendar:
         self.calendar.timePicker = value
 
     @property
-    def value(self) -> Union[js.Date, List[js.Date], str, List[str]]:
+    def value(self) -> Union[str, List[str], str, List[str]]:
         """Optional. Selects the day(s) (adds a round blue marker)."""
         return self.calendar.value
 
     @value.setter
-    def value(self, value: Union[js.Date, List[js.Date], str, List[str]]) -> None:
+    def value(self, value: Union[str, List[str], str, List[str]]) -> None:
         self.calendar.value = value
 
     @property
