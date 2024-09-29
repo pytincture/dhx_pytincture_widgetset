@@ -1,7 +1,10 @@
 from typing import List, Union, Dict, Any
 
+class ControlConfig:
+    def to_dict(self) -> Dict[str, Any]:
+        return {k: v for k, v in self.__dict__.items() if v is not None}
 
-class ChartConfig:
+class ChartConfig(ControlConfig):
     """Configuration class for Chart."""
     def __init__(self,
                  type: str,

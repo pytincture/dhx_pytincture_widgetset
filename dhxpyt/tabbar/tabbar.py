@@ -9,6 +9,22 @@ import js
 
 from .tabbar_config import TabbarConfig
 
+from ..grid import Grid, GridConfig
+from ..toolbar import Toolbar, ToolbarConfig
+from ..sidebar import Sidebar, SidebarConfig
+from ..form import Form, FormConfig
+from ..menu import Menu, MenuConfig
+#from ..layout import Layout, LayoutConfig, CellConfig
+from ..listbox import Listbox, ListboxConfig
+from ..calendar import Calendar, CalendarConfig
+from ..chart import Chart, ChartConfig
+from ..pagination import Pagination, PaginationConfig
+from ..ribbon import Ribbon, RibbonConfig
+from .tabbar_config import TabbarConfig, TabConfig
+from ..timepicker import Timepicker, TimepickerConfig
+from ..tree import Tree, TreeConfig
+
+
 
 class Tabbar:
     def __init__(self, config: TabbarConfig = None, widget_parent: Any = None):
@@ -17,6 +33,94 @@ class Tabbar:
             config = TabbarConfig()
         config_dict = config.to_dict()
         self.tabbar = js.dhx.Tabbar.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
+
+    """ Placeholder Widgets Adders """
+
+    def add_grid(self, id: str = "mainwindow", grid_config: GridConfig = None) -> Grid:
+        """Adds a Grid widget into a Layout cell."""
+        grid_widget = Grid(config=grid_config)
+        self.attach(id, grid_widget.grid)
+        if grid_config.data:
+            grid_widget.grid.data.parse(js.JSON.parse(json.dumps(grid_config.data)))
+        return grid_widget
+    
+    #def add_layout(self, id: str = "mainwindow", layout_config: LayoutConfig = None) -> TLayout:
+    #    """ Adds a Layout into a Layout cell """
+    #    layout_widget = Layout(config=layout_config)
+    #    self.attach(id, layout_widget.layout)
+    #    return layout_widget
+    
+    def add_menu(self, id: str = "mainwindow_header", menu_config: MenuConfig = None) -> Menu:
+        """ Adds a Layout into a Layout cell """
+        menu_widget = Menu(config=menu_config)
+        self.attach(id, menu_widget.menu)
+        return menu_widget
+
+    def add_toolbar(self, id: str = "mainwindow", toolbar_config: ToolbarConfig = None) -> Toolbar:
+        """Adds a Toolbar widget into a Layout cell."""
+        toolbar_widget = Toolbar(config=toolbar_config)
+        self.attach(id, toolbar_widget.toolbar)
+        return toolbar_widget
+
+    def add_sidebar(self, id: str, sidebar_config: SidebarConfig = None) -> Sidebar:
+        """Adds a Sidebar widget into a Layout cell."""
+        sidebar_widget = Sidebar(config=sidebar_config)
+        self.attach(id, sidebar_widget.sidebar)
+        return sidebar_widget
+
+    def add_form(self, id: str, form_config: FormConfig = None) -> Form:
+        """Adds a Form widget into a Layout cell."""
+        form_widget = Form(config=form_config)
+        self.attach(id, form_widget.form)
+        return form_widget
+    
+    def add_listbox(self, id: str, listbox_config: ListboxConfig = None) -> Any:
+        """Adds a Listbox widget into a Layout cell."""
+        listbox_widget = Listbox(config=listbox_config)
+        self.attach(id, listbox_widget.listbox)
+        return listbox_widget
+    
+    def add_calendar(self, id: str, calendar_config: CalendarConfig = None) -> Any:
+        """Adds a Calendar widget into a Layout cell."""
+        calendar_widget = Calendar(config=calendar_config)
+        self.attach(id, calendar_widget.calendar)
+        return calendar_widget
+    
+    def add_chart(self, id: str, chart_config: ChartConfig = None) -> Any:
+        """Adds a Chart widget into a Layout cell."""
+        chart_widget = Chart(config=chart_config)
+        self.attach(id, chart_widget.chart)
+        return chart_widget
+    
+    def add_pagination(self, id: str, pagination_config: PaginationConfig = None) -> Any:
+        """Adds a Pagination widget into a Layout cell."""
+        pagination_widget = Pagination(config=pagination_config)
+        self.attach(id, pagination_widget.pagination)
+        return pagination_widget
+    
+    def add_ribbon(self, id: str, ribbon_config: RibbonConfig = None) -> Any:
+        """Adds a Ribbon widget into a Layout cell."""
+        ribbon_widget = Ribbon(config=ribbon_config)
+        self.attach(id, ribbon_widget.ribbon)
+        return ribbon_widget
+    
+    def add_tabbar(self, id: str, tabbar_config: TabbarConfig = None) -> Any:
+        """Adds a Tabbar widget into a Layout cell."""
+        tabbar_widget = Tabbar(config=tabbar_config)
+        self.attach(id, tabbar_widget.tabbar)
+        return tabbar_widget
+    
+    def add_timepicker(self, id: str, timepicker_config: TimepickerConfig = None) -> Any:
+        """Adds a Timepicker widget into a Layout cell."""
+        timepicker_widget = Timepicker(config=timepicker_config)
+        self.attach(id, timepicker_widget.timepicker)
+        return timepicker_widget
+    
+    def add_tree(self, id: str, tree_config: TreeConfig = None) -> Any:
+        """Adds a Tree widget into a Layout cell."""
+        tree_widget = Tree(config=tree_config)
+        self.attach(id, tree_widget.tree)
+        return tree_widget
 
     """ Tabbar API Methods """
 

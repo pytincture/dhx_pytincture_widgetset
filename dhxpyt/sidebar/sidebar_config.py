@@ -145,8 +145,8 @@ class SidebarConfig:
                  collapsed: Optional[bool] = None,
                  css: Optional[str] = None,
                  menuCss: Optional[str] = None,
-                 minWidth: Union[int, str] = "44",
-                 width: Union[int, str] = "200"):
+                 minWidth: Union[int, str] = None,
+                 width: Union[int, str] = None):
         """
         Initializes the SidebarConfig.
 
