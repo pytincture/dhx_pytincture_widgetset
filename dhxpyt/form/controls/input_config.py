@@ -68,7 +68,6 @@ class InputConfig:
         :param successMessage: (Optional) Message after successful validation.
         :param errorMessage: (Optional) Message after validation error.
         """
-        self.type = "input"
         self.name = name
         self.id = id
         self.value = value
@@ -103,7 +102,6 @@ class InputConfig:
         Converts the InputConfig into a dictionary format.
         """
         config_dict = {
-            'type': self.type,
             'name': self.name,
             'id': self.id,
             'value': self.value,
@@ -139,5 +137,6 @@ class InputConfig:
         # Handle validation function
         if 'validation' in config_dict and callable(config_dict['validation']):
             config_dict['validation'] = create_proxy(self.validation)
+    
 
         return config_dict

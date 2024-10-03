@@ -1,6 +1,10 @@
 from typing import List, Union, Dict, Any, Callable
 
-class CalendarConfig:
+class ControlConfig:
+    def to_dict(self) -> Dict[str, Any]:
+        return {k: v for k, v in self.__dict__.items() if v is not None}
+
+class CalendarConfig(ControlConfig):
     """Configuration class for Calendar."""
     def __init__(self,
                  date: Union[str, Any] = None,

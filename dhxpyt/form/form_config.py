@@ -56,6 +56,10 @@ class FormConfig:
             'title': self.title,
             'width': self.width
         }
+
+        if 'cols' in config_dict:
+            config_dict['cols'] = [col.to_dict() for col in config_dict['cols']]
+            
         # Remove None values
         return {k: v for k, v in config_dict.items() if v is not None}
 
