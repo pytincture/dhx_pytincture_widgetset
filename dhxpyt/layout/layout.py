@@ -25,7 +25,15 @@ from ..tree import Tree, TreeConfig
 
 TLayout = TypeVar("TLayout", bound="Layout")
 
-class Layout:
+class LoadUICaller(type):
+    def __call__(cls, *args, **kwargs):
+        """Called when you call MyNewClass() """
+        obj = type.__call__(cls, *args, **kwargs)
+        obj.load_ui()
+        return obj
+
+class Layout(object, metaclass=LoadUICaller):
+    layout_config = None
     def __init__(self, config: LayoutConfig = None, mainwindow=False):
         """Initializes the layout instance."""
         if mainwindow:
@@ -39,11 +47,17 @@ class Layout:
                     ]
                 )
             self.layout = js.dhx.Layout.new("maindiv", js.JSON.parse(json.dumps(config.to_dict())))
+        elif self.layout_config:
+            self.layout = js.dhx.Layout.new(None, js.JSON.parse(json.dumps(self.layout_config.to_dict())))
         else:
             self.layout = js.dhx.Layout.new(None, js.JSON.parse(json.dumps(config.to_dict())))
         self.initialized = False
 
     """ Placeholder Widgets Adders """
+
+    def load_ui(self, *args, **kwargs):
+        """Subclass this to build your UI"""
+        pass
 
     def add_grid(self, id: str = "mainwindow", grid_config: GridConfig = None) -> Grid:
         """Adds a Grid widget into a Layout cell."""

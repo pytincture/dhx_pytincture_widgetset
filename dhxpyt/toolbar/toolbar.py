@@ -73,7 +73,11 @@ class Toolbar:
 
     def set_state(self, state: dict) -> None:
         """Sets values/states of controls."""
-        self.toolbar.setState(state)
+        self.toolbar.setState(js.JSON.parse(json.dumps(state)))
+
+    def update_item(self, id, item_dict: str) -> None:
+        """Updates a toolbar item that is already on the toolbar"""
+        self.toolbar.data.update(id, js.JSON.parse(json.dumps(item_dict)))
 
     def show(self, ids: Union[str, int, List[Union[str, int]]] = None) -> None:
         """Shows items of Toolbar."""

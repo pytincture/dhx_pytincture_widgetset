@@ -7,8 +7,8 @@ class CellConfig:
     Defines properties like header, id, width, height, etc.
     """
     def __init__(self,
-                 header: str = None,
                  id: str = None,
+                 header: str = None,
                  width: Union[str, int] = None,
                  height: Union[str, int] = None,
                  css: str = None,
@@ -59,18 +59,41 @@ class LayoutConfig:
         self.cols = cols if cols else None
         self.css = css
 
+    def process_nested_dict(self, obj):
+        # If obj is a dictionary, process its 'rows' and 'cols' if they exist
+        if isinstance(obj, dict):
+            if 'rows' in obj:
+                obj['rows'] = [
+                    self.process_nested_dict(cell) if isinstance(cell, (dict, object)) else cell for cell in obj['rows']
+                ]
+            if 'cols' in obj:
+                obj['cols'] = [
+                    self.process_nested_dict(cell) if isinstance(cell, (dict, object)) else cell for cell in obj['cols']
+                ]
+            return obj
+        # If obj is an object, convert it to a dict using to_dict()
+        elif hasattr(obj, 'to_dict'):
+            return obj.to_dict()
+        # Return obj as-is if it is not a dict or does not have to_dict()
+        return obj
+
     def to_dict(self) -> Dict[str, Any]:
         """
         Converts the LayoutConfig into a dictionary format that can be
         passed into the layout constructor. Handles nested rows and cols.
         """
+        # Create config_dict by excluding None values
         config_dict = {k: v for k, v in self.__dict__.items() if v is not None}
 
-        # Convert rows and columns to dictionaries using nested to_dict calls
+        # Convert rows and columns to dictionaries, ensuring nested dicts are handled
         if self.rows:
-            config_dict['rows'] = [cell.to_dict() for cell in self.rows]
+            config_dict['rows'] = [
+                self.process_nested_dict(cell) for cell in self.rows
+            ]
 
         if self.cols:
-            config_dict['cols'] = [cell.to_dict() for cell in self.cols]
+            config_dict['cols'] = [
+                self.process_nested_dict(cell) for cell in self.cols
+        ]
 
         return config_dict
