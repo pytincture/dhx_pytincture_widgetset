@@ -64,6 +64,7 @@ class Layout(object, metaclass=LoadUICaller):
         grid_widget = Grid(config=grid_config)
         self.attach(id, grid_widget.grid)
         if grid_config.data:
+            grid_widget.grid.data.removeAll()
             grid_widget.grid.data.parse(js.JSON.parse(json.dumps(grid_config.data)))
         return grid_widget
     

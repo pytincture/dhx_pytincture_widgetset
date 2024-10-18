@@ -148,6 +148,37 @@ class Grid:
             handler(value, row.to_py(), column.to_py())
         self.grid.events.on('afterEditEnd', create_proxy(event_handler))
 
+    def on_cell_click(self, handler: Callable[[Dict[str, Any], Dict[str, Any], Any], None]) -> None:
+        """Fires when a cell is clicked."""
+        def event_handler(row, column, event):
+            handler(row.to_py(), column.to_py(), event)
+        self.grid.events.on('cellClick', create_proxy(event_handler))
+
+    def on_cell_dbl_click(self, handler: Callable[[Dict[str, Any], Dict[str, Any], Any], None]) -> None:
+        """Fires when a cell is double-clicked."""
+        def event_handler(row, column, event):
+            handler(row.to_py(), column.to_py(), event)
+        self.grid.events.on('cellDblClick', create_proxy(event_handler))
+
+    def on_cell_mouse_down(self, handler: Callable[[Dict[str, Any], Dict[str, Any], Any], None]) -> None:
+        """Fires before releasing the left mouse button when clicking on a grid cell."""
+        def event_handler(row, column, event):
+            handler(row.to_py(), column.to_py(), event)
+        self.grid.events.on('cellMouseDown', create_proxy(event_handler))
+
+    def on_cell_mouse_over(self, handler: Callable[[Dict[str, Any], Dict[str, Any], Any], None]) -> None:
+        """Fires on moving the mouse pointer over a grid cell."""
+        def event_handler(row, column, event):
+            handler(row.to_py(), column.to_py(), event)
+        self.grid.events.on('cellMouseOver', create_proxy(event_handler))
+
+    def on_cell_right_click(self, handler: Callable[[Dict[str, Any], Dict[str, Any], Any], None]) -> None:
+        """Fires on right click on a grid cell."""
+        def event_handler(row, column, event):
+            handler(row.to_py(), column.to_py(), event)
+        self.grid.events.on('cellRightClick', create_proxy(event_handler))
+
+
     # Similarly, other events can be added following the documentation provided.
 
     """ Grid Selection Functions """
