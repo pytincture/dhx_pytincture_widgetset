@@ -15,7 +15,7 @@ class SimpleVaultConfig:
                  css: str = None,
                  height: Union[str, int] = "content",
                  width: Union[str, int] = "content",
-                 padding: Union[str, int] = None,
+                 padding: Union[str, int] = "5px",
                  hidden: bool = False,
                  disabled: bool = False,
                  fieldName: str = "file",

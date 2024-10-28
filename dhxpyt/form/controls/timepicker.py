@@ -11,7 +11,7 @@ from .timepicker_config import TimepickerConfig
 
 
 class Timepicker:
-    def __init__(self, config: TimepickerConfig = None):
+    def __init__(self, config: TimepickerConfig = None, widget_parent: Any = None):
         """Initializes the TimePicker control."""
         if config is None:
             config = TimepickerConfig()

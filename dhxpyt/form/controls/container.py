@@ -11,7 +11,7 @@ from .container_config import ContainerConfig
 
 
 class Container:
-    def __init__(self, config: ContainerConfig = None):
+    def __init__(self, config: ContainerConfig = None, widget_parent: Any = None):
         """Initializes the Container control."""
         if config is None:
             config = ContainerConfig()

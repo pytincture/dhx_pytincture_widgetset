@@ -15,7 +15,7 @@ class CheckboxGroupConfig:
                  disabled: bool = False,
                  height: Union[str, int] = "content",
                  hidden: bool = False,
-                 padding: Union[str, int] = None,
+                 padding: Union[str, int] = "5px",
                  required: bool = False,
                  width: Union[str, int] = "content",
                  hiddenLabel: bool = False,
@@ -75,11 +75,18 @@ class CheckboxGroupConfig:
         """
         Converts the CheckboxGroupConfig into a dictionary format.
         """
+        def process_option(option):
+            if isinstance(option, dict) and 'rows' in option:
+                option['rows'] = [process_option(item) for item in option['rows']]
+            elif hasattr(option, 'to_dict'):
+                return option.to_dict()
+            return option
+
         config_dict = {
             'type': self.type,
             'name': self.name,
             'id': self.id,
-            'options': self.options,
+            'options': process_option(self.options),
             'value': self.value,
             'css': self.css,
             'disabled': self.disabled,
@@ -98,6 +105,7 @@ class CheckboxGroupConfig:
             'errorMessage': self.errorMessage,
             'validation': self.validation
         }
+
         # Remove None values
         config_dict = {k: v for k, v in config_dict.items() if v is not None}
 
@@ -106,3 +114,4 @@ class CheckboxGroupConfig:
             config_dict['validation'] = create_proxy(self.validation)
 
         return config_dict
+

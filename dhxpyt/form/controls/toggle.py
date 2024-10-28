@@ -11,7 +11,7 @@ from .toggle_config import ToggleConfig
 
 
 class Toggle:
-    def __init__(self, config: ToggleConfig = None):
+    def __init__(self, config: ToggleConfig = None, widget_parent: Any = None):
         """Initializes the Toggle control."""
         if config is None:
             config = ToggleConfig()

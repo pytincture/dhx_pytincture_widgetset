@@ -1,4 +1,5 @@
 from typing import Union, Dict, Any
+from pyodide.ffi import create_proxy
 
 
 class ButtonConfig:
@@ -15,7 +16,7 @@ class ButtonConfig:
                  disabled: bool = False,
                  height: Union[str, int] = "content",
                  hidden: bool = False,
-                 padding: Union[str, int] = None,
+                 padding: Union[str, int] = "5px",
                  width: Union[str, int] = "content",
                  circle: bool = False,
                  color: str = "primary",

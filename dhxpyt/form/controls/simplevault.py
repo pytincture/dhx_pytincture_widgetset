@@ -11,7 +11,7 @@ from .simplevault_config import SimpleVaultConfig
 
 
 class SimpleVault:
-    def __init__(self, config: SimpleVaultConfig = None):
+    def __init__(self, config: SimpleVaultConfig = None, widget_parent: Any = None):
         """Initializes the SimpleVault control."""
         if config is None:
             config = SimpleVaultConfig()

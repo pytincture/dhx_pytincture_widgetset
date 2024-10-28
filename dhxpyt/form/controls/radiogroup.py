@@ -11,11 +11,12 @@ from .radiogroup_config import RadioGroupConfig
 
 
 class RadioGroup:
-    def __init__(self, config: RadioGroupConfig = None):
+    def __init__(self, config: RadioGroupConfig = None, widget_parent: Any = None):
         """Initializes the RadioGroup control."""
         if config is None:
             config = RadioGroupConfig()
         config_dict = config.to_dict()
+        print(config_dict)
         self.radiogroup = js.dhx.FormControl.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
     """ RadioGroup API Functions """

@@ -14,7 +14,7 @@ class RadioButtonOption:
                  css: str = None,
                  height: Union[str, int] = "content",
                  hidden: bool = False,
-                 padding: Union[str, int] = None,
+                 padding: Union[str, int] = "5px",
                  text: str = None,
                  width: Union[str, int] = "content"):
         self.type = "radioButton"
@@ -60,7 +60,7 @@ class RadioGroupConfig:
                  disabled: bool = False,
                  height: Union[str, int] = "content",
                  hidden: bool = False,
-                 padding: Union[str, int] = None,
+                 padding: Union[str, int] = "5px",
                  required: bool = False,
                  width: Union[str, int] = "content",
                  hiddenLabel: bool = False,
@@ -119,11 +119,16 @@ class RadioGroupConfig:
         """
         Converts the RadioGroupConfig into a dictionary format.
         """
+        def process_option(option):
+            if hasattr(option, 'to_dict'):
+                return option.to_dict()
+            return option
+
         config_dict = {
             'type': self.type,
             'name': self.name,
             'id': self.id,
-            'options': [option.to_dict() for option in self.options] if self.options else None,
+            'options': self.options,
             'value': self.value,
             'css': self.css,
             'disabled': self.disabled,
@@ -141,5 +146,6 @@ class RadioGroupConfig:
             'successMessage': self.successMessage,
             'errorMessage': self.errorMessage
         }
+
         # Remove None values
         return {k: v for k, v in config_dict.items() if v is not None}

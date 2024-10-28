@@ -11,7 +11,7 @@ from .avatar_config import AvatarConfig
 
 
 class Avatar:
-    def __init__(self, config: AvatarConfig = None):
+    def __init__(self, config: AvatarConfig = None, widget_parent: Any = None):
         """Initializes the Avatar control."""
         if config is None:
             config = AvatarConfig()

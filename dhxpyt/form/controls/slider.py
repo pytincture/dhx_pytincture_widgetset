@@ -11,7 +11,7 @@ from .slider_config import SliderConfig
 
 
 class Slider:
-    def __init__(self, config: SliderConfig = None):
+    def __init__(self, config: SliderConfig = None, widget_parent: Any = None):
         """Initializes the Slider control."""
         if config is None:
             config = SliderConfig()

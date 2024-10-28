@@ -16,7 +16,7 @@ class CheckboxConfig:
                  disabled: bool = False,
                  height: Union[str, int] = "content",
                  hidden: bool = False,
-                 padding: Union[str, int] = None,
+                 padding: Union[str, int] = "5px",
                  required: bool = False,
                  width: Union[str, int] = "content",
                  hiddenLabel: bool = False,

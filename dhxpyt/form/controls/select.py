@@ -11,7 +11,7 @@ from .select_config import SelectConfig
 
 
 class Select:
-    def __init__(self, config: SelectConfig = None):
+    def __init__(self, config: SelectConfig = None, widget_parent: Any = None):
         """Initializes the Select control."""
         if config is None:
             config = SelectConfig()

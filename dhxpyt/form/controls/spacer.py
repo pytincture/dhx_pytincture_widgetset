@@ -11,7 +11,7 @@ from .spacer_config import SpacerConfig
 
 
 class Spacer:
-    def __init__(self, config: SpacerConfig = None):
+    def __init__(self, config: SpacerConfig = None, widget_parent: Any = None):
         """Initializes the Spacer control."""
         if config is None:
             config = SpacerConfig()

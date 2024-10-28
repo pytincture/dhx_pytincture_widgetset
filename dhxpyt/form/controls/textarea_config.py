@@ -15,7 +15,7 @@ class TextareaConfig:
                  disabled: bool = False,
                  height: Union[str, int] = "content",
                  hidden: bool = False,
-                 padding: Union[str, int] = None,
+                 padding: Union[str, int] = "5px",
                  required: bool = False,
                  validation: Union[str, Callable[[Any], bool]] = None,
                  width: Union[str, int] = "content",

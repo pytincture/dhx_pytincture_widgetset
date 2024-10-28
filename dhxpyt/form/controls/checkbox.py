@@ -11,7 +11,7 @@ from .checkbox_config import CheckboxConfig
 
 
 class Checkbox:
-    def __init__(self, config: CheckboxConfig = None):
+    def __init__(self, config: CheckboxConfig = None, widget_parent: Any = None):
         """Initializes the Checkbox control."""
         if config is None:
             config = CheckboxConfig()

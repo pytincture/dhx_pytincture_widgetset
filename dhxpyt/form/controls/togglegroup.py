@@ -11,7 +11,7 @@ from .togglegroup_config import ToggleGroupConfig
 
 
 class ToggleGroup:
-    def __init__(self, config: ToggleGroupConfig = None):
+    def __init__(self, config: ToggleGroupConfig = None, widget_parent: Any = None):
         """Initializes the ToggleGroup control."""
         if config is None:
             config = ToggleGroupConfig()

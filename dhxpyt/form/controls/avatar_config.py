@@ -24,7 +24,7 @@ class AvatarConfig:
                  css: str = None,
                  width: Union[str, int] = "content",
                  height: Union[str, int] = "content",
-                 padding: Union[str, int] = None,
+                 padding: Union[str, int] = "5px",
                  label: str = None,
                  labelWidth: Union[str, int] = None,
                  labelPosition: str = "top",

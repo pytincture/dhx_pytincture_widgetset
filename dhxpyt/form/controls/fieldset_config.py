@@ -14,7 +14,7 @@ class FieldsetConfig:
                  css: str = None,
                  width: Union[str, int] = "content",
                  height: Union[str, int] = "content",
-                 padding: Union[str, int] = None,
+                 padding: Union[str, int] = "5px",
                  label: str = None,
                  labelAlignment: str = "left",
                  rows: List[Any] = None,

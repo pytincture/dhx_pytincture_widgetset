@@ -12,7 +12,7 @@ from .colorpicker_config import ColorpickerConfig
 
 
 class Colorpicker:
-    def __init__(self, config: ColorpickerConfig = None):
+    def __init__(self, config: ColorpickerConfig = None, widget_parent: Any = None):
         """Initializes the ColorPicker control."""
         if config is None:
             config = ColorPickerConfig()

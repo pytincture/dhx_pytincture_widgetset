@@ -11,7 +11,7 @@ from .button_config import ButtonConfig
 
 
 class Button:
-    def __init__(self, config: ButtonConfig = None):
+    def __init__(self, config: ButtonConfig = None, widget_parent: Any = None):
         """Initializes the Button control."""
         if config is None:
             config = ButtonConfig()

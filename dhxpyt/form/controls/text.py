@@ -11,7 +11,7 @@ from .text_config import TextConfig
 
 
 class Text:
-    def __init__(self, config: TextConfig = None):
+    def __init__(self, config: TextConfig = None, widget_parent: Any = None):
         """Initializes the Text control."""
         if config is None:
             config = TextConfig()

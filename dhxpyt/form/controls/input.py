@@ -11,7 +11,7 @@ from .input_config import InputConfig
 
 
 class Input:
-    def __init__(self, config: InputConfig = None):
+    def __init__(self, config: InputConfig = None, widget_parent: Any = None):
         """Initializes the Input control."""
         if config is None:
             config = InputConfig()

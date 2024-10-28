@@ -34,7 +34,8 @@ class LoadUICaller(type):
 
 class Layout(object, metaclass=LoadUICaller):
     layout_config = None
-    def __init__(self, config: LayoutConfig = None, mainwindow=False):
+    def __init__(self, config: LayoutConfig = None, mainwindow=False, **kwargs):
+        self.parent = kwargs.get("parent", None)
         """Initializes the layout instance."""
         if mainwindow:
             if not config:

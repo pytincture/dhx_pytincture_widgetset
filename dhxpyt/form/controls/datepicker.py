@@ -11,7 +11,7 @@ from .datepicker_config import DatepickerConfig
 
 
 class Datepicker:
-    def __init__(self, config: DatepickerConfig = None):
+    def __init__(self, config: DatepickerConfig = None, widget_parent: Any = None):
         """Initializes the DatePicker control."""
         if config is None:
             config = DatePickerConfig()

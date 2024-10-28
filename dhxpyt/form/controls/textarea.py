@@ -11,7 +11,7 @@ from .textarea_config import TextareaConfig
 
 
 class Textarea:
-    def __init__(self, config: TextareaConfig = None):
+    def __init__(self, config: TextareaConfig = None, widget_parent: Any = None):
         """Initializes the Textarea control."""
         if config is None:
             config = TextareaConfig()

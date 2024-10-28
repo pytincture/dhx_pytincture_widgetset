@@ -1,6 +1,16 @@
 from typing import List, Union, Dict, Any
 
 
+def process_item(item):
+    if isinstance(item, dict):
+        if 'cols' in item:
+            item['cols'] = [process_item(col) for col in item['cols']]
+        if 'rows' in item:
+            item['rows'] = [process_item(row) for row in item['rows']]
+    elif hasattr(item, 'to_dict'):
+        return item.to_dict()
+    return item
+
 class FormConfig:
     """
     Configuration class for Form.
@@ -58,7 +68,10 @@ class FormConfig:
         }
 
         if 'cols' in config_dict:
-            config_dict['cols'] = [col.to_dict() for col in config_dict['cols']]
+            config_dict['cols'] = [process_item(col) for col in config_dict['cols']]
+        if 'rows' in config_dict:
+            config_dict['rows'] = [process_item(row) for row in config_dict['rows']]
+
             
         # Remove None values
         return {k: v for k, v in config_dict.items() if v is not None}

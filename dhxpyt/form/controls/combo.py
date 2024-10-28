@@ -11,7 +11,7 @@ from .combo_config import ComboConfig
 
 
 class Combo:
-    def __init__(self, config: ComboConfig = None):
+    def __init__(self, config: ComboConfig = None, widget_parent: Any = None):
         """Initializes the Combo control."""
         if config is None:
             config = ComboConfig()

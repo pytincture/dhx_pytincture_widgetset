@@ -11,7 +11,7 @@ from .fieldset_config import FieldsetConfig
 
 
 class Fieldset:
-    def __init__(self, config: FieldsetConfig = None):
+    def __init__(self, config: FieldsetConfig = None, widget_parent: Any = None):
         """Initializes the Fieldset control."""
         if config is None:
             config = FieldsetConfig()

@@ -14,7 +14,7 @@ class SliderConfig:
                  disabled: bool = False,
                  height: Union[str, int] = "content",
                  hidden: bool = False,
-                 padding: Union[str, int] = None,
+                 padding: Union[str, int] = "5px",
                  width: Union[str, int] = "content",
                  inverse: bool = False,
                  majorTick: Union[int, float] = None,
