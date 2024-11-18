@@ -11,7 +11,7 @@ requires-python = ">=3.6"
 keywords = ["DHTMLX", "widgetset"]
 license = { text = "GNU General Public License v2" }
 dependencies = [
-    "pyodide-py==0.26.3"
+    "pyodide-py==0.26.4"
 ]
 
 [project.urls]
