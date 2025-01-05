@@ -22,7 +22,7 @@ class Window:
             config = WindowConfig()
         config_dict = config.to_dict()
         # Create the Window instance
-        self.window = js.dhx.Window.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
+        self.window = js.dhx.Window.new("maindiv", js.JSON.parse(json.dumps(config_dict)))
 
     """ Window API Functions """
 
