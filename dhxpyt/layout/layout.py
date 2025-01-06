@@ -352,7 +352,40 @@ class MainWindow(Layout):
         """Initialize the Main Window layout."""
         super().__init__(mainwindow=True)
         self.initialized = True
+        self.cookie_status = None
 
     def set_theme(self, theme: str) -> None:
         """Sets the layout theme."""
         js.dhx.setTheme(theme)
+
+    def show_cookie_banner():
+        # Suppose you've got a <div id="cookie-banner"> in your HTML
+        cookie_banner = js.document.getElementById("cookie-banner")
+        cookie_banner.style.display = "block"
+
+    def hide_cookie_banner(self):
+        cookie_banner = js.document.getElementById("cookie-banner")
+        cookie_banner.style.display = "none"
+
+    def accept_cookies(self, _event=None):
+        # Set a cookie in the browser to remember consent
+        js.document.cookie = "cookie_consent=accepted; path=/; max-age=31536000"
+        self.hide_cookie_banner()
+        self.cookie_status = True
+
+    def reject_cookies(self, _event=None):
+        # Possibly set a cookie or local storage to remember "rejected"
+        js.document.cookie = "cookie_consent=rejected; path=/; max-age=31536000"
+        self.hide_cookie_banner()
+        self.cookie_status = False
+
+    def check_cookie_consent(self):
+        # Check the document.cookie in JavaScript from Pyodide
+        cookies = js.document.cookie
+        if "cookie_consent=accepted" not in cookies and "cookie_consent=rejected" not in cookies:
+            self.show_cookie_banner()
+            accept_button = js.document.getElementById("accept-btn")
+            reject_button = js.document.getElementById("reject-btn")
+
+            accept_button.addEventListener("click", self.accept_cookies)
+            reject_button.addEventListener("click", self.reject_cookies)
