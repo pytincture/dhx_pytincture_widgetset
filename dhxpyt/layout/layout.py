@@ -358,7 +358,7 @@ class MainWindow(Layout):
         """Sets the layout theme."""
         js.dhx.setTheme(theme)
 
-    def show_cookie_banner():
+    def show_cookie_banner(self):
         # Suppose you've got a <div id="cookie-banner"> in your HTML
         cookie_banner = js.document.getElementById("cookie-banner")
         cookie_banner.style.display = "block"
@@ -387,5 +387,5 @@ class MainWindow(Layout):
             accept_button = js.document.getElementById("accept-btn")
             reject_button = js.document.getElementById("reject-btn")
 
-            accept_button.addEventListener("click", self.accept_cookies)
-            reject_button.addEventListener("click", self.reject_cookies)
+            accept_button.addEventListener("click", create_proxy(self.accept_cookies))
+            reject_button.addEventListener("click", create_proxy(self.reject_cookies))
