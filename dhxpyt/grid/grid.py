@@ -178,6 +178,80 @@ class Grid:
             handler(row.to_py(), column.to_py(), event)
         self.grid.events.on('cellRightClick', create_proxy(event_handler))
 
+    """ Grid Drag-and-Drop Event Handlers """
+
+    def on_before_row_drag(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
+        """Fires before dragging a row starts."""
+        def event_handler(data, event):
+            handler(data.to_py(), event)
+        self.grid.events.on('beforeRowDrag', create_proxy(event_handler))
+
+    def on_after_row_drag(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
+        """Fires after dragging a row finishes."""
+        def event_handler(data, event):
+            handler(data.to_py(), event)
+        self.grid.events.on('afterRowDrag', create_proxy(event_handler))
+
+    def on_before_column_drag(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
+        """Fires before dragging a column starts."""
+        def event_handler(data, event):
+            handler(data.to_py(), event)
+        self.grid.events.on('beforeColumnDrag', create_proxy(event_handler))
+
+    def on_after_column_drag(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
+        """Fires after dragging a column finishes."""
+        def event_handler(data, event):
+            handler(data.to_py(), event)
+        self.grid.events.on('afterColumnDrag', create_proxy(event_handler))
+
+    def on_row_drop(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
+        """Fires when a row is dropped."""
+        def event_handler(data, event):
+            handler(data.to_py(), event)
+        self.grid.events.on('afterRowDrop', create_proxy(event_handler))
+
+    def on_column_drop(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
+        """Fires when a column is dropped."""
+        def event_handler(data, event):
+            handler(data.to_py(), event)
+        self.grid.events.on('afterColumnDrop', create_proxy(event_handler))
+
+    # Dragging callbacks
+    def on_drag_row_in(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
+        """Fires when a row is dragged over a potential target."""
+        def event_handler(data, event):
+            handler(data.to_py(), event)
+        self.grid.events.on('dragRowIn', create_proxy(event_handler))
+
+    def on_drag_row_out(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
+        """Fires when a row is dragged out of a potential target."""
+        def event_handler(data, event):
+            handler(data.to_py(), event)
+        self.grid.events.on('dragRowOut', create_proxy(event_handler))
+
+    def on_drag_column_in(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
+        """Fires when a column is dragged over a potential target."""
+        def event_handler(data, event):
+            handler(data.to_py(), event)
+        self.grid.events.on('dragColumnIn', create_proxy(event_handler))
+
+    def on_drag_column_out(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
+        """Fires when a column is dragged out of a potential target."""
+        def event_handler(data, event):
+            handler(data.to_py(), event)
+        self.grid.events.on('dragColumnOut', create_proxy(event_handler))
+
+    def on_drag_row_start(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
+        """Fires when the dragging of a row starts."""
+        def event_handler(data, event):
+            handler(data.to_py(), event)
+        self.grid.events.on('dragRowStart', create_proxy(event_handler))
+
+    def on_drag_column_start(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
+        """Fires when the dragging of a column starts."""
+        def event_handler(data, event):
+            handler(data.to_py(), event)
+        self.grid.events.on('dragColumnStart', create_proxy(event_handler))
 
     # Similarly, other events can be added following the documentation provided.
 
