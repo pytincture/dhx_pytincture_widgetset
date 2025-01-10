@@ -23,7 +23,8 @@ class GridColumnConfig:
                  format: str = None,
                  template: Callable[[Dict[str, Any]], str] = None,
                  editorType: str = None,
-                 options: List[Dict[str, Any]] = None):
+                 options: List[Dict[str, Any]] = None,
+                 gravity: int = None):
         """
         Initializes the GridColumnConfig.
 
@@ -64,6 +65,7 @@ class GridColumnConfig:
         self.template = template
         self.editorType = editorType
         self.options = options
+        self.gravity = gravity
 
     def to_dict(self) -> Dict[str, Any]:
         config_dict = {
@@ -85,6 +87,7 @@ class GridColumnConfig:
             'template': self.template,
             'editorType': self.editorType,
             'options': self.options,
+            'gravity': self.gravity
         }
         return {k: v for k, v in config_dict.items() if v is not None}
 
@@ -101,6 +104,7 @@ class GridConfig:
                  autoHeight: bool = False,
                  autoWidth: bool = False,
                  bottomSplit: int = None,
+                 collapsed: bool = False,
                  css: str = None,
                  type: str = None,
                  dragCopy: bool = None,
@@ -177,6 +181,7 @@ class GridConfig:
         self.autoWidth = autoWidth
         self.bottomSplit = bottomSplit
         self.css = css
+        self.collapsed= collapsed
         self.type = type
         self.dragCopy = dragCopy
         self.dragItem = dragItem
