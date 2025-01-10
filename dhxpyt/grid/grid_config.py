@@ -102,6 +102,7 @@ class GridConfig:
                  autoWidth: bool = False,
                  bottomSplit: int = None,
                  css: str = None,
+                 type: str = None,
                  dragCopy: bool = None,
                  dragItem: str = None,
                  dragMode: str = None,
@@ -176,6 +177,7 @@ class GridConfig:
         self.autoWidth = autoWidth
         self.bottomSplit = bottomSplit
         self.css = css
+        self.type = type
         self.dragCopy = dragCopy
         self.dragItem = dragItem
         self.dragMode = dragMode
@@ -217,6 +219,7 @@ class GridConfig:
             'autoWidth': self.autoWidth,
             'bottomSplit': self.bottomSplit,
             'css': self.css,
+            'type': self.type,
             'dragCopy': self.dragCopy,
             'dragItem': self.dragItem,
             'dragMode': self.dragMode,
