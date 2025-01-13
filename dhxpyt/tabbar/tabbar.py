@@ -6,6 +6,7 @@ from typing import Any, Callable, Dict, List, Union
 import json
 from pyodide.ffi import create_proxy
 import js
+from uuid import uuid4
 
 from .tabbar_config import TabbarConfig
 
@@ -23,6 +24,7 @@ from ..ribbon import Ribbon, RibbonConfig
 from .tabbar_config import TabbarConfig, TabConfig
 from ..timepicker import Timepicker, TimepickerConfig
 from ..tree import Tree, TreeConfig
+from ..kanban import Kanban, KanbanConfig
 
 
 
@@ -49,6 +51,34 @@ class Tabbar:
     #    layout_widget = Layout(config=layout_config)
     #    self.attach(id, layout_widget.layout)
     #    return layout_widget
+
+        # Define a function to wait for the element to be ready
+    def wait_for_element(self, selector, callback):
+        def check_element():
+            if js.document.querySelector(selector):
+                callback()
+            else:
+                js.window.setTimeout(create_proxy(check_element), 100)  # Check again after 100ms
+
+        check_element()
+
+    def add_kanban(self, id: str = "mainwindow", kanban_config: KanbanConfig = None, kanban_callback: callable = None) -> None:
+        self.kanban_callback = kanban_callback
+        self.kanban_config = kanban_config
+        self.kanban_div_id = "kanban_root_" + str(uuid4()).replace("-", "") #"kanban_root"
+        self.attach_html(id, f'<div id="{self.kanban_div_id}" style="width:100%;height:100%;"></div>')
+        self.wait_for_element(f"#{self.kanban_div_id}", self.create_kanban)
+
+    def create_kanban(self):
+        return_kanban = Kanban(self.kanban_config, f"#{self.kanban_div_id}")
+        current_theme = js.document.documentElement.getAttribute('data-dhx-theme')
+        if current_theme == "dark":
+            theme = "willow-dark"
+        else:
+            theme = "willow"
+
+        return_kanban.kanban.setTheme(js.JSON.parse(json.dumps({"name": theme, "fonts": True})))
+        self.kanban_callback(return_kanban)
     
     def add_menu(self, id: str = "mainwindow_header", menu_config: MenuConfig = None) -> Menu:
         """ Adds a Layout into a Layout cell """
@@ -204,6 +234,7 @@ class Tabbar:
     def on_change(self, handler: Callable[[str, str], None]) -> None:
         """Fires on changing the active tab."""
         self.add_event_handler('change', handler)
+        return True
 
     """ Tabbar Properties """
 

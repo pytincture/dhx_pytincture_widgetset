@@ -22,6 +22,15 @@
     background: rgba(255, 160, 122, 0.5); /* Light orange with transparency */
 }
 
+.repair:before {
+    content: "\1F527"; /* Unicode for wrench/repair icon */
+    position: absolute;
+    left: 3px;
+    top: 2px;
+    font-size: 15px;
+    color: #00000030;
+}
+
 [data-cell-id='sidebar'], .dhx_sidebar--popup-menu {
     --dhx-h-background: 173;
     --dhx-s-background: 98.7%;
