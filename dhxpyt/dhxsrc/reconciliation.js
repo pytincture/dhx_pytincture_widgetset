@@ -1,4 +1,4 @@
-class ReconciliationUI {
+class Reconciliation {
   constructor(container, data) {
     this.container = document.querySelector(container);
     this.data = data;
@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch('proto.json')
         .then(response => response.json())
         .then(data => {
-            const reconciliation = new ReconciliationUI('#reconciliationContainer', data);
+            const reconciliation = new Reconciliation('#reconciliationContainer', data);
 
             reconciliation.on('update', ({ totalIncome, totalExpense, netTotal }) => {
                 console.log(`Updated: Income - $${totalIncome}, Expense - $${totalExpense}, Net - $${netTotal}`);
