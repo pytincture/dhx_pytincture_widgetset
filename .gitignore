@@ -19,3 +19,4 @@ dist/*.whl
 .DS_Store
 dhxpyt.egg-info/*
 dhxpyt.egg-info/*.*
+env/*
