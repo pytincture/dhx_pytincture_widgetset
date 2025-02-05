@@ -19,6 +19,8 @@ class Reconciliation:
         config_dict = config.to_dict()
         self.reconciliation = js.customdhx.Reconciliation.new(container, js.JSON.parse(json.dumps(config_dict)))
 
+    def update_header(self):
+        self.reconciliation.updateHeader()
 
     """ Reconciliation API Methods """
 
@@ -29,7 +31,6 @@ class Reconciliation:
         """Exports Reconciliation data to JSON format."""
         return self.reconciliation.data.serialize()
 
-
     """ Reconciliation Event Handlers """
 
     def add_event_handler(self, event_name: str, handler: Callable) -> None:
@@ -37,12 +38,17 @@ class Reconciliation:
         event_proxy = create_proxy(handler)
         self.reconciliation.events.on(event_name, event_proxy)
 
+    def on_net_div_click(self, handler: Callable) -> None:
+        """Helper to add event handlers dynamically."""
+        event_proxy = create_proxy(handler)
+        self.reconciliation.onNetDivClick = event_proxy
+
     # def on_card_click(self, handler: Callable[[Dict[str, Any]], None]) -> None:
     #     """Fires when a card is clicked."""
     #     def event_handler(card):
     #         handler(card.to_py())
     #     self.reconciliation.events.on("cardClick", create_proxy(event_handler))
 
-        #TODO:
-        # add transaction
-        # 
+    # TODO:
+    # add transaction
+    #

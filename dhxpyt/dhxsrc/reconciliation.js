@@ -3,12 +3,32 @@ globalThis.customdhx = globalThis.customdhx || {};
 
 class Reconciliation {
   constructor(container, data) {
-    this.container = document.querySelector(container);
+    // this.container = document.querySelector(container);
+    this.container = container;
     this.data = data;
     this.events = {};
-    this.render();
+    this.onNetDivClick = function () {};
+    
+    this.box = document.createElement('div');
+    this.box.id = 'adfjkey3fnan';
+    this.renderHeader();
+    // this.renderPanels();
+    // this.renderCloseUI();
+    // this.updateTotals();
+    console.log(this.box.id);
+    this.container.attachHTML(this.box.innerHTML);
+    console.log(this.box.id);
   }
 
+  // dhx stuff
+
+  getRootView() {
+    console.log(this.box)
+    // return this.box._view;
+    return this.box;
+  }
+
+  //
   on(event, callback) {
     this.events[event] = callback;
   }
@@ -26,21 +46,74 @@ class Reconciliation {
   // build up html then dump it into container
 
   render() {
-    this.container.innerHTML = '';
-    this.renderHeader();
-    this.renderPanels();
-    this.renderCloseUI();
-    this.updateTotals();
-    //this.container.attach()
+    // // this.container.innerHTML = '';
+    // this.box = document.createElement('div');
+    // this.box.id = 'adfjkey3fnan';
+    // this.renderHeader();
+    // // this.renderPanels();
+    // // this.renderCloseUI();
+    // // this.updateTotals();
+    // console.log(this.box.id);
+    // this.container.attachHTML(this.box.innerHTML);
+    // console.log(this.box.id);
+
+    return this.box;
   }
 
+  // // come back and fix this html
+  // renderHeader() {
+  //   this.header = document.createElement('div');
+  //   this.header.innerHTML = `
+  //     <h2>${this.data.description}</h2>
+  //     <div id="netTotal" class="net_total">Net Total: $0</div>
+  //   `;
+  //   this.box.appendChild(this.header);
+  // }
+
   renderHeader() {
-    const header = document.createElement('div');
-    header.innerHTML = `
-      <h2>${this.data.description}</h2>
-      <div id="netTotal" class="net_total">Net Total: $0</div>
-    `;
-    this.container.appendChild(header);
+    this.header = document.createElement('div');
+
+    // Create the h2 element and set its text content
+    const h2 = document.createElement('h2');
+    h2.textContent = this.data.description;
+
+    // Create the div for netTotal and set its class and text content
+    this.netTotalDiv = document.createElement('div');
+    this.netTotalDiv.id = 'netTotal';
+    this.netTotalDiv.classList.add('net_total');
+    this.netTotalDiv.textContent = 'Net Total: $0';
+
+    this.netTotalDiv.onclick = (click_event) => {
+      const newEvent = {
+        type: "anytype",
+        target: this.netTotalDiv.id,
+        value: this.netTotalDiv.textContent,
+        event_callback: "onNetDivClick"
+      }
+      this.onNetDivClick(newEvent);
+    }
+
+    // Append the h2 and netTotal div to the header
+    this.header.appendChild(h2);
+    this.header.appendChild(this.netTotalDiv);
+
+    // Append the header to the box
+    this.box.appendChild(this.header);
+  }
+
+  onNetDivClickEvent(proxy) {
+    this.onNetDivClick = proxy;
+    this.netTotalDiv.addEventListener("click", this.onNetDivClick)
+  }
+
+  updateHeader() {
+    // Create the div for netTotal and set its class and text content
+    this.netTotalDiv = document.createElement('div');
+    this.netTotalDiv.id = 'netTotal';
+    this.netTotalDiv.classList.add('net_total');
+    this.netTotalDiv.textContent = 'Net Total: $updateHeader value';
+
+    this.container.attachHTML(this.box.innerHTML);
   }
 
   renderPanels() {
@@ -53,7 +126,7 @@ class Reconciliation {
     
     panels.appendChild(incomePanel);
     panels.appendChild(expensePanel);
-    this.container.appendChild(panels);
+    this.box.appendChild(panels);
   }
 
   createPanel(type, categories) {
@@ -106,16 +179,16 @@ class Reconciliation {
       </div>
       <button id="closeBooksBtn" disabled>Close Books</button>
     `;
-    closeSection.querySelector('#overrideCheckbox').addEventListener('change', () => this.updateTotals());
+    closeSection.querySelector('#overrideCheckbox'). addEventListener('change', () => this.updateTotals());
     closeSection.querySelector('#closeBooksBtn').addEventListener('click', () => this.emit('close', {}));
-    this.container.appendChild(closeSection);
+    this.box.appendChild(closeSection);
   }
 
   updateTotals() {
     let totalIncome = 0;
     let totalExpense = 0;
-    this.container.querySelectorAll('.income_panel .txn_checkbox:checked').forEach(el => totalIncome += parseFloat(el.dataset.amount));
-    this.container.querySelectorAll('.expense_panel .txn_checkbox:checked').forEach(el => totalExpense += parseFloat(el.dataset.amount));
+    this.box.querySelectorAll('.income_panel .txn_checkbox:checked').forEach(el => totalIncome += parseFloat(el.dataset.amount));
+    this.box.querySelectorAll('.expense_panel .txn_checkbox:checked').forEach(el => totalExpense += parseFloat(el.dataset.amount));
     const netTotal = totalIncome - totalExpense;
     const netTotalEl = document.getElementById('netTotal');
     netTotalEl.innerText = `Net Total: $${netTotal}`;

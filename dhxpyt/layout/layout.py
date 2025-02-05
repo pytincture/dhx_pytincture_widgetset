@@ -156,8 +156,10 @@ class Layout(object, metaclass=LoadUICaller):
     
     def add_reconciliation(self, id: str, reconciliation_config: ReconciliationConfig = None) -> Any:
         """Adds a Reconciliation widget into a Layout cell."""
-        reconciliation_widget = Reconciliation(config=reconciliation_config)
-        self.attach(id, reconciliation_widget.reconciliation)
+        print(self.layout.getCell(id).id)
+        # print(js.JSON.stringify(js.JSON.decycle(self.layout.getCell(id))))
+        reconciliation_widget = Reconciliation(config=reconciliation_config, container=self.layout.getCell(id)) #need layout id
+        # self.attach(id, reconciliation_widget.reconciliation)
         return reconciliation_widget
     
     def add_ribbon(self, id: str, ribbon_config: RibbonConfig = None) -> Any:
