@@ -1,3 +1,6 @@
+globalThis.customdhx = globalThis.customdhx || {};
+
+
 class Reconciliation {
   constructor(container, data) {
     this.container = document.querySelector(container);
@@ -16,12 +19,19 @@ class Reconciliation {
     }
   }
 
+  // only render the widget when it gets attached
+  // container should be another layout widget
+  // expect this.container to be a layout
+  // assume container is a dhx layout (cell) (not undefined)
+  // build up html then dump it into container
+
   render() {
     this.container.innerHTML = '';
     this.renderHeader();
     this.renderPanels();
     this.renderCloseUI();
     this.updateTotals();
+    //this.container.attach()
   }
 
   renderHeader() {
@@ -117,20 +127,5 @@ class Reconciliation {
 }
 
 
-// Example usage
-document.addEventListener('DOMContentLoaded', () => {
-    fetch('proto.json')
-        .then(response => response.json())
-        .then(data => {
-            const reconciliation = new Reconciliation('#reconciliationContainer', data);
-
-            reconciliation.on('update', ({ totalIncome, totalExpense, netTotal }) => {
-                console.log(`Updated: Income - $${totalIncome}, Expense - $${totalExpense}, Net - $${netTotal}`);
-            });
-
-            reconciliation.on('close', () => {
-                alert('Books closed successfully!');
-            });
-        })
-        .catch(error => console.error('Error loading data:', error));
-});
+// 3. Attach the class to your global object
+globalThis.customdhx.Reconciliation = Reconciliation;

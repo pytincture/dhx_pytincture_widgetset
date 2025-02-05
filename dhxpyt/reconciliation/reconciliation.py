@@ -17,7 +17,8 @@ class Reconciliation:
         :param container: ID of the HTML element to attach the Reconciliation to.
         """
         config_dict = config.to_dict()
-        self.reconciliation = js.reconciliation.Reconciliation.new(container, js.JSON.parse(json.dumps(config_dict)))
+        self.reconciliation = js.customdhx.Reconciliation.new(container, js.JSON.parse(json.dumps(config_dict)))
+
 
     """ Reconciliation API Methods """
 
@@ -27,6 +28,7 @@ class Reconciliation:
     def export_to_json(self) -> str:
         """Exports Reconciliation data to JSON format."""
         return self.reconciliation.data.serialize()
+
 
     """ Reconciliation Event Handlers """
 

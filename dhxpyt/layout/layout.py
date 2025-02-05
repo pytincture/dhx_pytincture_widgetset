@@ -23,6 +23,7 @@ from ..tabbar import Tabbar, TabbarConfig
 from ..timepicker import Timepicker, TimepickerConfig
 from ..tree import Tree, TreeConfig
 from ..kanban import Kanban, KanbanConfig
+from ..reconciliation import Reconciliation, ReconciliationConfig
 
 
 TLayout = TypeVar("TLayout", bound="Layout")
@@ -152,6 +153,12 @@ class Layout(object, metaclass=LoadUICaller):
         pagination_widget = Pagination(config=pagination_config)
         self.attach(id, pagination_widget.pagination)
         return pagination_widget
+    
+    def add_reconciliation(self, id: str, reconciliation_config: ReconciliationConfig = None) -> Any:
+        """Adds a Reconciliation widget into a Layout cell."""
+        reconciliation_widget = Reconciliation(config=reconciliation_config)
+        self.attach(id, reconciliation_widget.reconciliation)
+        return reconciliation_widget
     
     def add_ribbon(self, id: str, ribbon_config: RibbonConfig = None) -> Any:
         """Adds a Ribbon widget into a Layout cell."""
