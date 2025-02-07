@@ -51,37 +51,99 @@
 
           this.makeHeaderSection("C", left_rows);
           this.makeHeaderSection("R", right_rows);
-      }
 
-      makeHeaderSection(cell_name, rows) {
+          this.toolbar.forEach(toolbar => {
+            const uid = toolbar._uid;
+            const selector = `[data-dhx-widget-id="${uid}"]`;
+            const currentToolbar = toolbar;
+            const currentLayout = this.layout;
+        
+            this.waitForElement(selector, 2000)
+                    .then(widgetUl => {
+                        const navElement = widgetUl.parentElement;
+                        const toolbar = currentToolbar;
+                        const layout = currentLayout;
+                        if (navElement && navElement.tagName.toLowerCase() === "nav") {
+                            navElement.addEventListener("click", event => {
+                                console.log(event);
+                                if(toolbar.stat == "down"){
+                                    toolbar.show("up")
+                                    toolbar.hide("down")
+                                    toolbar.stat = "up";
+                                    layout.getCell(toolbar.contentCell).hide();
+                                } else {
+                                    toolbar.show("down")
+                                    toolbar.hide("up")
+                                    toolbar.stat = "down";
+                                    layout.getCell(toolbar.contentCell).show();
+                                }
+                            });
+                        } else {
+                            console.error("The parent element is not a <nav>.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error(`Widget element for toolbar uid ${uid} not found within 2 seconds.`, error);
+                    });
+          });
+
+    }
+
+      makeHeaderSection(cell_start, rows) {
         Array.from({ length: rows }).forEach((_, index) => {
           console.log(`Processing row ${index + 1}`);
           var ndx = index + 1;
-          this.toolbar["toolbar"+cell_name+ndx.toString()] = new dhx.Toolbar(null, {css: "dhx_widget--bordered"});
-          this.toolbar["toolbar"+cell_name+ndx.toString()].data.parse(this.getToolbarData(`${cell_name}${ndx}`));
-          this.layout.getCell(`${cell_name}${ndx}A`).attach(this.toolbar["toolbar"+cell_name+ndx.toString()]);
-          this.layout.getCell(`${cell_name}${ndx}B`).hide();
+          var currentToolbar = new dhx.Toolbar(null, {id: `toolbar${cell_start}${ndx}`,css: "dhx_widget--bordered"});
+          const currentContent = cell_start+ndx.toString()+"B";
+          currentToolbar.data.parse(this.getToolbarData(`${cell_start}${ndx}`));
+          this.layout.getCell(`${cell_start}${ndx}A`).attach(currentToolbar);
+          this.layout.getCell(currentContent).hide();
           const currentLayout = this.layout;
-          const currentToolbar = this.toolbar["toolbar"+cell_name+ndx.toString()];
-          currentToolbar.hide([`${cell_name}${ndx}down`]);
-          this.toolbar["toolbar" + cell_name + ndx.toString()].events.on("click", function(id, e) {
-              if(id.endsWith("up")) {
-                // -2 because of up
-                currentToolbar.hide([`${id}`])
-                currentToolbar.show([`${id.slice(0, -2)}down`])
-                currentLayout.getCell(`${id.slice(0, -2)}B`).show();
-              } else {
-                // -4 is becuase of down
-                currentToolbar.show([`${id.slice(0, -4)}up`])
-                currentToolbar.hide([`${id}`])
-                currentLayout.getCell(`${id.slice(0, -4)}B`).hide();
-              }
-          });
+          currentToolbar.hide("down");
+          this.toolbar.push(currentToolbar);
+          currentToolbar.stat = "up";
+          currentToolbar.contentCell = currentContent;
+          
+          
+          
+        //   currentToolbar.events.on("click", function(id, e) {
+        //       if(id.endsWith("up")) {
+        //         // -2 because of up
+        //         currentToolbar.hide(id)
+        //         currentToolbar.show("down")
+        //         currentToolbar.stat = "down";
+        //         currentLayout.getCell(currentContent).show();
+        //       } else {
+        //         // -4 is becuase of down
+        //         currentToolbar.show("up")
+        //         currentToolbar.hide("down")
+        //         currentToolbar.stat = "up";
+        //         currentLayout.getCell(currentContent).hide();
+        //       }
+        //   });
+        });
+      }
+
+      waitForElement(selector, timeout = 2000, intervalTime = 50) {
+        return new Promise((resolve, reject) => {
+            const interval = setInterval(() => {
+                const element = document.querySelector(selector);
+                if (element) {
+                    clearInterval(interval);
+                    clearTimeout(timer);
+                    resolve(element);
+                }
+            }, intervalTime);
+    
+            const timer = setTimeout(() => {
+                clearInterval(interval);
+                reject(new Error("Timeout reached: element not found."));
+            }, timeout);
         });
       }
 
       getToolbarData(name) {
-        return [{ id: name+"up", icon: "mdi mdi-chevron-right" }, { id: name+"down", icon: "mdi mdi-chevron-down", visible: false}]
+        return [{ id: "up", icon: "mdi mdi-chevron-right" }, { id: "down", icon: "mdi mdi-chevron-down", visible: false}]
       }
 
       getLayoutCount(name, rows) {
