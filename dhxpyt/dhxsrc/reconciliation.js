@@ -5,13 +5,14 @@
   class Reconciliation {
     constructor(container, data) {
       // The data passed in (e.g. categories, description, etc.)
-      this.data = data || {};
+      this.data = data.data || {};
       this.events = {};
       this.onNetDivClick = function () { };
       this.toolbar = [];
-      var left_rows = 4;
-      var right_rows = 4;
 
+      var left_rows = this.data.expense_categories;
+      var right_rows = this.data.income_categories;
+      
       this.layout = new dhx.Layout(null, {
         type: "none",
         rows: [
@@ -27,7 +28,7 @@
                   {
                     type: "none",
                     padding: 10,
-                    rows: this.getLayoutCount("C", left_rows)
+                    rows: this.scaffoldCategories(left_rows)
                   }
                 ]
               },
@@ -37,7 +38,7 @@
                   {
                     type: "none",
                     padding: 10,
-                    rows: this.getLayoutCount("R", right_rows)
+                    rows: this.scaffoldCategories(right_rows)
                   }
                 ]
               }
@@ -47,68 +48,123 @@
       });
       container.attach(this.layout);
 
-      var toolbar_h1 = new dhx.Toolbar(null, { css: "dhx_widget--bordered" }); toolbar_h1.data.parse([{}]); this.layout.getCell("H1").attach(toolbar_h1);
+      // var toolbar_h1 = new dhx.Toolbar(null, { css: "dhx_widget--bordered" }); toolbar_h1.data.parse([{}]); this.layout.getCell("H1").attach(toolbar_h1);
 
-      this.makeHeaderSection("C", left_rows);
-      this.makeHeaderSection("R", right_rows);
+      this.populateCategories(left_rows);
+      this.populateCategories(right_rows);
+      
+      this.makeHeaderSection(left_rows);
+      this.makeHeaderSection(right_rows);
     }
 
-    makeHeaderSection(cell_name, rows) {
-      Array.from({ length: rows }).forEach((_, index) => {
-        console.log(`Processing row ${index + 1}`);
+    makeHeaderSection(rows) {
+      Array.from({ length: rows.length }).forEach((_, index) => {
+        const row = rows[index];
+        const cell_name = row.category_id
+        // const category_and_transactions = this.renderCategory(cell_name, row);
+        // console.log(category_and_transactions)
         var ndx = index + 1;
-        this.toolbar["toolbar" + cell_name + ndx.toString()] = new dhx.Toolbar(null, { css: "dhx_widget--bordered" });
-        this.toolbar["toolbar" + cell_name + ndx.toString()].data.parse(this.getToolbarData(`${cell_name}${ndx}`));
-        this.layout.getCell(`${cell_name}${ndx}A`).attach(this.toolbar["toolbar" + cell_name + ndx.toString()]);
-        this.layout.getCell(`${cell_name}${ndx}B`).hide();
+        const toolbar_id = `toolbar${cell_name}`;
+        const header_cell_id = `${cell_name}_header`;
+        const items_cell_id = `${cell_name}_items`;
+        const down_id = `${cell_name}_headerdown`;
+        console.log(`makeHeaderSection ${toolbar_id} ${header_cell_id} ${items_cell_id} ${down_id}`);
+        this.toolbar[toolbar_id] = new dhx.Toolbar(null, { css: "dhx_widget--bordered" });
+        this.toolbar[toolbar_id].data.parse(this.getToolbarData(header_cell_id, row));
+        this.layout.getCell(header_cell_id).attach(this.toolbar[toolbar_id]);
+        this.layout.getCell(items_cell_id).hide();
         const currentLayout = this.layout;
-        const currentToolbar = this.toolbar["toolbar" + cell_name + ndx.toString()];
-        currentToolbar.hide([`${cell_name}${ndx}down`]);
-        this.toolbar["toolbar" + cell_name + ndx.toString()].events.on("click", function (id, e) {
+        const currentToolbar = this.toolbar[toolbar_id];
+        currentToolbar.hide([down_id]);
+        this.toolbar[toolbar_id].events.on("click", function (id, e) {
+          console.log(`click ${id}`);
+          console.log(e)
           if (id.endsWith("up")) {
             // -2 because of up
-            currentToolbar.hide([`${id}`])
-            currentToolbar.show([`${id.slice(0, -2)}down`])
-            currentLayout.getCell(`${id.slice(0, -2)}B`).show();
+            const down_id = `${id.slice(0, -2)}down`;
+            const items_id = `${id.slice(0, -9)}_items`;
+            console.log(`showing ${down_id} and ${items_id} and hiding ${id}`);
+            currentToolbar.hide([id])
+            currentToolbar.show([down_id])
+            currentLayout.getCell(items_id).show();
           } else {
             // -4 is becuase of down
-            currentToolbar.show([`${id.slice(0, -4)}up`])
-            currentToolbar.hide([`${id}`])
-            currentLayout.getCell(`${id.slice(0, -4)}B`).hide();
+            const up_id = `${id.slice(0, -4)}up`;
+            const items_id = `${id.slice(0, -11)}_items`;
+            console.log(`showing ${up_id} and hiding ${id} and ${items_id}`);
+            currentToolbar.show([up_id])
+            currentToolbar.hide([id])
+            currentLayout.getCell(items_id).hide();
           }
         });
       });
     }
 
-    getToolbarData(name) {
-      return [{ id: name + "up", icon: "mdi mdi-chevron-right" }, { id: name + "down", icon: "mdi mdi-chevron-down", visible: false }]
+    getToolbarData(name, row) {
+      const up_id = `${name}up`;
+      const down_id = `${name}down`;
+      console.log(`getToolbarData ${up_id} ${down_id}`);
+      return [{value: `${row.name}`},{ id: up_id, icon: "mdi mdi-chevron-right" }, { id: down_id, icon: "mdi mdi-chevron-down", visible: false }]
     }
 
-    getLayoutCount(name, rows) {
+    scaffoldCategories(rows) {
       // Initialize an empty array
       const list = [];
-
-      // Loop 'count' times to fill the list
-      for (let i = 0; i < rows; i++) {
+      console.log(rows)
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        console.log(`creating header id ${row.category_id}_header`);
+        console.log(`creating items id ${row.category_id}_items`);
         // Create an object with an id and a value
         var ndx = i + 1;
-        var itemA = {
-          id: `${name}${ndx}A`,
+        var category_header = {
+          id: `${row.category_id}_header`,
           height: "auto",
           padding: 5,
         };
-        var itemB = {
-          id: `${name}${ndx}B`,
+        var category_details = {
+          id: `${row.category_id}_items`,
           height: "auto",
-          html: "<div>HELLO WORLD<div>",
         };
-
+        
         // Add the object to the list
-        list.push(itemA);
-        list.push(itemB);
+        list.push(category_header);
+        list.push(category_details);
       }
 
       return list;
+    };
+
+    populateCategories(rows) {
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const item_details_grid = this.renderTransactionsTable(row);
+        console.log(`Attaching ${row.category_id}_items`);
+        this.layout.getCell(`${row.category_id}_items`).attach(item_details_grid);
+      }
+    }
+
+    renderTransactionsTable(category) {
+      const dataset = category.transactions.map(txn => {
+        return {
+          selected: true,
+          info: txn.memo,
+          total: txn.amount
+        };
+      });
+
+      const grid = new dhx.Grid(`${category.category_id}_grid`, {
+        columns: [
+          { id: "selected", header: [{ text: "#" }], type: "boolean" },
+          { id: "info", header: [{ text: "Title" }] },
+          { id: "total", header: [{ text: "Name" }] },
+        ],
+        headerRowHeight: 0,
+        data: dataset,
+        align: "left",
+      });
+
+      return grid;
     }
 
     // -----------------------------------------------------------------------
@@ -226,7 +282,7 @@
               <div class="txn_amount">$${txn.amount}</div>
           `;
       txnEl.querySelector('.txn_checkbox').addEventListener('change', () => this.updateTotals());
-      return txnEl;
+      return txnEl.outerHTML;
     }
 
     renderCloseUI() {
@@ -243,6 +299,7 @@
     }
 
     updateTotals() {
+      console.log("updateTotals");
       let totalIncome = 0;
       let totalExpense = 0;
       this.box.querySelectorAll('.income_panel .txn_checkbox:checked')
