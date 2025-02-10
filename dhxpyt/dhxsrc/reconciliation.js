@@ -101,14 +101,12 @@
         var category_header_cell = {
           id: header_id,
           height: "auto",
-          padding: 5,
         };
 
         var category_items_cell = {
           id: items_id,
-          height: "auto",
           hidden: true,
-          html: `<h2>Hi</h2>`,
+          height: "auto",
         };
 
         // Add the object to the list
@@ -182,12 +180,12 @@
       console.log(`building grid for ${category.category_id}_grid using ${JSON.stringify(dataset)}`);
       const grid = new dhx.Grid(`${category.category_id}_grid`, {
         columns: [
-          { id: "selected", width: "auto", header: [{ text: "" }] },
-          { id: "info", width: "auto", header: [{ text: "Info" }] },
-          { id: "total", width: "auto", header: [{ text: "Amount" }] },
+          { id: "selected", header: [{ text: "" }] },
+          { id: "info", header: [{ text: "Info" }] },
+          { id: "total", header: [{ text: "Amount" }], align: "right" },
         ],
         headerRowHeight: 0,
-        adjust: true,
+        // adjust: true,
         autoWidth: true
       });
 
