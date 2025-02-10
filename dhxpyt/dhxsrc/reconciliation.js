@@ -64,6 +64,11 @@
         padding: 0
       }, "dhx_grid-header-cell");
 
+      dhx.cssManager.add( {
+        flex: 1,
+        width: "100%",
+        height: "100%",
+      }, "button-full")
     }
 
     _getToolbarId(category_id) {
@@ -108,14 +113,26 @@
       return list;
     };
 
+    getHeaderHtml(name, row) {
+      return `
+        <table style="width: 100%;">
+          <tr>
+            <td>${row.name}</td>
+            <td>${this._computeCategoryTotal(row)}</td>
+          </tr>
+        </table>
+      `;
+    }
+    
     getCategoryToolbarConfig(name, row) {
       const up_id = `${name}up`;
       const down_id = `${name}down`;
       return [
         { id: up_id, icon: "mdi mdi-chevron-right" }, 
         { id: down_id, icon: "mdi mdi-chevron-down", hidden: true }, 
-        { value: `${row.name}` },
-        { value: `${this._computeCategoryTotal(row)}` }
+        { id: name, type: "button", html: "button", css: "dhx_button--width_full", twoState: true,html: this.getHeaderHtml(name, row) },
+        // { value: `${row.name}` },
+        // { value: `${this._computeCategoryTotal(row)}` }
       ];
     }
 
@@ -134,22 +151,10 @@
 
     addCategoryHeaderEvents(categoryToolbar, currentLayout) {
       categoryToolbar.events.on("click", function (id, e) {
-        if (id.endsWith("up")) {
-          // -2 because of up
-          const category_toolbar_id = id.slice(0, -2);
-          const down_id = `${category_toolbar_id}down`;
-          categoryToolbar.hide([id]);
-          categoryToolbar.show([down_id]);
-          const category_items_id = category_toolbar_id.replace("_toolbar", "_items");
+        const category_items_id = id.replace("_toolbar", "_items");
+        if (categoryToolbar.getState(id) == true) {
           currentLayout.cell(category_items_id).show();
         } else {
-          // -4 is becuase of down
-          const category_toolbar_id = id.slice(0, -4);
-          const up_id = `${category_toolbar_id}up`;
-          const items_id = `${id.slice(0, -11)}_items`;
-          categoryToolbar.show([up_id]);
-          categoryToolbar.hide([id]);
-          const category_items_id = category_toolbar_id.replace("_toolbar", "_items");
           currentLayout.cell(category_items_id).hide();
         }
       });
