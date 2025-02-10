@@ -117,13 +117,13 @@
       return list;
     };
 
-    getHeaderToolbarConfig(name, row) {
+    getCategoryToolbarConfig(name, row) {
       const up_id = `${name}up`;
       const down_id = `${name}down`;
       console.log(`getToolbarData ${up_id} ${down_id}`);
       return [
         { id: up_id, icon: "mdi mdi-chevron-right" }, 
-        { id: down_id, icon: "mdi mdi-chevron-down", visible: false }, 
+        { id: down_id, icon: "mdi mdi-chevron-down", hidden: true }, 
         { value: `${row.name}` },
         { value: `${this._computeCategoryTotal(row)}` }
       ];
@@ -135,7 +135,7 @@
         const toolbar_id = this._getToolbarId(category_id);
         const header_cell_id = this._getCategoryHeaderId(category_id);
         const categoryToolbar = new dhx.Toolbar(null, { css: "dhx_widget--bordered" });
-        categoryToolbar.data.parse(this.getHeaderToolbarConfig(toolbar_id, row));
+        categoryToolbar.data.parse(this.getCategoryToolbarConfig(toolbar_id, row));
         this.addCategoryHeaderEvents(categoryToolbar, this.layout);
         this.layout.getCell(header_cell_id).attach(categoryToolbar);
         this.toolbars[toolbar_id] = categoryToolbar;
