@@ -48,15 +48,9 @@
       });
 
       this.layout.events.on("afterShow", (cellId) => {
-        console.log(`layout afterShow ${cellId}`);
-        console.log(left_rows);
-        console.log(right_rows);
         const categoryId = cellId.replace("_items", "");
-        console.log(`searching for category ${categoryId}`);
         const category = left_rows.find(cat => cat.category_id === categoryId) ||
-                 right_rows.find(cat => cat.category_id === categoryId);
-        
-        console.log(`passing category ${category.category_id}`);
+                 right_rows.find(cat => cat.category_id === categoryId);        
         this.layout.getCell(cellId).attach(this.buildItemsGrid(category));
       });
 
@@ -91,12 +85,9 @@
     setupCategoryLayout(rows) {
       // Initialize an empty array
       const list = [];
-      console.log(rows)
       for (const row of rows) {
         const header_id = this._getCategoryHeaderId(row.category_id);
         const items_id = this._getCategoryItemsId(row.category_id);
-        console.log(`creating header id ${header_id}`);
-        console.log(`creating items id ${items_id}`);
 
         var category_header_cell = {
           id: header_id,
@@ -120,7 +111,6 @@
     getCategoryToolbarConfig(name, row) {
       const up_id = `${name}up`;
       const down_id = `${name}down`;
-      console.log(`getToolbarData ${up_id} ${down_id}`);
       return [
         { id: up_id, icon: "mdi mdi-chevron-right" }, 
         { id: down_id, icon: "mdi mdi-chevron-down", hidden: true }, 
@@ -167,8 +157,6 @@
 
     
     buildItemsGrid(category) {
-      console.log(`building grid for ${category.category_id}`);
-      console.log(`category.transactions ${JSON.stringify(category)}`);
       const dataset = category.transactions.map(({ memo, amount }) => {
         return {
           "selected": "true",
@@ -177,7 +165,6 @@
         };
       });
 
-      console.log(`building grid for ${category.category_id}_grid using ${JSON.stringify(dataset)}`);
       const grid = new dhx.Grid(`${category.category_id}_grid`, {
         columns: [
           { id: "selected", header: [{ text: "" }] },
