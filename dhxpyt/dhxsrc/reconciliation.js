@@ -151,7 +151,7 @@
           categoryToolbar.hide([id]);
           categoryToolbar.show([down_id]);
           const category_items_id = category_toolbar_id.replace("_toolbar", "_items");
-          currentLayout.cell(`${category_items_id}`).show();
+          currentLayout.cell(category_items_id).show();
         } else {
           // -4 is becuase of down
           const category_toolbar_id = id.slice(0, -4);
@@ -160,7 +160,7 @@
           categoryToolbar.show([up_id]);
           categoryToolbar.hide([id]);
           const category_items_id = category_toolbar_id.replace("_toolbar", "_items");
-          currentLayout.cell(`${category_items_id}`).hide();
+          currentLayout.cell(category_items_id).hide();
         }
       });
     }
