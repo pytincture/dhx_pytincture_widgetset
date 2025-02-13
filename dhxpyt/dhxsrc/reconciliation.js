@@ -77,9 +77,13 @@
             if (navElement && navElement.tagName.toLowerCase() === "nav") {
               navElement.addEventListener("click", event => {
                 if (toolbar.getState(toolbarId) == true) {
+                  toolbar.hide("up")
+                  toolbar.show("down") 
                   layout.cell(categoryItemsId).show();
                   toolbar.setState({[toolbarId]: false});
                 } else {
+                  toolbar.hide("down")
+                  toolbar.show("up")
                   layout.cell(categoryItemsId).hide();
                   toolbar.setState({[toolbarId]: true});
                 }
@@ -182,7 +186,9 @@
       const up_id = `${name}up`;
       const down_id = `${name}down`;
       return [
-        { id: name, type: "button", full: true, twoState: true, html: this.getHeaderHtml(name, row) },
+        { id: name, type: "navItem", twoState: true},
+        { id: "up", icon: "mdi mdi-chevron-right" }, { id: "down", icon: "mdi mdi-chevron-down", hidden: true },
+        { id: "html", type: "customHTML", html: this.getHeaderHtml(name, row) },
       ];
     }
 
@@ -193,22 +199,14 @@
         const header_cell_id = this._getCategoryHeaderId(category_id);
         const categoryToolbar = new dhx.Toolbar(null, {id: toolbar_id, css: "dhx_widget--bordered" });
         categoryToolbar.data.parse(this.getCategoryToolbarConfig(toolbar_id, row));
-        categoryToolbar.setState({[toolbar_id]: true});
-        this.addCategoryHeaderEvents(categoryToolbar, this.layout);
+        const state = { [toolbar_id]: true };
+        console.log(`state before setting: ${JSON.stringify(categoryToolbar.getState(toolbar_id))}`);
+        console.log(`setting state: ${JSON.stringify(state)}`);
+        categoryToolbar.setState(state);
+        console.log(`state after setting: ${JSON.stringify(categoryToolbar.getState(toolbar_id))}`);
         this.layout.getCell(header_cell_id).attach(categoryToolbar);
         this.toolbars.push(categoryToolbar);
       }
-    }
-
-    addCategoryHeaderEvents(categoryToolbar, currentLayout) {
-      categoryToolbar.events.on("click", function (id, e) {
-        const category_items_id = id.replace("_toolbar", "_items");
-        if (categoryToolbar.getState(id) == true) {
-          currentLayout.cell(category_items_id).show();
-        } else {
-          currentLayout.cell(category_items_id).hide();
-        }
-      });
     }
 
     
