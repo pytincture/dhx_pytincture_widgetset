@@ -7,14 +7,13 @@
       // The data passed in (e.g. categories, description, etc.)
       this.data = data.data || {};
       this.events = {};
-      this.onNetDivClick = function () { };
       this.toolbars = [];
 
       var left_rows = this.data.expense_categories;
       var right_rows = this.data.income_categories;
       
       this.layout = new dhx.Layout(null, {
-        type: "none",
+        type: "wide",
         rows: [
           {
             id: "H1",
@@ -23,21 +22,23 @@
           {
             cols: [
               {
-                type: "none",
+                type: "wide",
                 rows: [
                   {
-                    type: "none",
+                    type: "wide",
                     padding: 10,
+                    width: "100%",
                     rows: this.setupCategoryLayout(left_rows)
                   }
                 ]
               },
               {
-                type: "none",
+                type: "wide",
                 rows: [
                   {
-                    type: "none",
+                    type: "wide",
                     padding: 10,
+                    width: "100%",
                     rows: this.setupCategoryLayout(right_rows)
                   }
                 ]
@@ -64,11 +65,10 @@
         padding: 0
       }, "dhx_grid-header-cell");
 
-      dhx.cssManager.add( {
-        flex: 1,
-        width: "100%",
-        height: "100%",
-      }, "button-full")
+      dhx.cssManager.add({
+        display: "inline",
+      }, "dhx_layout-rows");
+
     }
 
     _getToolbarId(category_id) {
@@ -96,13 +96,16 @@
 
         var category_header_cell = {
           id: header_id,
-          height: "auto",
+          type: "wide",
+          width: "100%",
         };
 
         var category_items_cell = {
           id: items_id,
+          type: "wide",
+          width: "100%",
           hidden: true,
-          height: "auto",
+          height: "contents",
         };
 
         // Add the object to the list
@@ -128,11 +131,7 @@
       const up_id = `${name}up`;
       const down_id = `${name}down`;
       return [
-        { id: up_id, icon: "mdi mdi-chevron-right" }, 
-        { id: down_id, icon: "mdi mdi-chevron-down", hidden: true }, 
-        { id: name, type: "button", html: "button", css: "dhx_button--width_full", twoState: true,html: this.getHeaderHtml(name, row) },
-        // { value: `${row.name}` },
-        // { value: `${this._computeCategoryTotal(row)}` }
+        { id: name, type: "button", full: true, twoState: true, html: this.getHeaderHtml(name, row) },
       ];
     }
 
@@ -177,8 +176,9 @@
           { id: "total", header: [{ text: "Amount" }], align: "right" },
         ],
         headerRowHeight: 0,
-        // adjust: true,
-        autoWidth: true
+        adjust: true,
+        height: -1,
+        width: "100%",
       });
 
       grid.data.parse(dataset);
