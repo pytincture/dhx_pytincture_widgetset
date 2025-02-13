@@ -106,6 +106,11 @@
         display: "inline",
       }, "dhx_layout-rows");
 
+      dhx.cssManager.add({
+        width: "100%",
+        ["padding-right"]: "10px",
+      }, "category-header")
+
     }
 
     _getToolbarId(category_id) {
@@ -158,7 +163,7 @@
         <table style="width: 100%;">
           <tr>
             <td>${row.name}</td>
-            <td>${this._computeCategoryTotal(row)}</td>
+            <td align="right">${this._computeCategoryTotal(row)}</td>
           </tr>
         </table>
       `;
@@ -188,7 +193,7 @@
       return [
         { id: name, type: "navItem", twoState: true},
         { id: "up", icon: "mdi mdi-chevron-right" }, { id: "down", icon: "mdi mdi-chevron-down", hidden: true },
-        { id: "html", type: "customHTML", html: this.getHeaderHtml(name, row) },
+        { id: "html", type: "customHTML", html: this.getHeaderHtml(name, row), css: "category-header" },
       ];
     }
 
