@@ -60,6 +60,39 @@
       this.renderCategoryHeaders(left_rows);
       this.renderCategoryHeaders(right_rows);
 
+      console.log(`Adding event listeners to toolbars ${this.toolbars.length}`);
+      this.toolbars.forEach(toolbar => {
+        const uid = toolbar._uid;
+        const selector = `[data-dhx-widget-id="${uid}"]`;
+        const currentToolbar = toolbar;
+        const currentLayout = this.layout;
+
+        this.waitForElement(selector, 2000)
+          .then(widgetUl => {
+            const navElement = widgetUl.parentElement;
+            const toolbar = currentToolbar;
+            const toolbarId = toolbar.config.id;
+            const categoryItemsId = toolbarId.replace("_toolbar", "_items");
+            const layout = currentLayout;
+            if (navElement && navElement.tagName.toLowerCase() === "nav") {
+              navElement.addEventListener("click", event => {
+                if (toolbar.getState(toolbarId) == true) {
+                  layout.cell(categoryItemsId).show();
+                  toolbar.setState({[toolbarId]: false});
+                } else {
+                  layout.cell(categoryItemsId).hide();
+                  toolbar.setState({[toolbarId]: true});
+                }
+              });
+            } else {
+              console.error("The parent element is not a <nav>.");
+            }
+          })
+          .catch(error => {
+            console.error(`Widget element for toolbar uid ${uid} not found within 2 seconds.`, error);
+          });
+      });
+
       dhx.cssManager.add({
         display: "none",
         padding: 0
@@ -126,6 +159,24 @@
         </table>
       `;
     }
+
+    waitForElement(selector, timeout = 2000, intervalTime = 50) {
+      return new Promise((resolve, reject) => {
+        const interval = setInterval(() => {
+          const element = document.querySelector(selector);
+          if (element) {
+            clearInterval(interval);
+            clearTimeout(timer);
+            resolve(element);
+          }
+        }, intervalTime);
+
+        const timer = setTimeout(() => {
+          clearInterval(interval);
+          reject(new Error("Timeout reached: element not found."));
+        }, timeout);
+      });
+    }
     
     getCategoryToolbarConfig(name, row) {
       const up_id = `${name}up`;
@@ -140,11 +191,12 @@
         const category_id = row.category_id;
         const toolbar_id = this._getToolbarId(category_id);
         const header_cell_id = this._getCategoryHeaderId(category_id);
-        const categoryToolbar = new dhx.Toolbar(null, { css: "dhx_widget--bordered" });
+        const categoryToolbar = new dhx.Toolbar(null, {id: toolbar_id, css: "dhx_widget--bordered" });
         categoryToolbar.data.parse(this.getCategoryToolbarConfig(toolbar_id, row));
+        categoryToolbar.setState({[toolbar_id]: true});
         this.addCategoryHeaderEvents(categoryToolbar, this.layout);
         this.layout.getCell(header_cell_id).attach(categoryToolbar);
-        this.toolbars[toolbar_id] = categoryToolbar;
+        this.toolbars.push(categoryToolbar);
       }
     }
 
