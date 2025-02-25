@@ -19,8 +19,8 @@ class Reconciliation:
         config_dict = config.to_dict()
         self.reconciliation = js.customdhx.Reconciliation.new(container, js.JSON.parse(json.dumps(config_dict)))
 
-    def update_header(self):
-        self.reconciliation.updateHeader()
+    # def update_header(self):
+    #     self.reconciliation.updateHeader()
 
     """ Reconciliation API Methods """
 

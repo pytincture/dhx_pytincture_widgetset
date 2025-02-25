@@ -218,7 +218,7 @@
     buildItemsGrid(category) {
       const dataset = category.transactions.map(({ memo, amount }) => {
         return {
-          "selected": "true",
+          "selected": true,
           "info": `${memo}`,
           "total": `${amount}`
         };
@@ -226,7 +226,7 @@
 
       const grid = new dhx.Grid(`${category.category_id}_grid`, {
         columns: [
-          { id: "selected", header: [{ text: "" }] },
+          { id: "selected", type: "boolean", editable: true, header: [{ text: "" }] },
           { id: "info", header: [{ text: "Info" }] },
           { id: "total", header: [{ text: "Amount" }], align: "right" },
         ],
