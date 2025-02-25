@@ -20,3 +20,4 @@ dist/*.whl
 dhxpyt.egg-info/*
 dhxpyt.egg-info/*.*
 env/*
+.python-version
