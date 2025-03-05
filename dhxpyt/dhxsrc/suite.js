@@ -22600,7 +22600,7 @@ function redrawSync(newParent, newIdx, withDOM) {
 				insertBefore(parEl, hydrate(vnew), refEl);
 
 				// another hack that allows any higher-level syncChildren to set
-				// reconciliation bounds using a live node
+				// cardflow bounds using a live node
 				vold.el = vnew.el;
 
 				// restore
