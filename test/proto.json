@@ -1,6 +1,6 @@
 {
-    "reconciliation_id": "REC-2025-01-31",
-    "description": "End-of-Day Reconciliation for January 31, 2025",
+    "cardflow_id": "REC-2025-01-31",
+    "description": "End-of-Day CardFlow for January 31, 2025",
     "income_categories": [
         {
             "category_id": "IC001",

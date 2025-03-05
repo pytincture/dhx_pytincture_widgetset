@@ -23,7 +23,7 @@ from ..tabbar import Tabbar, TabbarConfig
 from ..timepicker import Timepicker, TimepickerConfig
 from ..tree import Tree, TreeConfig
 from ..kanban import Kanban, KanbanConfig
-from ..reconciliation import Reconciliation, ReconciliationConfig
+from ..cardflow import CardFlow, CardFlowConfig
 
 
 TLayout = TypeVar("TLayout", bound="Layout")
@@ -40,21 +40,23 @@ class Layout(object, metaclass=LoadUICaller):
     def __init__(self, config: LayoutConfig = None, mainwindow=False, **kwargs):
         self.parent = kwargs.get("parent", None)
         """Initializes the layout instance."""
+        mainconfig = self.layout_config or config or {}
+        mainconfig = mainconfig if type(mainconfig) is dict else mainconfig.to_dict()
+        if not mainconfig:
+            mainconfig = LayoutConfig(
+                css="dhx_layout-cell--bordered",
+                type="line",
+                rows=[
+                    CellConfig(id="mainwindow_header", width="98vw", height="auto", header=None),
+                    CellConfig(id="mainwindow", width="98vw", header=None)
+                ]
+            ).to_dict()
+
         if mainwindow:
-            if not config:
-                config = LayoutConfig(
-                    css="dhx_layout-cell--bordered",
-                    type="line",
-                    rows=[
-                      CellConfig(id="mainwindow_header", width="98vw", height="auto", header=None),
-                      CellConfig(id="mainwindow", width="98vw", header=None)
-                    ]
-                )
-            self.layout = js.dhx.Layout.new("maindiv", js.JSON.parse(json.dumps(config.to_dict())))
-        elif self.layout_config:
-            self.layout = js.dhx.Layout.new(None, js.JSON.parse(json.dumps(self.layout_config.to_dict())))
+            self.layout = js.dhx.Layout.new("maindiv", js.JSON.parse(json.dumps(mainconfig)))
         else:
-            self.layout = js.dhx.Layout.new(None, js.JSON.parse(json.dumps(config.to_dict())))
+            self.layout = js.dhx.Layout.new(None, js.JSON.parse(json.dumps(mainconfig)))
+            
         self.initialized = False
 
     """ Placeholder Widgets Adders """
@@ -154,10 +156,10 @@ class Layout(object, metaclass=LoadUICaller):
         self.attach(id, pagination_widget.pagination)
         return pagination_widget
     
-    def add_reconciliation(self, id: str, reconciliation_config: ReconciliationConfig = None) -> Any:
-        """Adds a Reconciliation widget into a Layout cell."""
-        reconciliation_widget = Reconciliation(config=reconciliation_config, container=self.layout.getCell(id))
-        return reconciliation_widget
+    def add_cardflow(self, id: str, cardflow_config: CardFlowConfig = None) -> Any:
+        """Adds a CardFlow widget into a Layout cell."""
+        cardflow_widget = CardFlow(config=cardflow_config, container=self.layout.getCell(id))
+        return cardflow_widget
     
     def add_ribbon(self, id: str, ribbon_config: RibbonConfig = None) -> Any:
         """Adds a Ribbon widget into a Layout cell."""

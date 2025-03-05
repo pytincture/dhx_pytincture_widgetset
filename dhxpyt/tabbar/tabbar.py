@@ -25,6 +25,7 @@ from .tabbar_config import TabbarConfig, TabConfig
 from ..timepicker import Timepicker, TimepickerConfig
 from ..tree import Tree, TreeConfig
 from ..kanban import Kanban, KanbanConfig
+from ..cardflow import CardFlow, CardFlowConfig
 
 
 
@@ -45,6 +46,11 @@ class Tabbar:
         if grid_config.data:
             grid_widget.grid.data.parse(js.JSON.parse(json.dumps(grid_config.data)))
         return grid_widget
+    
+    def add_cardflow(self, id: str, cardflow_config: CardFlowConfig = None) -> Any:
+        """Adds a CardFlow widget into a Layout cell."""
+        cardflow_widget = CardFlow(config=cardflow_config, container=self.tabbar.getCell(id))
+        return cardflow_widget
     
     #def add_layout(self, id: str = "mainwindow", layout_config: LayoutConfig = None) -> TLayout:
     #    """ Adds a Layout into a Layout cell """
