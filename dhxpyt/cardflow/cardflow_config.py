@@ -75,7 +75,7 @@ class CardFlowConfig:
                  group: Dict[str, Any] = None,
                  groupable: bool = True,
                  hideExpandCollapse: bool = False,
-                 autoCollapse bool = False,
+                 autoCollapse: bool = False,
                  optionItems: List[Dict[str, Any]] = None,
                  sortDisabled: bool = False,
                  sortHeader: str = ""):
