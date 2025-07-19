@@ -75,6 +75,7 @@ class CardFlowConfig:
                  group: Dict[str, Any] = None,
                  groupable: bool = True,
                  hideExpandCollapse: bool = False,
+                 autoCollapse bool = False,
                  optionItems: List[Dict[str, Any]] = None,
                  sortDisabled: bool = False,
                  sortHeader: str = ""):
@@ -99,6 +100,7 @@ class CardFlowConfig:
         self.group = group if group is not None else {}
         self.groupable = groupable
         self.hideExpandCollapse = hideExpandCollapse
+        self.autoCollapse = autoCollapse
         self.sortDisabled = sortDisabled
         self.sortHeader = sortHeader
         self.optionItems = optionItems
@@ -114,6 +116,7 @@ class CardFlowConfig:
             "group": self.group,
             "groupable": self.groupable,
             "hideExpandCollapse": self.hideExpandCollapse,
+            "autoCollapse": self.autoCollapse,
             "optionItems": self.optionItems,
             "sortDisabled": self.sortDisabled,
             "sortHeader": self.sortHeader,
