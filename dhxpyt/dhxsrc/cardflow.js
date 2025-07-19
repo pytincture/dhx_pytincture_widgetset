@@ -33,7 +33,7 @@
   
     class CardFlow {
         constructor(container, config) {
-            // Save the config (should include: columns, data, editable, group, groupable, etc.)
+            // Save the config (should include: columns, data, editable, autoCollapse, group, groupable, etc.)
             this.config = config || {};
             this.events = {};
             this.onNetDivClick = function () {};
@@ -116,6 +116,9 @@
                                         toolbar.hide("up");
                                         toolbar.stat = "down";
                                         currentLayout.getCell(toolbar.contentCell).show();
+                                        if (this.config.autoCollapse === true){
+                                            this.collapseAll();
+                                        }
                                         this.onExpand(toolbar.id, event);
                                     }
                                 }
@@ -356,6 +359,9 @@
                         currentToolbar.show("down");
                         currentToolbar.stat = "down";
                         this.layout.getCell(currentContent).show();
+                        if (this.config.autoCollapse === true){
+                            this.collapseAll();
+                        }
                         this.onExpand(currentToolbar.id, e);
                     } else if (id.endsWith("down")) {
                         currentToolbar.show("up");
