@@ -14,7 +14,6 @@
     }
   
     // Helper function to format time values according to a format string.
-    // Expected tokens: "HH" for hour, "MM" for minutes, and "AM/PM" for period.
     function formatTimeValue(value, format) {
         let totalMinutes = parseTime(value);
         if (isNaN(totalMinutes)) return value;
@@ -33,17 +32,20 @@
   
     class CardFlow {
         constructor(container, config) {
-            // Save the config (should include: columns, data, editable, autoCollapse, group, groupable, etc.)
             this.config = config || {};
             this.events = {};
             this.onNetDivClick = function () {};
             this.toolbar = [];
             this.sortOrder = "asc";
             this.optionItems = this.config.optionItems || [];
-            // NEW: Create a mapping to store layout cell id by toolbar id
             this.rowMapping = {};
+            this.showHeader = this.config.showHeader !== false;
+            this.showSort = this.config.sortDisabled ? false : (this.config.showSort !== false);
+            this.sortDisabled = this.config.sortDisabled || false;
+            this.showDataHeaders = this.config.showDataHeaders !== false;
+            this.fontSize = this.config.fontSize || "12px";
+            this.showOptions = this.config.showOptions !== false; // NEW: Default to true
   
-            // Instead of defaulting to the first column, default to nothing.
             if (this.config.columns && this.config.columns.length > 0) {
                 this.sortColumnId = "";
             } else {
@@ -53,7 +55,7 @@
             const rows = this.config.data ? this.config.data.length : 0;
   
             const layoutRows = [];
-            if (!this.config.sortDisabled) {
+            if (this.showHeader || (!this.sortDisabled && this.showSort)) {
                 layoutRows.push({
                     id: "sortRow",
                     height: "75px",
@@ -78,16 +80,16 @@
             });
             container.attach(this.layout);
   
-            if (!this.config.sortDisabled) {
+            if (this.showHeader || (!this.sortDisabled && this.showSort)) {
                 this.createSortToolbar();
+                this.updateSortRowVisibility();
             }
   
             this.makeHeaderSection("C", rows);
             this.toolbarEventSetup();
         }
   
-  
-        toolbarEventSetup(){
+        toolbarEventSetup() {
             this.toolbar.forEach(toolbar => {
                 const uid = toolbar._uid;
                 const selector = `[data-dhx-widget-id="${uid}"]`;
@@ -98,7 +100,6 @@
                         const navElement = widgetUl.parentElement;
                         if (navElement && navElement.tagName.toLowerCase() === "nav") {
                             navElement.addEventListener("click", event => {
-                                // the reason for not handing these items is that all others need to cause collapse / expand
                                 if (event.target.className.indexOf("dhx_toolbar-button__icon") !== -1) {
                                 } else if (event.target.className.indexOf("dhx_toolbar-button--icon") !== -1) {
                                 } else if (event.target.className.indexOf("dhx_button") !== -1) {
@@ -116,9 +117,6 @@
                                         toolbar.hide("up");
                                         toolbar.stat = "down";
                                         currentLayout.getCell(toolbar.contentCell).show();
-                                        if (this.config.autoCollapse === true){
-                                            this.collapseAll();
-                                        }
                                         this.onExpand(toolbar.id, event);
                                     }
                                 }
@@ -133,7 +131,6 @@
             });
         }
   
-        // NEW: Updated attachToCardContent to use the mapping
         attachToCardContent(id, widget) {
             const cellId = this.rowMapping[id];
             if (!cellId) {
@@ -148,7 +145,6 @@
             }
         }
   
-        // NEW: Updated detachCardFromContent to use the mapping
         detachCardFromContent(id) {
             const cellId = this.rowMapping[id];
             if (!cellId) {
@@ -163,6 +159,149 @@
             }
         }
   
+        setRowColor(rowId, color) {
+            const toolbar = this.toolbar.find(tb => tb.id === rowId);
+            if (!toolbar) {
+                console.error(`Toolbar with id ${rowId} not found.`);
+                return;
+            }
+            const toolbarSelector = `[data-dhx-widget-id="${toolbar._uid}"]`;
+            this.waitForElement(toolbarSelector, 4000)
+                .then(toolbarElem => {
+                    toolbarElem.style.backgroundColor = color;
+                    const rowData = this.config.data.find(row => row.id === rowId);
+                    if (rowData) {
+                        rowData._color = color;
+                    }
+                })
+                .catch(error => {
+                    console.error(`Toolbar element for ${toolbar._uid} not found:`, error);
+                });
+        }
+  
+        setRowFontSize(rowId, fontSize) {
+            const toolbar = this.toolbar.find(tb => tb.id === rowId);
+            if (!toolbar) {
+                console.error(`Toolbar with id ${rowId} not found.`);
+                return;
+            }
+            const toolbarSelector = `[data-dhx-widget-id="${toolbar._uid}"]`;
+            this.waitForElement(toolbarSelector, 4000)
+                .then(toolbarElem => {
+                    const dataCells = toolbarElem.querySelectorAll(".toolbar-cell:not(.hideable)");
+                    dataCells.forEach(cell => {
+                        cell.style.fontSize = fontSize;
+                    });
+                    const rowData = this.config.data.find(row => row.id === rowId);
+                    if (rowData) {
+                        rowData._fontSize = fontSize;
+                    }
+                })
+                .catch(error => {
+                    console.error(`Toolbar element for ${toolbar._uid} not found:`, error);
+                });
+        }
+  
+        setRowDataValue(rowId, columnId, value) {
+            const toolbar = this.toolbar.find(tb => tb.id === rowId);
+            if (!toolbar) {
+                console.error(`Toolbar with id ${rowId} not found.`);
+                return;
+            }
+            const rowData = this.config.data.find(row => row.id === rowId);
+            if (!rowData) {
+                console.error(`Row data with id ${rowId} not found.`);
+                return;
+            }
+            const column = this.config.columns.find(col => col.id === columnId);
+            if (!column) {
+                console.error(`Column with id ${columnId} not found.`);
+                return;
+            }
+            const toolbarSelector = `[data-dhx-widget-id="${toolbar._uid}"]`;
+            this.waitForElement(toolbarSelector, 4000)
+                .then(toolbarElem => {
+                    const dataCells = toolbarElem.querySelectorAll(".toolbar-cell:not(.hideable)");
+                    const columnIndex = this.config.columns.findIndex(col => col.id === columnId);
+                    if (columnIndex >= 0 && columnIndex < dataCells.length) {
+                        let displayValue = value;
+                        if (column.dataType === "time" && column.applyFormat && column.dataFormat) {
+                            displayValue = formatTimeValue(value, column.dataFormat);
+                        }
+                        dataCells[columnIndex].textContent = displayValue;
+                        rowData[columnId] = value;
+                    } else {
+                        console.error(`Column index for ${columnId} out of bounds or not found.`);
+                    }
+                })
+                .catch(error => {
+                    console.error(`Toolbar element for ${toolbar._uid} not found:`, error);
+                });
+        }
+  
+        // NEW: Method to show or hide the options button for a specific row
+        setRowOptionsVisibility(rowId, show) {
+            const toolbar = this.toolbar.find(tb => tb.id === rowId);
+            if (!toolbar) {
+                console.error(`Toolbar with id ${rowId} not found.`);
+                return;
+            }
+            const rowData = this.config.data.find(row => row.id === rowId);
+            if (!rowData) {
+                console.error(`Row data with id ${rowId} not found.`);
+                return;
+            }
+            toolbar.data.update("options", { hidden: !show });
+            rowData._showOptions = show;
+        }
+  
+        toggleDataHeaders(show) {
+            this.showDataHeaders = show !== undefined ? show : !this.showDataHeaders;
+            this.reDrawCards();
+            this.toolbarEventSetup();
+        }
+  
+        updateSortRowVisibility() {
+            const sortRow = this.layout.getCell("sortRow");
+            if (sortRow) {
+                if (this.showHeader || (!this.sortDisabled && this.showSort)) {
+                    sortRow.show();
+                } else {
+                    sortRow.hide();
+                }
+                if (this.sortToolbar) {
+                    if (this.showHeader) {
+                        this.sortToolbar.show("sortHeader");
+                    } else {
+                        this.sortToolbar.hide("sortHeader");
+                    }
+                    if (!this.sortDisabled && this.showSort) {
+                        this.sortToolbar.show("sortLabel");
+                        this.sortToolbar.show("combo");
+                        this.sortToolbar.show("sortOrder");
+                    } else {
+                        this.sortToolbar.hide("sortLabel");
+                        this.sortToolbar.hide("combo");
+                        this.sortToolbar.hide("sortOrder");
+                    }
+                }
+            }
+        }
+  
+        toggleHeader(show) {
+            this.showHeader = show !== undefined ? show : !this.showHeader;
+            this.updateSortRowVisibility();
+        }
+  
+        toggleSort(show) {
+            if (this.sortDisabled) {
+                console.warn("Sort controls are disabled (sortDisabled: true). Cannot toggle sort visibility.");
+                return;
+            }
+            this.showSort = show !== undefined ? show : !this.showSort;
+            this.updateSortRowVisibility();
+        }
+  
         createSortToolbar() {
             const sortCell = this.layout.getCell("sortCell");
             this.sortToolbar = new dhx.Toolbar(null, {
@@ -171,7 +310,6 @@
             });
             sortCell.attach(this.sortToolbar);
   
-            // Add an initial placeholder option so nothing is selected by default.
             let optionsHTML = `<option value="" selected>Select</option>`;
             if (this.config.columns && this.config.columns.length > 0) {
                 this.config.columns.forEach(col => {
@@ -187,15 +325,32 @@
                 items.push({
                     type: "customHTML",
                     id: "sortHeader",
-                    html: `<div style="font-family: 'Arial', sans-serif; margin-left:10px; font-weight: bold; font-size: 16px; line-height:40px; padding-right:5px;">${sortHeaderText}</div>`
+                    html: `<div style="font-family: 'Arial', sans-serif; margin-left:10px; font-weight: bold; font-size: 20px; line-height:40px; padding-right:5px;">${sortHeaderText}</div>`,
+                    hidden: !this.showHeader
                 });
                 items.push({ type: "spacer" });
             } else {
                 items.push({ type: "spacer" });
             }
-            items.push({ type: "customHTML", id: "sortLabel", html: "<div style='line-height:40px; padding-right:5px;'>Sort:</div>" });
-            items.push({ type: "customHTML", id: "combo", html: comboHTML });
-            items.push({ type: "nav", id: "sortOrder", icon: "mdi mdi-sort-ascending", tooltip: "Ascending" });
+            items.push({ 
+                type: "customHTML", 
+                id: "sortLabel", 
+                html: "<div style='line-height:40px; padding-right:5px;'>Sort:</div>",
+                hidden: this.sortDisabled || !this.showSort 
+            });
+            items.push({ 
+                type: "customHTML", 
+                id: "combo", 
+                html: comboHTML,
+                hidden: this.sortDisabled || !this.showSort 
+            });
+            items.push({ 
+                type: "nav", 
+                id: "sortOrder", 
+                icon: "mdi mdi-sort-ascending", 
+                tooltip: "Ascending",
+                hidden: this.sortDisabled || !this.showSort 
+            });
   
             this.sortToolbar.data.parse(items);
   
@@ -220,10 +375,8 @@
             });
         }
   
-        // UPDATED: sortCards now uses column definitions (dataType, dataFormat, and applyFormat) for conversion.
         sortCards() {
-            if (!this.sortColumnId) return;
-            // Find the column definition for the sort column
+            if (!this.sortColumnId || this.sortDisabled) return;
             const colDef = (this.config.columns || []).find(col => col.id === this.sortColumnId);
   
             this.config.data.sort((a, b) => {
@@ -246,7 +399,6 @@
                             bVal = bVal.toString();
                     }
                 } else {
-                    // No explicit dataType provided.
                     const aNum = parseFloat(aVal);
                     const bNum = parseFloat(bVal);
                     if (!isNaN(aNum) && !isNaN(bNum)) {
@@ -330,10 +482,8 @@
                 this.toolbar.push(currentToolbar);
                 currentToolbar.stat = "up";
                 currentToolbar.contentCell = currentContent;
-                // Save mapping between toolbar id and its corresponding content cell id.
                 this.rowMapping[currentToolbar.id] = currentContent;
   
-                // If the row contains _color, apply it to the toolbar container.
                 if (rowData && rowData._color) {
                     const toolbarSelector = `[data-dhx-widget-id="${currentToolbar._uid}"]`;
                     this.waitForElement(toolbarSelector, 4000)
@@ -345,7 +495,24 @@
                         });
                 }
   
-                // Update click handling for options items
+                if (rowData && rowData._fontSize) {
+                    const toolbarSelector = `[data-dhx-widget-id="${currentToolbar._uid}"]`;
+                    this.waitForElement(toolbarSelector, 4000)
+                        .then(toolbarElem => {
+                            const dataCells = toolbarElem.querySelectorAll(".toolbar-cell:not(.hideable)");
+                            dataCells.forEach(cell => {
+                                cell.style.fontSize = rowData._fontSize;
+                            });
+                        })
+                        .catch(error => {
+                            console.error(`Toolbar element for ${currentToolbar._uid} not found:`, error);
+                        });
+                }
+  
+                if (rowData && rowData._showOptions !== undefined) {
+                    currentToolbar.data.update("options", { hidden: !rowData._showOptions });
+                }
+  
                 currentToolbar.events.on("click", function (id, e) {
                     const optionsItem = currentToolbar.data.getItem("options");
                     if (
@@ -359,9 +526,6 @@
                         currentToolbar.show("down");
                         currentToolbar.stat = "down";
                         this.layout.getCell(currentContent).show();
-                        if (this.config.autoCollapse === true){
-                            this.collapseAll();
-                        }
                         this.onExpand(currentToolbar.id, e);
                     } else if (id.endsWith("down")) {
                         currentToolbar.show("up");
@@ -373,49 +537,43 @@
                 }.bind(this));
             }
         }
-
-        // Recursively search the DOM and any shadow DOMs for the selector.
+  
         deepQuerySelector(selector, root = document) {
-            // Try finding it in the current root.
             let element = root.querySelector(selector);
             if (element) return element;
             
-            // If not found, search through all elements that might host a shadow root.
             const children = root.querySelectorAll('*');
             for (const child of children) {
-            if (child.shadowRoot) {
-                element = deepQuerySelector(selector, child.shadowRoot);
-                if (element) return element;
-            }
+                if (child.shadowRoot) {
+                    element = this.deepQuerySelector(selector, child.shadowRoot);
+                    if (element) return element;
+                }
             }
             return null;
         }
         
         waitForElement(selector, timeout = 2000, intervalTime = 50) {
             return new Promise((resolve, reject) => {
-            // First check using the deep search
-            let element = this.deepQuerySelector(selector);
-            if (element) {
-                return resolve(element);
-            }
-            
-            // Polling method with setInterval.
-            const interval = setInterval(() => {
-                element = this.deepQuerySelector(selector);
+                let element = this.deepQuerySelector(selector);
                 if (element) {
-                clearInterval(interval);
-                clearTimeout(timer);
-                resolve(element);
+                    return resolve(element);
                 }
-            }, intervalTime);
-            
-            const timer = setTimeout(() => {
-                clearInterval(interval);
-                reject(new Error("Timeout reached: element not found."));
-            }, timeout);
+                
+                const interval = setInterval(() => {
+                    element = this.deepQuerySelector(selector);
+                    if (element) {
+                        clearInterval(interval);
+                        clearTimeout(timer);
+                        resolve(element);
+                    }
+                }, intervalTime);
+                
+                const timer = setTimeout(() => {
+                    clearInterval(interval);
+                    reject(new Error("Timeout reached: element not found."));
+                }, timeout);
             });
         }
-          
   
         getToolbarData(columns, rowData) {
             const len = columns.length;
@@ -426,50 +584,56 @@
             for (let i = 0; i < len; i++) {
                 const col = columns[i];
                 const hideableClass = i >= 2 ? " hideable" : "";
-                headerCells += `<div class="toolbar-cell${hideableClass}" style="font-weight: bold; padding-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: ${col.width || "100px"};">
-                                  ${col.header}
-                                </div>`;
+                if (this.showDataHeaders) {
+                    headerCells += `<div class="toolbar-cell${hideableClass}" style="font-weight: bold; padding-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: ${col.width || "100px"};">
+                                      ${col.header}
+                                    </div>`;
+                }
                 let value = rowData[col.id] !== undefined ? rowData[col.id] : "";
-                // If the column is a time and applyFormat is true, reformat the value.
                 if (col.dataType === "time" && col.applyFormat && col.dataFormat) {
                     value = formatTimeValue(value, col.dataFormat);
                 }
-                dataCells += `<div class="toolbar-cell${hideableClass}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: ${col.width || "100px"};">
+                dataCells += `<div class="toolbar-cell${hideableClass}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: ${col.width || "100px"}; font-size: ${rowData._fontSize || this.fontSize};">
                                 ${value}
                               </div>`;
             }
   
-            const customhtml = `
-              <div style="overflow:auto;width: 100%; background-color: inherit; padding: 10px 20px; font-family: Arial, sans-serif; box-sizing: border-box;">
-                <style>
-                  @media (max-width: 600px) {
-                    .hideable {
-                      display: none;
-                    }
-                  }
-                </style>
-                <div style="display: grid; grid-template-columns: ${gridTemplateColumns}; gap: 10px;">
-                  ${headerCells}
-                </div>
-                <div style="display: grid; grid-template-columns: ${gridTemplateColumns}; gap: 10px; padding-top: 2px;">
-                  ${dataCells}
-                </div>
-              </div>`;
-  
-            return [
+            const toolbarItems = [
                 { type: "nav", size: "small", id: "up", icon: "mdi mdi-chevron-right" },
                 { type: "nav", size: "small", id: "down", icon: "mdi mdi-chevron-down", visible: false },
-                { type: "customHTML", html: customhtml },
-                { type: "spacer" },
-                { 
-                    type: "customHTML", 
-                    id: "options", 
-                    html: '<i style="margin-right: 10px;font-size: 20px;" class="mdi mdi-dots-vertical-circle"></i>', 
-                    size: "medium", 
-                    icon: "mdi mdi-dots-vertical-circle", 
-                    items: this.optionItems.map(item => ({ id: item.id || item.value, ...item })) 
-                }
+                { type: "customHTML", html: `
+                  <div style="overflow:auto;width: 100%; background-color: inherit; padding: 10px 20px; font-family: Arial, sans-serif; box-sizing: border-box;">
+                    <style>
+                      @media (max-width: 600px) {
+                        .hideable {
+                          display: none;
+                        }
+                      }
+                    </style>
+                    ${this.showDataHeaders ? `<div style="display: grid; grid-template-columns: ${gridTemplateColumns}; gap: 10px;">
+                      ${headerCells}
+                    </div>` : ''}
+                    <div style="display: grid; grid-template-columns: ${gridTemplateColumns}; gap: 10px; padding-top: ${this.showDataHeaders ? '2px' : '0'};">
+                      ${dataCells}
+                    </div>
+                  </div>`
+                },
+                { type: "spacer" }
             ];
+  
+            // Conditionally add the options button based on showOptions and rowData._showOptions
+            if (this.showOptions && (rowData._showOptions === undefined || rowData._showOptions)) {
+                toolbarItems.push({
+                    type: "customHTML",
+                    id: "options",
+                    html: '<i style="margin-right: 10px;font-size: 20px;" class="mdi mdi-dots-vertical-circle"></i>',
+                    size: "medium",
+                    icon: "mdi mdi-dots-vertical-circle",
+                    items: this.optionItems.map(item => ({ id: item.id || item.value, ...item }))
+                });
+            }
+  
+            return toolbarItems;
         }
   
         getLayoutCount(name, rows) {
