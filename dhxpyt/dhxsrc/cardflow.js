@@ -44,7 +44,7 @@
             this.sortDisabled = this.config.sortDisabled || false;
             this.showDataHeaders = this.config.showDataHeaders !== false;
             this.fontSize = this.config.fontSize || "12px";
-            this.showOptions = this.config.showOptions !== false; // NEW: Default to true
+            this.showOptions = this.config.showOptions !== false;
   
             if (this.config.columns && this.config.columns.length > 0) {
                 this.sortColumnId = "";
@@ -63,7 +63,7 @@
                     cols: [
                         {
                             id: "sortCell",
-                            html: "<div id='sortToolbarContainer'></div>"
+                            html: "<div id='sortToolbarContainer' style='width: 100%;'></div>"
                         }
                     ],
                 });
@@ -222,13 +222,20 @@
             this.waitForElement(toolbarSelector, 4000)
                 .then(toolbarElem => {
                     const dataCells = toolbarElem.querySelectorAll(".toolbar-cell:not(.hideable)");
-                    const columnIndex = this.config.columns.findIndex(col => col.id === columnId);
-                    if (columnIndex >= 0 && columnIndex < dataCells.length) {
+                    let cellIndex = 0;
+                    for (let i = 0; i < this.config.columns.length; i++) {
+                        if (this.config.columns[i].type === "stretch") continue;
+                        if (this.config.columns[i].id === columnId) {
+                            break;
+                        }
+                        cellIndex++;
+                    }
+                    if (cellIndex < dataCells.length) {
                         let displayValue = value;
                         if (column.dataType === "time" && column.applyFormat && column.dataFormat) {
                             displayValue = formatTimeValue(value, column.dataFormat);
                         }
-                        dataCells[columnIndex].textContent = displayValue;
+                        dataCells[cellIndex].textContent = displayValue;
                         rowData[columnId] = value;
                     } else {
                         console.error(`Column index for ${columnId} out of bounds or not found.`);
@@ -239,7 +246,6 @@
                 });
         }
   
-        // NEW: Method to show or hide the options button for a specific row
         setRowOptionsVisibility(rowId, show) {
             const toolbar = this.toolbar.find(tb => tb.id === rowId);
             if (!toolbar) {
@@ -306,13 +312,15 @@
             const sortCell = this.layout.getCell("sortCell");
             this.sortToolbar = new dhx.Toolbar(null, {
                 id: "sortToolbar",
-                css: "dhx_widget--bordered height55"
+                css: "dhx_widget--bordered height55",
+                width: "100%"
             });
             sortCell.attach(this.sortToolbar);
   
             let optionsHTML = `<option value="" selected>Select</option>`;
             if (this.config.columns && this.config.columns.length > 0) {
                 this.config.columns.forEach(col => {
+                    if (col.type === "stretch" || !col.id) return;
                     const headerText = (typeof col.header === "string") ? col.header.replace(/:/g, "") : col.header;
                     optionsHTML += `<option value="${col.id}">${headerText}</option>`;
                 });
@@ -325,7 +333,7 @@
                 items.push({
                     type: "customHTML",
                     id: "sortHeader",
-                    html: `<div style="font-family: 'Arial', sans-serif; margin-left:10px; font-weight: bold; font-size: 20px; line-height:40px; padding-right:5px;">${sortHeaderText}</div>`,
+                    html: sortHeaderText,
                     hidden: !this.showHeader
                 });
                 items.push({ type: "spacer" });
@@ -443,15 +451,21 @@
         }
   
         onExpand(id, event) {
-            //console.log("expand", id, event);
+            if (this.events["onCardExpand"]) {
+                this.events["onCardExpand"](id, event);
+            }
         }
   
         onCollapse(id, event) {
-            //console.log("collapse", id, event);
+            if (this.events["onCardCollapse"]) {
+                this.events["onCardCollapse"](id, event);
+            }
         }
   
         onOptions(id, event, optionValue) {
-            //console.log("options", id, event, optionValue);
+            if (this.events["onOptions"]) {
+                this.events["onOptions"](id, event, optionValue);
+            }
         }
   
         makeHeaderSection(cell_start, rows) {
@@ -462,7 +476,8 @@
                 const ndx = index + 1;
                 const currentToolbar = new dhx.Toolbar(null, {
                     id: `toolbar${cell_start}${ndx}`,
-                    css: "dhx_widget--bordered height55"
+                    css: "dhx_widget--bordered height55",
+                    width: "100%"
                 });
                 const currentContent = cell_start + ndx.toString() + "B";
   
@@ -576,16 +591,36 @@
         }
   
         getToolbarData(columns, rowData) {
-            const len = columns.length;
-            const gridTemplateColumns = columns.map(col => col.width ? col.width : "100px").join(" ");
             let headerCells = "";
             let dataCells = "";
+            let leftColumns = "";
+            let rightColumns = "";
+            let stretchIndex = -1;
+            let cellIndex = 0; // For hideable class and cell indexing
   
-            for (let i = 0; i < len; i++) {
+            // Detect stretch column and build column widths
+            for (let i = 0; i < columns.length; i++) {
                 const col = columns[i];
-                const hideableClass = i >= 2 ? " hideable" : "";
+                if (col.type === "stretch") {
+                    stretchIndex = i;
+                    continue;
+                }
+                const colWidth = col.width || "100px";
+                if (i < stretchIndex || stretchIndex === -1) {
+                    leftColumns += colWidth + " ";
+                } else {
+                    rightColumns += colWidth + " ";
+                }
+            }
+  
+            // Build cells
+            for (let i = 0; i < columns.length; i++) {
+                const col = columns[i];
+                if (col.type === "stretch") continue;
+                const hideableClass = cellIndex >= 2 ? " hideable" : "";
+                const colWidth = col.width || "100px";
                 if (this.showDataHeaders) {
-                    headerCells += `<div class="toolbar-cell${hideableClass}" style="font-weight: bold; padding-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: ${col.width || "100px"};">
+                    headerCells += `<div class="toolbar-cell${hideableClass}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: ${colWidth}; font-weight: bold; padding-bottom: 2px;">
                                       ${col.header}
                                     </div>`;
                 }
@@ -593,40 +628,87 @@
                 if (col.dataType === "time" && col.applyFormat && col.dataFormat) {
                     value = formatTimeValue(value, col.dataFormat);
                 }
-                dataCells += `<div class="toolbar-cell${hideableClass}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: ${col.width || "100px"}; font-size: ${rowData._fontSize || this.fontSize};">
+                dataCells += `<div class="toolbar-cell${hideableClass}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: ${colWidth}; font-size: ${rowData._fontSize || this.fontSize};">
                                 ${value}
                               </div>`;
+                cellIndex++;
             }
+  
+            let htmlContent = `
+              <div style="width: 100%; background-color: inherit; padding: 10px 20px; font-family: Arial, sans-serif; box-sizing: border-box;">
+                <style>
+                  @media (max-width: 600px) {
+                    .hideable {
+                      display: none;
+                    }
+                  }
+                  .toolbar-cell:not(.hideable) {
+                    min-width: 0;
+                  }
+                </style>
+            `;
+  
+            if (stretchIndex !== -1) {
+                // Use flexbox layout for stretch
+                const leftHeaderCells = stretchIndex > 0 ? headerCells.split('</div>').slice(0, stretchIndex).join('</div>') + '</div>' : '';
+                const rightHeaderCells = headerCells.split('</div>').slice(stretchIndex).join('</div>') + (headerCells ? '</div>' : '');
+                const leftDataCells = stretchIndex > 0 ? dataCells.split('</div>').slice(0, stretchIndex).join('</div>') + '</div>' : '';
+                const rightDataCells = dataCells.split('</div>').slice(stretchIndex).join('</div>') + (dataCells ? '</div>' : '');
+  
+                if (this.showDataHeaders) {
+                    htmlContent += `
+                      <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <div style="display: grid; grid-template-columns: ${leftColumns}; gap: 10px;">
+                          ${leftHeaderCells}
+                        </div>
+                        <div style="display: grid; grid-template-columns: ${rightColumns}; gap: 10px;">
+                          ${rightHeaderCells}
+                        </div>
+                      </div>
+                    `;
+                }
+  
+                htmlContent += `
+                  <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding-top: ${this.showDataHeaders ? '2px' : '0'};">
+                    <div style="display: grid; grid-template-columns: ${leftColumns}; gap: 10px;">
+                      ${leftDataCells}
+                    </div>
+                    <div style="display: grid; grid-template-columns: ${rightColumns}; gap: 10px;">
+                      ${rightDataCells}
+                    </div>
+                  </div>
+                `;
+            } else {
+                // Use grid layout for no stretch
+                const gridTemplateColumns = columns.map(col => col.width || "100px").join(" ");
+                if (this.showDataHeaders) {
+                    htmlContent += `
+                      <div style="display: grid; grid-template-columns: ${gridTemplateColumns}; gap: 10px; width: 100%;">
+                        ${headerCells}
+                      </div>
+                    `;
+                }
+                htmlContent += `
+                  <div style="display: grid; grid-template-columns: ${gridTemplateColumns}; gap: 10px; padding-top: ${this.showDataHeaders ? '2px' : '0'}; width: 100%;">
+                    ${dataCells}
+                  </div>
+                `;
+            }
+  
+            htmlContent += `</div>`;
   
             const toolbarItems = [
                 { type: "nav", size: "small", id: "up", icon: "mdi mdi-chevron-right" },
                 { type: "nav", size: "small", id: "down", icon: "mdi mdi-chevron-down", visible: false },
-                { type: "customHTML", html: `
-                  <div style="overflow:auto;width: 100%; background-color: inherit; padding: 10px 20px; font-family: Arial, sans-serif; box-sizing: border-box;">
-                    <style>
-                      @media (max-width: 600px) {
-                        .hideable {
-                          display: none;
-                        }
-                      }
-                    </style>
-                    ${this.showDataHeaders ? `<div style="display: grid; grid-template-columns: ${gridTemplateColumns}; gap: 10px;">
-                      ${headerCells}
-                    </div>` : ''}
-                    <div style="display: grid; grid-template-columns: ${gridTemplateColumns}; gap: 10px; padding-top: ${this.showDataHeaders ? '2px' : '0'};">
-                      ${dataCells}
-                    </div>
-                  </div>`
-                },
+                { type: "customHTML", html: htmlContent },
                 { type: "spacer" }
             ];
   
-            // Conditionally add the options button based on showOptions and rowData._showOptions
             if (this.showOptions && (rowData._showOptions === undefined || rowData._showOptions)) {
                 toolbarItems.push({
                     type: "customHTML",
                     id: "options",
-                    html: '<i style="margin-right: 10px;font-size: 20px;" class="mdi mdi-dots-vertical-circle"></i>',
+                    html: '<i style="margin-right: 10px; font-size: 20px;" class="mdi mdi-dots-vertical-circle"></i>',
                     size: "medium",
                     icon: "mdi mdi-dots-vertical-circle",
                     items: this.optionItems.map(item => ({ id: item.id || item.value, ...item }))
@@ -640,14 +722,14 @@
             const list = [];
             for (let i = 0; i < rows; i++) {
                 const ndx = i + 1;
-                const itemA = { id: `${name}${ndx}A`, height: "auto", padding: 5 };
-                const itemB = { id: `${name}${ndx}B`, height: "auto", html: "", padding: 5 };
+                const itemA = { id: `${name}${ndx}A`, height: "auto", padding: 5, width: "100%" };
+                const itemB = { id: `${name}${ndx}B`, height: "auto", html: "", padding: 5, width: "100%" };
                 list.push(itemA);
                 list.push(itemB);
             }
             return {
                 type: "none",
-                rows: [{ type: "none", padding: 10, rows: list, css:"layout-scroll"}]
+                rows: [{ type: "none", padding: 10, rows: list, css: "layout-scroll", width: "100%" }]
             };
         }
   

@@ -15,7 +15,8 @@ class CardFlowColumnConfig:
         css: str = None,
         dataType: str = "str",
         dataFormat: str = "",
-        applyFormat: bool = False
+        applyFormat: bool = False,
+        coltype: str = ""
     ):
         """
         Initializes a CardFlow column configuration.
@@ -39,6 +40,7 @@ class CardFlowColumnConfig:
         self.dataType = dataType
         self.dataFormat = dataFormat
         self.applyFormat = applyFormat
+        self.coltype = coltype
 
     def to_dict(self) -> Dict[str, Any]:
         config_dict = {
@@ -51,6 +53,7 @@ class CardFlowColumnConfig:
             "dataType": self.dataType,
             "dataFormat": self.dataFormat,
             "applyFormat": self.applyFormat,
+            "type": self.coltype
         }
         # Remove keys that are None so we don't pass unnecessary data to JS
         return {k: v for k, v in config_dict.items() if v is not None}
