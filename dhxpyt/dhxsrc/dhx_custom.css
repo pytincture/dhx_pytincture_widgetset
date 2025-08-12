@@ -139,3 +139,30 @@
         --dhx-spreadsheet-range-color-8: #ecb6ff;
         /* end DHTMLX Spreadsheet service variables */
     }
+
+
+.layout-incomplete {
+    color: red !important;
+    background-color: #f9e6e6 !important;
+    font-size:x-large;
+    font-weight: bold;
+    margin: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.layout-complete {
+    color: #4682b4 !important;
+    background-color: #e6f2f9 !important;
+    margin: 0;
+    font-size: x-large;
+    font-weight: bold;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
