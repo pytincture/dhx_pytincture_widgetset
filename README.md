@@ -32,3 +32,38 @@ pip install -r requirements.txt
 or from pypi
 
 pip install dhxpyt
+
+
+## QuickStart
+
+## Windows
+#### Install UV / pytincture / dhxpyt on Powershell
+```
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+$env:Path += ";$env:USERPROFILE\.cargo\bin"
+[Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::User)
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
+New-Item -ItemType Directory -Name dhxpyt_quickstart; Set-Location dhxpyt_quickstart
+uv venv --python 3.13; .\.venv\Scripts\Activate.ps1
+uv pip install dhxpyt pyodide-py js pytincture itsdangerous
+Invoke-WebRequest -Uri https://pytincture.com/quickstart.py -OutFile quickstart.py
+$env:PYTHONUTF8 = "1"
+uv run quickstart.py
+```
+
+## Linux / MacOS
+#### Install UV / pytincture / dhxpyt on Bash
+```
+curl -LsSf https://astral.sh/uv/install.sh | sh
+echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+uv --version
+mkdir dhxpyt_quickstart;cd dhxpyt_quickstart
+uv venv --python 3.13 && source .venv/bin/activate
+uv pip install dhxpyt pyodide-py js pytincture itsdangerous
+curl -O https://pytincture.com/quickstart.py
+uv run quickstart.py
+```
+
+Open in Browser:
+http://localhost:8070/quickstart
