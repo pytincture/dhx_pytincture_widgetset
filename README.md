@@ -13,8 +13,6 @@ The **DHX PyTincture Widgetset** is a Python-based library that integrates the [
 ## Installation
 ### Prerequisites
 - Python 3.13+
-- Pyodide (configured for browser-based Python execution)
-- Node.js (for local development and dependency management, optional)
 
 ### API Documenataion
 https://pytincture.com/dhxpyt.html
