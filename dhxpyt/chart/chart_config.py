@@ -393,7 +393,7 @@ class CalendarHeatMapChartConfig(ChartConfig):
     - series: List of series configurations (e.g., [{value: "value", date: "date", positiveColor: "#04deb6", negativeColor: "#ff457a", weekStart: "monday", startDate: "01/03/22", endDate: "01/07/24"}])
 
     Optional properties:
-    - data: Dataset to parse (e.g., [{value: 50, date: new Date(2022, 2, 2)}, ...]).
+    - data: Dataset to parse (e.g., [{value: 50, date: Date(2022, 2, 2)}, ...]).
     - legend: Legend configuration (e.g., {values: {text: "Calendar heatmap chart"}}).
     - css: Custom CSS classes.
     - export_styles: Export styles.
