@@ -4,7 +4,11 @@ import js
 import json
 from pyodide.ffi import create_proxy
 
-from .chart_config import ChartConfig
+from .chart_config import (ChartConfig, LineChartConfig, SplineAreaChartConfig, 
+                           BarChartConfig, SplineChartConfig, XBarChartConfig, 
+                           AreaChartConfig, Pie3DChartConfig, PieChartConfig, 
+                           DonutChartConfig, RadarChartConfig, ScatterChartConfig, 
+                           TreeMapChartConfig, CalendarHeatMapChartConfig)
 
 class Chart:
     """
