@@ -89,6 +89,15 @@ class CardFlow:
     def toggle_data_headers(self, show=None):
         self.cardflow.toggleDataHeaders(show)
 
+    def set_card_expanded_height(self, card_id: str, height: str) -> None:
+        """
+        Sets the expanded height for a specific card.
+        
+        :param card_id: The ID of the card to modify
+        :param height: The height value (e.g., "400px", "50vh", "auto")
+        """
+        self.cardflow.setCardExpandedHeight(card_id, height)
+
     def set_theme(self, theme: str) -> None:
         """
         If your JS code supports a setTheme method, or if you have a theme mechanism, call it here.
