@@ -72,7 +72,8 @@ class CardFlowConfig:
         ],
         "data": [ ... ],
         "cardHeight": "120px",
-        "stacked": True
+        "stacked": True,
+        "defaultExpandedHeight": "300px"
     }
     """
     def __init__(
@@ -92,8 +93,9 @@ class CardFlowConfig:
         showDataHeaders: bool = True,
         showOptions: bool = True,
         fontSize: str = "",
-        cardHeight: str = None,  # NEW: pass a string like "120px" (defaults to "auto" in JS)
-        stacked: bool = False   # NEW: pass True/False for stacked layout
+        cardHeight: str = None,  # Height of collapsed cards
+        stacked: bool = False,
+        defaultExpandedHeight: str = "300px"  # NEW: Default height for expanded cards
     ):
         """
         Initializes the CardFlowConfig.
@@ -109,6 +111,7 @@ class CardFlowConfig:
         :param sortHeader: Label/text to show on the sorting toolbar.
         :param cardHeight: Height (CSS) of each card row, e.g. "100px". Defaults to "auto" in JS if not set.
         :param stacked: If True, card data displays in vertical (stacked) format rather than side-by-side grid.
+        :param defaultExpandedHeight: Default height for expanded card content areas (e.g., "300px").
         """
         self.columns = columns if columns is not None else []
         self.data = data if data is not None else []
@@ -121,6 +124,7 @@ class CardFlowConfig:
         self.sortHeader = sortHeader
         self.cardHeight = cardHeight
         self.stacked = stacked
+        self.defaultExpandedHeight = defaultExpandedHeight
         self.optionItems = optionItems
         self.showHeader = showHeader
         self.showSort = showSort
@@ -146,14 +150,16 @@ class CardFlowConfig:
             "optionItems": self.optionItems,
             "sortDisabled": self.sortDisabled,
             "sortHeader": self.sortHeader,
-            # new parameters
+            # existing parameters
             "cardHeight": self.cardHeight,
             "stacked": self.stacked,
             "showHeader": self.showHeader,
             "showSort": self.showSort,
             "showDataHeaders": self.showDataHeaders,
             "fontSize": self.fontSize,
-            "showOptions": self.showOptions
+            "showOptions": self.showOptions,
+            # new parameter
+            "defaultExpandedHeight": self.defaultExpandedHeight
         }
         # Remove keys with None values
         return {k: v for k, v in config_dict.items() if v is not None}

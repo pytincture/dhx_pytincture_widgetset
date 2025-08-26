@@ -12,7 +12,7 @@
         }
         return NaN;
     }
-  
+
     // Helper function to format time values according to a format string.
     function formatTimeValue(value, format) {
         let totalMinutes = parseTime(value);
@@ -26,10 +26,10 @@
         let minuteStr = minutes.toString().padStart(2, "0");
         return format.replace("HH", hourStr).replace("MM", minuteStr).replace("AM/PM", period);
     }
-  
+
     // Ensure we have a "customdhx" namespace
     globalThis.customdhx = globalThis.customdhx || {};
-  
+
     class CardFlow {
         constructor(container, config) {
             this.config = config || {};
@@ -39,21 +39,22 @@
             this.sortOrder = "asc";
             this.optionItems = this.config.optionItems || [];
             this.rowMapping = {};
+            this.defaultExpandedHeight = this.config.defaultExpandedHeight || "300px";
             this.showHeader = this.config.showHeader !== false;
             this.showSort = this.config.sortDisabled ? false : (this.config.showSort !== false);
             this.sortDisabled = this.config.sortDisabled || false;
             this.showDataHeaders = this.config.showDataHeaders !== false;
             this.fontSize = this.config.fontSize || "12px";
             this.showOptions = this.config.showOptions !== false;
-  
+
             if (this.config.columns && this.config.columns.length > 0) {
                 this.sortColumnId = "";
             } else {
                 this.sortColumnId = null;
             }
-  
+
             const rows = this.config.data ? this.config.data.length : 0;
-  
+
             const layoutRows = [];
             if (this.showHeader || (!this.sortDisabled && this.showSort)) {
                 layoutRows.push({
@@ -72,29 +73,61 @@
                 id: "cardsRow",
                 cols: [this.getLayoutCount("C", rows)],
             });
-  
+
             this.layout = new dhx.Layout(null, {
                 id: "youknowme",
                 type: "none",
                 rows: layoutRows,
             });
             container.attach(this.layout);
-  
+
             if (this.showHeader || (!this.sortDisabled && this.showSort)) {
                 this.createSortToolbar();
                 this.updateSortRowVisibility();
             }
-  
+
             this.makeHeaderSection("C", rows);
             this.toolbarEventSetup();
         }
-  
+
+        // Method to set expanded height for a specific card (can be called dynamically)
+        setCardExpandedHeight(cardId, height) {
+            const rowData = this.config.data.find(row => row.id === cardId);
+            if (rowData) {
+                rowData._expanded_height = height;
+            }
+            
+            // If the card is currently expanded, update its height immediately
+            const toolbar = this.toolbar.find(tb => tb.id === cardId);
+            if (toolbar && toolbar.stat === "down") {
+                const cellId = this.rowMapping[cardId];
+                if (cellId) {
+                    this.updateCellHeight(cellId, height);
+                }
+            }
+        }
+
+        // Helper method to update cell height dynamically
+        updateCellHeight(cellId, height) {
+            const cellElement = document.querySelector(`[data-dhx-id="${cellId}"]`);
+            if (cellElement) {
+                cellElement.style.height = height;
+                cellElement.style.minHeight = height;
+            }
+        }
+
+        // Helper method to get the expanded height for a card
+        getCardExpandedHeight(cardId) {
+            const rowData = this.config.data.find(row => row.id === cardId);
+            return (rowData && rowData._expanded_height) ? rowData._expanded_height : this.defaultExpandedHeight;
+        }
+
         toolbarEventSetup() {
             this.toolbar.forEach(toolbar => {
                 const uid = toolbar._uid;
                 const selector = `[data-dhx-widget-id="${uid}"]`;
                 const currentLayout = this.layout;
-  
+
                 this.waitForElement(selector, 4000)
                     .then(widgetUl => {
                         const navElement = widgetUl.parentElement;
@@ -116,7 +149,11 @@
                                         toolbar.show("down");
                                         toolbar.hide("up");
                                         toolbar.stat = "down";
-                                        currentLayout.getCell(toolbar.contentCell).show();
+                                        const contentCell = currentLayout.getCell(toolbar.contentCell);
+                                        contentCell.show();
+                                        // Apply the specific height for this card from _expanded_height or default
+                                        const expandedHeight = this.getCardExpandedHeight(toolbar.id);
+                                        this.updateCellHeight(toolbar.contentCell, expandedHeight);
                                         this.onExpand(toolbar.id, event);
                                     }
                                 }
@@ -130,7 +167,7 @@
                     });
             });
         }
-  
+
         attachToCardContent(id, widget) {
             const cellId = this.rowMapping[id];
             if (!cellId) {
@@ -144,7 +181,7 @@
                 console.error(`Card with id ${id} not found.`);
             }
         }
-  
+
         detachCardFromContent(id) {
             const cellId = this.rowMapping[id];
             if (!cellId) {
@@ -158,7 +195,7 @@
                 console.error(`Card with id ${id} not found.`);
             }
         }
-  
+
         setRowColor(rowId, color) {
             const toolbar = this.toolbar.find(tb => tb.id === rowId);
             if (!toolbar) {
@@ -178,7 +215,7 @@
                     console.error(`Toolbar element for ${toolbar._uid} not found:`, error);
                 });
         }
-  
+
         setRowFontSize(rowId, fontSize) {
             const toolbar = this.toolbar.find(tb => tb.id === rowId);
             if (!toolbar) {
@@ -201,7 +238,7 @@
                     console.error(`Toolbar element for ${toolbar._uid} not found:`, error);
                 });
         }
-  
+
         setRowDataValue(rowId, columnId, value) {
             const toolbar = this.toolbar.find(tb => tb.id === rowId);
             if (!toolbar) {
@@ -245,7 +282,7 @@
                     console.error(`Toolbar element for ${toolbar._uid} not found:`, error);
                 });
         }
-  
+
         setRowOptionsVisibility(rowId, show) {
             const toolbar = this.toolbar.find(tb => tb.id === rowId);
             if (!toolbar) {
@@ -260,13 +297,13 @@
             toolbar.data.update("options", { hidden: !show });
             rowData._showOptions = show;
         }
-  
+
         toggleDataHeaders(show) {
             this.showDataHeaders = show !== undefined ? show : !this.showDataHeaders;
             this.reDrawCards();
             this.toolbarEventSetup();
         }
-  
+
         updateSortRowVisibility() {
             const sortRow = this.layout.getCell("sortRow");
             if (sortRow) {
@@ -293,12 +330,12 @@
                 }
             }
         }
-  
+
         toggleHeader(show) {
             this.showHeader = show !== undefined ? show : !this.showHeader;
             this.updateSortRowVisibility();
         }
-  
+
         toggleSort(show) {
             if (this.sortDisabled) {
                 console.warn("Sort controls are disabled (sortDisabled: true). Cannot toggle sort visibility.");
@@ -307,7 +344,7 @@
             this.showSort = show !== undefined ? show : !this.showSort;
             this.updateSortRowVisibility();
         }
-  
+
         createSortToolbar() {
             const sortCell = this.layout.getCell("sortCell");
             this.sortToolbar = new dhx.Toolbar(null, {
@@ -316,16 +353,16 @@
                 width: "100%"
             });
             sortCell.attach(this.sortToolbar);
-  
+
             let optionsHTML = `<option value="" selected>Select</option>`;
             if (this.config.columns && this.config.columns.length > 0) {
                 this.config.columns.forEach(col => {
                     if (col.type === "stretch" || !col.id) return;
                     const headerText = (typeof col.header === "string") ? col.header.replace(/:/g, "") : col.header;
-                    optionsHTML += `<option value="${col.id}">${headerText}</option>`;
+                    optionsHTML += `<option value="$${col.id}">$${headerText}</option>`;
                 });
             }
-  
+
             const comboHTML = `<select id="sortColumnSelect" style="height:25px; font-size:12px; width:80px;">${optionsHTML}</select>`;
             const sortHeaderText = this.config.sortHeader || "";
             const items = [];
@@ -359,9 +396,9 @@
                 tooltip: "Ascending",
                 hidden: this.sortDisabled || !this.showSort 
             });
-  
+
             this.sortToolbar.data.parse(items);
-  
+
             setTimeout(() => {
                 const selectEl = document.getElementById("sortColumnSelect");
                 if (selectEl) {
@@ -371,7 +408,7 @@
                     });
                 }
             }, 100);
-  
+
             this.sortToolbar.events.on("click", (id, e) => {
                 if (id === "sortOrder") {
                     this.sortOrder = this.sortOrder === "asc" ? "desc" : "asc";
@@ -382,15 +419,15 @@
                 }
             });
         }
-  
+
         sortCards() {
             if (!this.sortColumnId || this.sortDisabled) return;
             const colDef = (this.config.columns || []).find(col => col.id === this.sortColumnId);
-  
+
             this.config.data.sort((a, b) => {
                 let aVal = a[this.sortColumnId];
                 let bVal = b[this.sortColumnId];
-  
+
                 if (colDef && colDef.dataType) {
                     switch(colDef.dataType) {
                         case "float":
@@ -424,7 +461,7 @@
                         }
                     }
                 }
-  
+
                 if (aVal < bVal) return this.sortOrder === "asc" ? -1 : 1;
                 if (aVal > bVal) return this.sortOrder === "asc" ? 1 : -1;
                 return 0;
@@ -432,7 +469,7 @@
             this.reDrawCards();
             this.toolbarEventSetup();
         }
-  
+
         reDrawCards() {
             const rows = this.config.data ? this.config.data.length : 0;
             this.toolbar.forEach(toolbar => {
@@ -449,38 +486,38 @@
             }
             this.makeHeaderSection("C", rows);
         }
-  
+
         onExpand(id, event) {
             if (this.events["onCardExpand"]) {
                 this.events["onCardExpand"](id, event);
             }
         }
-  
+
         onCollapse(id, event) {
             if (this.events["onCardCollapse"]) {
                 this.events["onCardCollapse"](id, event);
             }
         }
-  
+
         onOptions(id, event, optionValue) {
             if (this.events["onOptions"]) {
                 this.events["onOptions"](id, event, optionValue);
             }
         }
-  
+
         makeHeaderSection(cell_start, rows) {
             const dataSet = this.config.data || [];
             const columns = this.config.columns || [];
-  
+
             for (let index = 0; index < rows; index++) {
                 const ndx = index + 1;
                 const currentToolbar = new dhx.Toolbar(null, {
-                    id: `toolbar${cell_start}${ndx}`,
+                    id: `toolbar$${cell_start}$${ndx}`,
                     css: "dhx_widget--bordered height55",
                     width: "100%"
                 });
                 const currentContent = cell_start + ndx.toString() + "B";
-  
+
                 const rowData = dataSet[index];
                 if (rowData) {
                     if (rowData.id) {
@@ -489,16 +526,16 @@
                         currentToolbar.id = (index + 1).toString();
                     }
                 }
-  
+
                 currentToolbar.data.parse(this.getToolbarData(columns, rowData));
-                this.layout.getCell(`${cell_start}${ndx}A`).attach(currentToolbar);
+                this.layout.getCell(`$${cell_start}$${ndx}A`).attach(currentToolbar);
                 this.layout.getCell(currentContent).hide();
                 currentToolbar.hide("down");
                 this.toolbar.push(currentToolbar);
                 currentToolbar.stat = "up";
                 currentToolbar.contentCell = currentContent;
                 this.rowMapping[currentToolbar.id] = currentContent;
-  
+
                 if (rowData && rowData._color) {
                     const toolbarSelector = `[data-dhx-widget-id="${currentToolbar._uid}"]`;
                     this.waitForElement(toolbarSelector, 4000)
@@ -509,7 +546,7 @@
                             console.error(`Toolbar element for ${currentToolbar._uid} not found:`, error);
                         });
                 }
-  
+
                 if (rowData && rowData._fontSize) {
                     const toolbarSelector = `[data-dhx-widget-id="${currentToolbar._uid}"]`;
                     this.waitForElement(toolbarSelector, 4000)
@@ -523,11 +560,11 @@
                             console.error(`Toolbar element for ${currentToolbar._uid} not found:`, error);
                         });
                 }
-  
+
                 if (rowData && rowData._showOptions !== undefined) {
                     currentToolbar.data.update("options", { hidden: !rowData._showOptions });
                 }
-  
+
                 currentToolbar.events.on("click", function (id, e) {
                     const optionsItem = currentToolbar.data.getItem("options");
                     if (
@@ -541,6 +578,9 @@
                         currentToolbar.show("down");
                         currentToolbar.stat = "down";
                         this.layout.getCell(currentContent).show();
+                        // Apply the specific height for this card from _expanded_height or default
+                        const expandedHeight = this.getCardExpandedHeight(currentToolbar.id);
+                        this.updateCellHeight(currentContent, expandedHeight);
                         this.onExpand(currentToolbar.id, e);
                     } else if (id.endsWith("down")) {
                         currentToolbar.show("up");
@@ -552,7 +592,7 @@
                 }.bind(this));
             }
         }
-  
+
         deepQuerySelector(selector, root = document) {
             let element = root.querySelector(selector);
             if (element) return element;
@@ -589,7 +629,7 @@
                 }, timeout);
             });
         }
-  
+
         getToolbarData(columns, rowData) {
             let headerCells = "";
             let dataCells = "";
@@ -597,7 +637,7 @@
             let rightColumns = "";
             let stretchIndex = -1;
             let cellIndex = 0; // For hideable class and cell indexing
-  
+
             // Detect stretch column and build column widths
             for (let i = 0; i < columns.length; i++) {
                 const col = columns[i];
@@ -612,7 +652,7 @@
                     rightColumns += colWidth + " ";
                 }
             }
-  
+
             // Build cells
             for (let i = 0; i < columns.length; i++) {
                 const col = columns[i];
@@ -633,7 +673,7 @@
                               </div>`;
                 cellIndex++;
             }
-  
+
             let htmlContent = `
               <div style="width: 100%; background-color: inherit; padding: 10px 20px; font-family: Arial, sans-serif; box-sizing: border-box;">
                 <style>
@@ -647,14 +687,14 @@
                   }
                 </style>
             `;
-  
+
             if (stretchIndex !== -1) {
                 // Use flexbox layout for stretch
                 const leftHeaderCells = stretchIndex > 0 ? headerCells.split('</div>').slice(0, stretchIndex).join('</div>') + '</div>' : '';
                 const rightHeaderCells = headerCells.split('</div>').slice(stretchIndex).join('</div>') + (headerCells ? '</div>' : '');
                 const leftDataCells = stretchIndex > 0 ? dataCells.split('</div>').slice(0, stretchIndex).join('</div>') + '</div>' : '';
                 const rightDataCells = dataCells.split('</div>').slice(stretchIndex).join('</div>') + (dataCells ? '</div>' : '');
-  
+
                 if (this.showDataHeaders) {
                     htmlContent += `
                       <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
@@ -667,7 +707,7 @@
                       </div>
                     `;
                 }
-  
+
                 htmlContent += `
                   <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding-top: ${this.showDataHeaders ? '2px' : '0'};">
                     <div style="display: grid; grid-template-columns: ${leftColumns}; gap: 10px;">
@@ -694,16 +734,16 @@
                   </div>
                 `;
             }
-  
+
             htmlContent += `</div>`;
-  
+
             const toolbarItems = [
                 { type: "nav", size: "small", id: "up", icon: "mdi mdi-chevron-right" },
                 { type: "nav", size: "small", id: "down", icon: "mdi mdi-chevron-down", visible: false },
                 { type: "customHTML", html: htmlContent },
                 { type: "spacer" }
             ];
-  
+
             if (this.showOptions && (rowData._showOptions === undefined || rowData._showOptions)) {
                 toolbarItems.push({
                     type: "customHTML",
@@ -714,10 +754,10 @@
                     items: this.optionItems.map(item => ({ id: item.id || item.value, ...item }))
                 });
             }
-  
+
             return toolbarItems;
         }
-  
+
         getLayoutCount(name, rows) {
             const list = [];
             for (let i = 0; i < rows; i++) {
@@ -732,14 +772,15 @@
                 rows: [{ type: "none", padding: 10, rows: list, css: "layout-scroll", width: "100%" }]
             };
         }
-  
+
         collapseAll() {
             this.toolbar.forEach(toolbar => {
-                if (toolbar.stat === "up") {
+                if (toolbar.stat === "down") {
                     const currentContent = toolbar.contentCell;
                     this.layout.getCell(currentContent).hide();
-                    toolbar.show("down");
-                    toolbar.stat = "down";
+                    toolbar.show("up");
+                    toolbar.hide("down");
+                    toolbar.stat = "up";
                     this.onCollapse(toolbar.id, {});
                 }
             });
@@ -747,16 +788,20 @@
     
         expandAll() {
             this.toolbar.forEach(toolbar => {
-                if (toolbar.stat === "down") {
+                if (toolbar.stat === "up") {
                     const currentContent = toolbar.contentCell;
                     this.layout.getCell(currentContent).show();
-                    toolbar.show("up");
-                    toolbar.stat = "up";
+                    // Apply the specific height for this card from _expanded_height or default
+                    const expandedHeight = this.getCardExpandedHeight(toolbar.id);
+                    this.updateCellHeight(currentContent, expandedHeight);
+                    toolbar.hide("up");
+                    toolbar.show("down");
+                    toolbar.stat = "down";
                     this.onExpand(toolbar.id, {});
                 }
             });
         }
     }
-  
+
     globalThis.customdhx.CardFlow = CardFlow;
 })();
