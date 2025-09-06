@@ -700,17 +700,7 @@ input:checked + .theme-slider:before, input:checked + .markdown-slider:before {
     z-index: 1001;
 }
 
-/* Generic RAG Widget Layout Fix - works with any container */
-.rag-sidebar + div {
-    flex: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    min-width: 0 !important;
-}
-
-/* Alternative: Target any flex container with a rag-sidebar */
-[style*="display: flex"] > div:not(.rag-sidebar),
-[style*="display:flex"] > div:not(.rag-sidebar) {
+div:not(.rag-sidebar) {
     flex: 1 !important;
     display: flex !important;
     flex-direction: column !important;
@@ -720,5 +710,11 @@ input:checked + .theme-slider:before, input:checked + .markdown-slider:before {
 .rag-chat-container {
     flex: 1 !important;
     overflow-y: auto !important;
+}
+
+#my-widget {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
 }
 
