@@ -700,21 +700,23 @@ input:checked + .theme-slider:before, input:checked + .markdown-slider:before {
     z-index: 1001;
 }
 
-div:not(.rag-sidebar) {
+/* Fix 1: Any container with rag-sidebar needs flex layout */
+div:has(.rag-sidebar) {
+    display: flex !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Fix 2: Main content area (sibling of sidebar) needs flex: 1 */
+.rag-sidebar + div {
     flex: 1 !important;
     display: flex !important;
     flex-direction: column !important;
     min-width: 0 !important;
 }
 
+/* Fix 3: Chat container fills main content */
 .rag-chat-container {
     flex: 1 !important;
     overflow-y: auto !important;
 }
-
-#my-widget {
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-}
-
