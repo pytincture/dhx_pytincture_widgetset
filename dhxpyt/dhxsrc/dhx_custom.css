@@ -700,14 +700,21 @@ input:checked + .theme-slider:before, input:checked + .markdown-slider:before {
     z-index: 1001;
 }
 
-/* Fix 1: Any container with rag-sidebar needs flex layout */
-div:has(.rag-sidebar) {
+.rag-sidebar:parent,
+*:not(.rag-sidebar):has(.rag-sidebar),
+div .rag-sidebar:parent {
     display: flex !important;
     width: 100% !important;
-    height: 100% !important;
+    height: 100vh !important;
 }
 
-/* Fix 2: Main content area (sibling of sidebar) needs flex: 1 */
+/* Alternative: Use JavaScript to add class */
+.rag-widget-container {
+    display: flex !important;
+    width: 100% !important;
+    height: 100vh !important;
+}
+
 .rag-sidebar + div {
     flex: 1 !important;
     display: flex !important;
@@ -715,7 +722,6 @@ div:has(.rag-sidebar) {
     min-width: 0 !important;
 }
 
-/* Fix 3: Chat container fills main content */
 .rag-chat-container {
     flex: 1 !important;
     overflow-y: auto !important;
