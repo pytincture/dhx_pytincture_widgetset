@@ -83,6 +83,9 @@
         }
 
         createUI(container) {
+            container.style.display = 'flex';
+            container.style.width = '100%';
+            container.style.height = '100%';
             container.innerHTML = `
                 <div class="rag-sidebar" id="sidebar-${this.uid}">
                     <div class="resize-handle" id="resize-handle-${this.uid}"></div>
@@ -125,11 +128,6 @@
                         </form>
                     </div>
                 </div>`;
-
-// Add container styles
-container.style.display = 'flex';
-container.style.width = '100%';
-container.style.height = '100%';
             
             // Get DOM elements
             this.chatContainer = document.getElementById(`chat-container-${this.uid}`);
