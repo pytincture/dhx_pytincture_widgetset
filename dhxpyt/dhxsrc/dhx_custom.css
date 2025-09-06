@@ -700,29 +700,3 @@ input:checked + .theme-slider:before, input:checked + .markdown-slider:before {
     z-index: 1001;
 }
 
-.rag-sidebar:parent,
-*:not(.rag-sidebar):has(.rag-sidebar),
-div .rag-sidebar:parent {
-    display: flex !important;
-    width: 100% !important;
-    height: 100vh !important;
-}
-
-/* Alternative: Use JavaScript to add class */
-.rag-widget-container {
-    display: flex !important;
-    width: 100% !important;
-    height: 100vh !important;
-}
-
-.rag-sidebar + div {
-    flex: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    min-width: 0 !important;
-}
-
-.rag-chat-container {
-    flex: 1 !important;
-    overflow-y: auto !important;
-}
