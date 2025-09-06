@@ -92,7 +92,7 @@
                     </div>
                     <div class="rag-chat-list" id="chat-list-${this.uid}"></div>
                 </div>
-                <div class="rag-main-content">
+                <div class="rag-main-content" style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
                     <div class="rag-header">
                         <div class="rag-header-left">
                             <button class="sidebar-toggle" id="sidebar-toggle-${this.uid}">
@@ -117,7 +117,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="rag-chat-container" id="chat-container-${this.uid}"></div>
+                    <div class="rag-chat-container" id="chat-container-${this.uid}" style="flex: 1; overflow-y: auto;"></div>
                     <div class="rag-input-container">
                         <form class="rag-input-form">
                             <textarea id="query-${this.uid}" placeholder="${this.getPlaceholderText()}" rows="1"></textarea>
@@ -125,6 +125,11 @@
                         </form>
                     </div>
                 </div>`;
+
+// Add container styles
+container.style.display = 'flex';
+container.style.width = '100%';
+container.style.height = '100%';
             
             // Get DOM elements
             this.chatContainer = document.getElementById(`chat-container-${this.uid}`);
