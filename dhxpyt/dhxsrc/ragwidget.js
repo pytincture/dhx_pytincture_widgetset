@@ -1,6 +1,148 @@
 (function () {
     globalThis.customdhx = globalThis.customdhx || {};
     
+    const css = `
+        .rag-sidebar {
+            width: 250px;
+            min-width: 200px;
+            max-width: 500px;
+            background: #f5f5f5;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.2s ease;
+        }
+
+        .rag-sidebar.hidden {
+            display: none;
+        }
+
+        .rag-sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            font-weight: 600;
+        }
+
+        .rag-chat-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .rag-chat-item {
+            padding: 10px 12px;
+            cursor: pointer;
+        }
+
+        .rag-chat-item.active {
+            background: #dfe9ff;
+            font-weight: 600;
+        }
+
+        .rag-main-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .rag-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .rag-status {
+            padding: 6px 12px;
+            background: #eef3ff;
+            border-bottom: 1px solid #d0d7ff;
+            font-size: 13px;
+            color: #3b4a8a;
+        }
+
+        .rag-chat-container {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .rag-input-container {
+            border-top: 1px solid #e0e0e0;
+            padding: 12px;
+        }
+
+        .rag-input-form {
+            display: flex;
+            gap: 8px;
+        }
+
+        .rag-input-form textarea {
+            flex: 1;
+            resize: none;
+            padding: 10px;
+            border: 1px solid #d0d0d0;
+            border-radius: 6px;
+        }
+
+        .rag-input-form button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            background: #2563eb;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .rag-message {
+            padding: 12px;
+            border-radius: 8px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .rag-user-message {
+            align-self: flex-end;
+            background: #2563eb;
+            color: #fff;
+        }
+
+        .rag-assistant-message {
+            align-self: flex-start;
+            background: #f1f5f9;
+            color: #111827;
+        }
+
+        .rag-dark .rag-main-content {
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+
+        .rag-dark .rag-sidebar {
+            background: #1e293b;
+            border-right-color: #334155;
+        }
+
+        .rag-dark .rag-chat-item.active {
+            background: #334155;
+        }
+
+        .rag-dark .rag-input-form textarea {
+            background: #1f2937;
+            color: #e5e7eb;
+            border-color: #374151;
+        }
+
+        .rag-dark .rag-assistant-message {
+            background: #1f2937;
+            color: #e2e8f0;
+        }
+    `;
+    
     class RagWidget {
         constructor(container, config) {
             this.config = config || {};
@@ -104,14 +246,14 @@
                         <div class="rag-header-right">
                             <div class="toggle-group">
                                 <label class="theme-switch">
-                                    <input type="checkbox" id="theme-toggle-$${this.uid}" $${this.isDarkMode ? 'checked' : ''}>
+                                    <input type="checkbox" id="theme-toggle-${this.uid}" ${this.isDarkMode ? 'checked' : ''}>
                                     <span class="theme-slider"></span>
                                 </label>
                                 <span class="theme-label">${this.isDarkMode ? 'Dark' : 'Light'}</span>
                             </div>
                             <div class="toggle-group">
                                 <label class="markdown-switch">
-                                    <input type="checkbox" id="markdown-toggle-$${this.uid}" $${this.markdownEnabled ? 'checked' : ''}>
+                                    <input type="checkbox" id="markdown-toggle-${this.uid}" ${this.markdownEnabled ? 'checked' : ''}>
                                     <span class="markdown-slider"></span>
                                 </label>
                                 <span class="markdown-label">${this.markdownEnabled ? 'MD' : 'Text'}</span>
@@ -122,7 +264,7 @@
                     <div class="rag-chat-container" id="chat-container-${this.uid}"></div>
                     <div class="rag-input-container">
                         <form class="rag-input-form">
-                            <textarea id="query-$${this.uid}" placeholder="$${this.getPlaceholderText()}" rows="1"></textarea>
+                            <textarea id="query-${this.uid}" placeholder="${this.getPlaceholderText()}" rows="1"></textarea>
                             <button type="button" id="send-btn-${this.uid}">Send</button>
                         </form>
                     </div>
@@ -257,9 +399,9 @@
                 <div class="rag-config-content">
                     <h3>Configure Summarization API</h3>
                     <label>Backend URL</label>
-                    <input id="backendUrl-$${this.uid}" placeholder="http://localhost:8000" value="$${this.backendUrl}">
+                    <input id="backendUrl-${this.uid}" placeholder="http://localhost:8000" value="${this.backendUrl}">
                     <label>API Key (optional)</label>
-                    <input id="apiKey-$${this.uid}" placeholder="API Key" value="$${this.apiKey}">
+                    <input id="apiKey-${this.uid}" placeholder="API Key" value="${this.apiKey}">
                     <label>Model Provider</label>
                     <select id="provider-${this.uid}">
                         <option value="ollama">Ollama</option>
@@ -331,7 +473,7 @@
 
         startNewChat() {
             const newId = Date.now().toString();
-            const newTitle = `$${this.defaultChatTitle} $${new Date().toLocaleTimeString()}`;
+            const newTitle = `${this.defaultChatTitle} ${new Date().toLocaleTimeString()}`;
             this.emit('chat-create', { chatId: newId, title: newTitle });
             
             this.chats.push({ id: newId, title: newTitle, messages: [] });
@@ -557,7 +699,7 @@
                 case 'batch_result':
                     // Handle batch processing results
                     const batchHeader = chunk.metadata?.position ? 
-                        `\n\n**Message $${chunk.metadata.position}/$${chunk.metadata.total}:**\n` : 
+                        `\n\n**Message ${chunk.metadata.position}/${chunk.metadata.total}:**\n` : 
                         '\n\n**Processed Message:**\n';
                     this.appendContent(batchHeader + (chunk.content || ''), targetElement);
                     break;
@@ -569,7 +711,7 @@
                 case 'message_complete':
                     const stats = chunk.metadata;
                     const statusMsg = stats ? 
-                        `Message completed ($${stats.compression_ratio?.toFixed(1)}% compression, $${stats.tokens_saved} tokens saved)` :
+                        `Message completed (${stats.compression_ratio?.toFixed(1)}% compression, ${stats.tokens_saved} tokens saved)` :
                         'Message completed';
                     this.showProcessingStatus(statusMsg, chunk.metadata);
                     break;
@@ -577,7 +719,7 @@
                 case 'session_complete':
                     const sessionStats = chunk.metadata;
                     const completionMsg = sessionStats ? 
-                        `Summarization complete! Processed $${sessionStats.total_processed} messages in $${sessionStats.processing_time?.toFixed(1)}s. Total tokens saved: ${sessionStats.tokens_saved}` :
+                        `Summarization complete! Processed ${sessionStats.total_processed} messages in ${sessionStats.processing_time?.toFixed(1)}s. Total tokens saved: ${sessionStats.tokens_saved}` :
                         'Summarization complete!';
                     this.showProcessingStatus(completionMsg, chunk.metadata);
                     this.finalizeContent(targetElement);
@@ -699,7 +841,7 @@
         // Method to monitor session status
         async monitorSessionStatus(sessionId) {
             try {
-                const response = await fetch(`$${this.backendUrl}/session/$${sessionId}/status`);
+                const response = await fetch(`${this.backendUrl}/session/${sessionId}/status`);
                 if (response.ok) {
                     const status = await response.json();
                     this.emit('session-status', status);
@@ -725,7 +867,6 @@
                 `### Mock Summarization Stream\n\n**Streaming response simulation:**\n\n- ✅ **Context analysis** complete\n- ✅ **Code extraction** finished\n- ✅ **Semantic preservation** verified\n\n\`\`\`javascript\n// Streaming chunk processed\nconst result = await processor.summarize(content);\nconsole.log("Compression:", result.ratio);\n\`\`\`\n\n> Real backend would provide actual conversation summarization`
             ];
             
-            const text = mockTexts[Math.floor(Math.random() * mockTexts.length)];
             const text = mockTexts[Math.floor(Math.random() * mockTexts.length)];
             const words = text.split(' ');
             let fullText = '';

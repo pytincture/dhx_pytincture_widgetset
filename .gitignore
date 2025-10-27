@@ -20,3 +20,6 @@ dist/*.whl
 dhxpyt.egg-info/*
 dhxpyt.egg-info/*.*
 env/*
+node_modules/*
+node_modules/*.*
+package*.json
