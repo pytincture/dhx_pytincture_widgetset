@@ -24,6 +24,7 @@ from ..timepicker import Timepicker, TimepickerConfig
 from ..tree import Tree, TreeConfig
 from ..kanban import Kanban, KanbanConfig
 from ..cardflow import CardFlow, CardFlowConfig
+from ..cardpanel import CardPanel, CardPanelConfig
 
 
 TLayout = TypeVar("TLayout", bound="Layout")
@@ -160,6 +161,11 @@ class Layout(object, metaclass=LoadUICaller):
         """Adds a CardFlow widget into a Layout cell."""
         cardflow_widget = CardFlow(config=cardflow_config, container=self.layout.getCell(id))
         return cardflow_widget
+    
+    def add_cardpanel(self, id: str, cardpanel_config: CardPanelConfig = None) -> CardPanel:
+        """Adds a CardPanel widget into a Layout cell."""
+        cardpanel_widget = CardPanel(config=cardpanel_config, container=self.layout.getCell(id))
+        return cardpanel_widget
     
     def add_ribbon(self, id: str, ribbon_config: RibbonConfig = None) -> Any:
         """Adds a Ribbon widget into a Layout cell."""
