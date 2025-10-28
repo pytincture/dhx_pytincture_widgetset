@@ -124,26 +124,33 @@
 
         toolbarEventSetup() {
             this.toolbar.forEach(toolbar => {
+                if (toolbar.stat !== "down" && toolbar.stat !== "up") {
+                    toolbar.stat = "up";
+                }
+
                 const uid = toolbar._uid;
                 const selector = `[data-dhx-widget-id="${uid}"]`;
                 const currentLayout = this.layout;
 
                 this.waitForElement(selector, 4000)
                     .then(widgetUl => {
-                        const navElement = widgetUl.parentElement;
-                        if (navElement && navElement.tagName.toLowerCase() === "nav") {
-                            navElement.addEventListener("click", event => {
-                                if (event.target.className.indexOf("dhx_toolbar-button__icon") !== -1) {
-                                } else if (event.target.className.indexOf("dhx_toolbar-button--icon") !== -1) {
-                                } else if (event.target.className.indexOf("dhx_button") !== -1) {
-                                } else if (event.target.className.indexOf("mdi-dots") !== -1) {
-                                } else if (event.target.className.indexOf("dhx_toolbar__item") !== -1) {
-                                } else {
-                                    if (toolbar.stat === "down") {
-                                        toolbar.show("up");
-                                        toolbar.hide("down");
-                                        toolbar.stat = "up";
-                                        currentLayout.getCell(toolbar.contentCell).hide();
+                const navElement = widgetUl.closest("nav") || widgetUl;
+                if (!navElement.__cardflowClickHandler) {
+                    const handler = (event) => {
+                        if (event.target.className.indexOf("dhx_toolbar-button__icon") !== -1) {
+                        } else if (event.target.className.indexOf("dhx_toolbar-button--icon") !== -1) {
+                        } else if (event.target.className.indexOf("dhx_button") !== -1) {
+                        } else if (event.target.className.indexOf("mdi-dots") !== -1) {
+                        } else if (event.target.className.indexOf("dhx_toolbar__item") !== -1) {
+                        } else {
+                            if (toolbar.stat !== "down" && toolbar.stat !== "up") {
+                                toolbar.stat = "up";
+                            }
+                            if (toolbar.stat === "down") {
+                                toolbar.show("up");
+                                toolbar.hide("down");
+                                toolbar.stat = "up";
+                                currentLayout.getCell(toolbar.contentCell).hide();
                                         this.onCollapse(toolbar.id, event);
                                     } else if (toolbar.stat === "up") {
                                         toolbar.show("down");
@@ -152,20 +159,23 @@
                                         const contentCell = currentLayout.getCell(toolbar.contentCell);
                                         contentCell.show();
                                         // Apply the specific height for this card from _expanded_height or default
-                                        const expandedHeight = this.getCardExpandedHeight(toolbar.id);
-                                        this.updateCellHeight(toolbar.contentCell, expandedHeight);
-                                        this.onExpand(toolbar.id, event);
-                                    }
-                                }
-                            });
-                        } else {
-                            console.error("The parent element is not a <nav>.");
+                                const expandedHeight = this.getCardExpandedHeight(toolbar.id);
+                                this.updateCellHeight(toolbar.contentCell, expandedHeight);
+                                this.onExpand(toolbar.id, event);
+                            }
                         }
-                    })
-                    .catch(error => {
-                        console.error(`Widget element for toolbar uid ${uid} not found within 4 seconds.`, error);
-                    });
+                    };
+                    navElement.addEventListener("click", handler);
+                    navElement.__cardflowClickHandler = handler;
+                }
+                if (!navElement) {
+                    console.error("Toolbar container not found for nav click handling.");
+                }
+            })
+            .catch(error => {
+                console.error(`Widget element for toolbar uid ${uid} not found within 4 seconds.`, error);
             });
+        });
         }
 
         attachToCardContent(id, widget) {
@@ -528,7 +538,7 @@
                 }
 
                 currentToolbar.data.parse(this.getToolbarData(columns, rowData));
-                this.layout.getCell(`$${cell_start}$${ndx}A`).attach(currentToolbar);
+                this.layout.getCell(`${cell_start}${ndx}A`).attach(currentToolbar);
                 this.layout.getCell(currentContent).hide();
                 currentToolbar.hide("down");
                 this.toolbar.push(currentToolbar);
@@ -573,7 +583,12 @@
                         optionsItem.items.find(item => item.id === id)
                     ) {
                         this.onOptions(currentToolbar.id, e, id);
-                    } else if (id.endsWith("up")) {
+                    } else {
+                        if (currentToolbar.stat !== "down" && currentToolbar.stat !== "up") {
+                            currentToolbar.stat = "up";
+                        }
+
+                        if (id.endsWith("up")) {
                         currentToolbar.hide(id);
                         currentToolbar.show("down");
                         currentToolbar.stat = "down";
@@ -582,12 +597,13 @@
                         const expandedHeight = this.getCardExpandedHeight(currentToolbar.id);
                         this.updateCellHeight(currentContent, expandedHeight);
                         this.onExpand(currentToolbar.id, e);
-                    } else if (id.endsWith("down")) {
+                        } else if (id.endsWith("down")) {
                         currentToolbar.show("up");
                         currentToolbar.hide("down");
                         currentToolbar.stat = "up";
                         this.layout.getCell(currentContent).hide();
                         this.onCollapse(currentToolbar.id, e);
+                    }
                     }
                 }.bind(this));
             }
@@ -782,16 +798,32 @@
                     toolbar.hide("down");
                     toolbar.stat = "up";
                     this.onCollapse(toolbar.id, {});
+                } else if (toolbar.stat !== "up") {
+                    const currentContent = toolbar.contentCell;
+                    this.layout.getCell(currentContent).hide();
+                    toolbar.show("up");
+                    toolbar.hide("down");
+                    toolbar.stat = "up";
+                    this.onCollapse(toolbar.id, {});
                 }
             });
         }
     
         expandAll() {
             this.toolbar.forEach(toolbar => {
-                if (toolbar.stat === "up") {
+                if (toolbar.stat === "up" || toolbar.stat === undefined || toolbar.stat === null) {
                     const currentContent = toolbar.contentCell;
                     this.layout.getCell(currentContent).show();
                     // Apply the specific height for this card from _expanded_height or default
+                    const expandedHeight = this.getCardExpandedHeight(toolbar.id);
+                    this.updateCellHeight(currentContent, expandedHeight);
+                    toolbar.hide("up");
+                    toolbar.show("down");
+                    toolbar.stat = "down";
+                    this.onExpand(toolbar.id, {});
+                } else if (toolbar.stat !== "down") {
+                    const currentContent = toolbar.contentCell;
+                    this.layout.getCell(currentContent).show();
                     const expandedHeight = this.getCardExpandedHeight(toolbar.id);
                     this.updateCellHeight(currentContent, expandedHeight);
                     toolbar.hide("up");
