@@ -416,6 +416,5 @@
         }
     }
 
-    globalThis.customdhx = globalThis.customdhx || {};
     globalThis.customdhx.CardPanel = CardPanel;
 })();
