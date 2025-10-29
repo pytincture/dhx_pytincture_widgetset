@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 
 @dataclass
@@ -36,6 +36,18 @@ class CardPanelConfig:
     searchable: bool = True
     auto_filter: bool = True
     cards: List[Any] = field(default_factory=list)
+    add_button_text: Optional[str] = None
+    search_button_text: Optional[str] = None
+    search_placeholder: Optional[str] = None
+    search_aria_label: Optional[str] = None
+    show_search: Optional[bool] = None
+    view_button_text: Optional[str] = None
+    card_min_width: Optional[Union[int, float, str]] = None
+    card_min_height: Optional[Union[int, float, str]] = None
+    card_gap: Optional[Union[int, float, str]] = None
+    card_columns: Optional[int] = None
+    card_icon_size: Optional[Union[int, float, str]] = None
+    card_template: Optional[Any] = None
 
     def to_dict(self) -> Dict[str, Any]:
         cards_payload: List[Dict[str, Any]] = []
@@ -54,4 +66,30 @@ class CardPanelConfig:
             "autoFilter": self.auto_filter,
             "cards": cards_payload,
         }
+
+        if self.add_button_text is not None:
+            config_dict["addButtonText"] = self.add_button_text
+        if self.search_button_text is not None:
+            config_dict["searchButtonText"] = self.search_button_text
+        if self.search_placeholder is not None:
+            config_dict["searchPlaceholder"] = self.search_placeholder
+        if self.search_aria_label is not None:
+            config_dict["searchAriaLabel"] = self.search_aria_label
+        if self.show_search is not None:
+            config_dict["showSearch"] = self.show_search
+        if self.view_button_text is not None:
+            config_dict["viewButtonText"] = self.view_button_text
+        if self.card_min_width is not None:
+            config_dict["cardMinWidth"] = self.card_min_width
+        if self.card_min_height is not None:
+            config_dict["cardMinHeight"] = self.card_min_height
+        if self.card_gap is not None:
+            config_dict["cardGap"] = self.card_gap
+        if self.card_columns is not None:
+            config_dict["cardColumns"] = self.card_columns
+        if self.card_icon_size is not None:
+            config_dict["cardIconSize"] = self.card_icon_size
+        if self.card_template is not None:
+            config_dict["cardTemplate"] = self.card_template
+
         return config_dict
