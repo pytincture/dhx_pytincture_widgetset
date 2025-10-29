@@ -1,11 +1,192 @@
+function createUniqueId(prefix) {
+    return `${prefix}_${Math.random().toString(16).slice(2)}`;
+}
+
 (function () {
+    globalThis.customdhx = globalThis.customdhx || {};
+
     class CardPanel {
-        constructor(rootSelector, options = {}) {
-            this.root = (typeof rootSelector === "string") ? document.querySelector(rootSelector) : rootSelector;
-            if (!this.root) {
-                throw new Error("Root element not found for CardPanel");
+        constructor(target, options = {}) {
+            this._events = {};
+            this.cards = [];
+            this._pendingActions = [];
+            this._ready = false;
+            this._eventsBound = false;
+            this._mountId = null;
+            this._domReadyPromise = null;
+
+            this._ids = this._generateIds();
+
+            if (!this._initializeLayout(target)) {
+                throw new Error("Unable to initialize CardPanel: target container not found.");
             }
 
+            this._bootstrap(options);
+        }
+
+        _generateIds() {
+            const uid = Math.random().toString(16).slice(2);
+            return {
+                layoutCss: "cardpanel-layout",
+                headerRow: `cardpanel_header_row_${uid}`,
+                subheaderRow: `cardpanel_subheader_row_${uid}`,
+                cardsRow: `cardpanel_cards_row_${uid}`,
+                title: `cardpanel_title_${uid}`,
+                description: `cardpanel_desc_${uid}`,
+                searchWrap: `cardpanel_search_${uid}`,
+                searchInput: `cardpanel_search_input_${uid}`,
+                searchButton: `cardpanel_search_btn_${uid}`,
+                addButton: `cardpanel_add_${uid}`,
+                grid: `cardpanel_grid_${uid}`
+            };
+        }
+
+        _buildLayoutConfig() {
+            return {
+                css: this._ids.layoutCss,
+                type: "none",
+                rows: [
+                    { id: this._ids.headerRow, height: "auto" },
+                    { id: this._ids.subheaderRow, height: "auto" },
+                    { id: this._ids.cardsRow, gravity: 1 }
+                ]
+            };
+        }
+
+        _initializeLayout(target) {
+            if (!globalThis.dhx || typeof globalThis.dhx.Layout !== "function") {
+                throw new Error("dhx.Layout is required for CardPanel.");
+            }
+
+            const config = this._buildLayoutConfig();
+
+            if (target && typeof target.attach === "function") {
+                this.layout = new dhx.Layout(null, config);
+                target.attach(this.layout);
+            } else if (target && typeof target.attachHTML === "function") {
+                const mountId = createUniqueId("cardpanel_mount");
+                target.attachHTML(`<div id="${mountId}" style="width:100%;height:100%;"></div>`);
+                const mountEl = document.getElementById(mountId);
+                if (!mountEl) {
+                    return false;
+                }
+                this._mountId = mountId;
+                this.layout = new dhx.Layout(mountEl, config);
+            } else {
+                const host = this._resolveDomTarget(target);
+                if (!host) {
+                    return false;
+                }
+                this.layout = new dhx.Layout(host, config);
+            }
+
+            this._attachShell();
+            this._ensureDomReady();
+            return true;
+        }
+
+        _resolveDomTarget(target) {
+            if (typeof target === "string") {
+                return document.querySelector(target);
+            }
+
+            if (target && (target.nodeType === 1 || target === document)) {
+                return target;
+            }
+
+            return null;
+        }
+
+        _attachShell() {
+            const headerCell = this.layout.getCell(this._ids.headerRow);
+            const subheaderCell = this.layout.getCell(this._ids.subheaderRow);
+            const cardsCell = this.layout.getCell(this._ids.cardsRow);
+
+            if (!headerCell || !subheaderCell || !cardsCell) {
+                throw new Error("CardPanel layout cells are not available.");
+            }
+
+            headerCell.attachHTML(this._headerTemplate());
+            subheaderCell.attachHTML(this._subheaderTemplate());
+            cardsCell.attachHTML(this._cardsTemplate());
+        }
+
+        _headerTemplate() {
+            return `
+                <div class="cardpanel-header">
+                    <div class="cardpanel-header-left">
+                        <div class="cardpanel-title" id="${this._ids.title}"></div>
+                    </div>
+                    <div class="cardpanel-actions">
+                        <div class="cardpanel-search" id="${this._ids.searchWrap}">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M21 21l-4.2-4.2" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"></path>
+                                <circle cx="11" cy="11" r="7" stroke="#94a3b8" stroke-width="2"></circle>
+                            </svg>
+                            <input type="text" id="${this._ids.searchInput}" placeholder="Search data sources..." />
+                            <button class="cardpanel-search-btn" id="${this._ids.searchButton}">Search</button>
+                        </div>
+                        <button class="cardpanel-add" id="${this._ids.addButton}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="margin-right:6px;">
+                                <path d="M12 5v14M5 12h14" stroke="white" stroke-width="2" stroke-linecap="round"></path>
+                            </svg>
+                            Add Data Source
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        _subheaderTemplate() {
+            return `
+                <div class="cardpanel-subheader">
+                    <div class="cardpanel-desc" id="${this._ids.description}"></div>
+                </div>
+            `;
+        }
+
+        _cardsTemplate() {
+            return `
+                <div class="cardpanel-grid" id="${this._ids.grid}"></div>
+            `;
+        }
+
+        _cacheDomRefs() {
+            this._titleEl = this._titleEl || document.getElementById(this._ids.title);
+            this._descEl = this._descEl || document.getElementById(this._ids.description);
+            this._searchWrapEl = this._searchWrapEl || document.getElementById(this._ids.searchWrap);
+            this._input = this._input || document.getElementById(this._ids.searchInput);
+            this._searchBtn = this._searchBtn || document.getElementById(this._ids.searchButton);
+            this._addBtn = this._addBtn || document.getElementById(this._ids.addButton);
+            this._grid = this._grid || document.getElementById(this._ids.grid);
+
+            if (this._grid && !this._eventsBound) {
+                this._wireEvents();
+            }
+
+            return Boolean(this._grid);
+        }
+
+        _ensureDomReady() {
+            if (this._domReadyPromise) {
+                return this._domReadyPromise;
+            }
+
+            this._domReadyPromise = new Promise((resolve) => {
+                const attempt = () => {
+                    if (this._cacheDomRefs()) {
+                        resolve();
+                        return;
+                    }
+                    window.requestAnimationFrame(attempt);
+                };
+                attempt();
+            });
+
+            return this._domReadyPromise;
+        }
+
+        _bootstrap(options) {
             this.options = Object.assign({
                 title: "Data Sources",
                 description: "Manage and connect to various data sources with intelligent profiling and lineage tracking.",
@@ -14,29 +195,125 @@
                 cards: []
             }, options);
 
-            this._events = {};
-            this.cards = [];
             this._injectStyles();
-            this._renderBase();
+            this._ensureDomReady().then(() => {
+                this._applyOptions();
+                this._ready = true;
 
-            if (Array.isArray(this.options.cards) && this.options.cards.length) {
-                this.load(this.options.cards);
+                if (Array.isArray(this.options.cards) && this.options.cards.length) {
+                    this.load(this.options.cards);
+                }
+
+                this._flushPendingActions();
+            });
+        }
+
+        _applyOptions() {
+            if (this._titleEl) {
+                this._titleEl.textContent = this.options.title || "";
+            }
+
+            if (this._descEl) {
+                this._descEl.textContent = this.options.description || "";
+                const wrapper = this._descEl.parentElement;
+                if (wrapper) {
+                    wrapper.style.display = this.options.description ? "" : "none";
+                }
+            }
+
+            if (this._searchWrapEl) {
+                this._searchWrapEl.style.display = this.options.searchable === false ? "none" : "flex";
+            }
+
+            if (this._input) {
+                this._input.value = "";
+            }
+
+            if (!this._eventsBound) {
+                this._wireEvents();
             }
         }
 
+        _enqueueAction(action) {
+            if (this._ready) {
+                action();
+            } else {
+                this._pendingActions.push(action);
+            }
+        }
+
+        _flushPendingActions() {
+            if (!this._pendingActions.length) {
+                return;
+            }
+
+            const pending = this._pendingActions.slice();
+            this._pendingActions.length = 0;
+
+            pending.forEach((fn) => {
+                try {
+                    fn();
+                } catch (err) {
+                    console.error(err);
+                }
+            });
+        }
+
+        _wireEvents() {
+            if (this._eventsBound) {
+                return;
+            }
+
+            if (this._searchBtn) {
+                this._searchBtn.addEventListener("click", () => {
+                    const query = (this._input?.value || "").trim();
+                    this.emit("search", query);
+                    if (this.options.autoFilter) {
+                        this._filter(query);
+                    }
+                });
+            }
+
+            if (this._input) {
+                this._input.addEventListener("keyup", (event) => {
+                    const query = (this._input?.value || "").trim();
+
+                    if (event.key === "Enter") {
+                        this.emit("search", query);
+                    }
+
+                    if (this.options.autoFilter) {
+                        this._filter(query);
+                    }
+                });
+            }
+
+            if (this._addBtn) {
+                this._addBtn.addEventListener("click", () => {
+                    this.emit("add");
+                });
+            }
+
+            this._eventsBound = true;
+        }
+
         on(name, handler) {
-            if (typeof handler !== "function") return;
+            if (typeof handler !== "function") {
+                return;
+            }
             this._events[name] = this._events[name] || [];
             this._events[name].push(handler);
         }
 
         off(name, handler) {
-            if (!this._events[name]) return;
-            this._events[name] = this._events[name].filter(h => h !== handler);
+            if (!this._events[name]) {
+                return;
+            }
+            this._events[name] = this._events[name].filter((h) => h !== handler);
         }
 
         emit(name, ...args) {
-            (this._events[name] || []).forEach(handler => {
+            (this._events[name] || []).forEach((handler) => {
                 try {
                     handler(...args);
                 } catch (err) {
@@ -51,7 +328,35 @@
             }
 
             const css = `
-:root {
+.cardpanel-layout {
+    --bg: #f4f6fb;
+    --panel: #ffffff;
+    --panel-2: #eff3fb;
+    --text: #172033;
+    --muted: #5d6a7e;
+    --brand: #2563eb;
+    --accent: #2b9cdb;
+    --btn: #2563eb;
+    --btn-hover: #1d4ed8;
+    --chip: #e8eefc;
+    --surface-border: #d6deea;
+    --card-border: #d0d8e6;
+    --pill-text: #1f2a44;
+    --shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+
+    background: var(--bg);
+    height: 100%;
+    color: var(--text);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    box-sizing: border-box;
+}
+.cardpanel-layout .dhx_layout-cell {
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+html[data-dhx-theme="dark"] .cardpanel-layout {
     --bg: #0f1217;
     --panel: #151a22;
     --panel-2: #1b222d;
@@ -64,14 +369,8 @@
     --chip: #0b1220;
     --surface-border: #233044;
     --card-border: #1e293b;
+    --pill-text: #cbd5e1;
     --shadow: 0 8px 24px rgba(0,0,0,.35);
-}
-.cardpanel-wrap {
-    background: var(--bg);
-    height: 100%;
-    color: var(--text);
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    box-sizing: border-box;
 }
 .cardpanel-header {
     display: flex;
@@ -101,7 +400,7 @@
     color: var(--text); font-size: 14px;
 }
 .cardpanel-search-btn {
-    background: #3b82f6;
+    background: var(--brand);
     color: #fff;
     border: none;
     border-radius: 9999px;
@@ -112,7 +411,7 @@
     transition: background 0.2s ease;
     box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
 }
-.cardpanel-search-btn:hover { background: #2563eb; }
+.cardpanel-search-btn:hover { background: var(--btn-hover); }
 
 .cardpanel-add {
     display: inline-flex; align-items: center; gap: 8px;
@@ -138,6 +437,7 @@
     grid-template-columns: repeat(4, minmax(260px, 1fr));
     gap: 16px;
     background: transparent;
+    overflow: auto;
 }
 @media (max-width: 1300px) {
     .cardpanel-grid { grid-template-columns: repeat(3, minmax(260px, 1fr)); }
@@ -172,14 +472,14 @@
 .card-foot { margin-top:auto; display:flex; justify-content:flex-end; }
 
 .card-view {
-    background: #0b5cf5; border: none; color: #fff; font-weight:600;
+    background: var(--brand); border: none; color: #fff; font-weight:600;
     padding: 8px 12px; border-radius: 10px; cursor: pointer;
 }
-.card-view:hover { background: #0a4bd1; }
+.card-view:hover { background: var(--btn-hover); }
 
 .card-pill {
     display:inline-block; padding:3px 8px; border-radius:999px;
-    background:#0f172a; color:#cbd5e1; border:1px solid #233044; font-size:12px;
+    background:var(--chip); color:var(--pill-text); border:1px solid var(--surface-border); font-size:12px;
 }
 `;
 
@@ -189,213 +489,103 @@
             document.head.appendChild(style);
         }
 
-        _renderBase() {
-            this.root.innerHTML = "";
-
-            const wrap = document.createElement("div");
-            wrap.className = "cardpanel-wrap";
-
-            const header = document.createElement("div");
-            header.className = "cardpanel-header";
-
-            const left = document.createElement("div");
-            left.style.display = "flex";
-            left.style.alignItems = "center";
-            left.style.gap = "12px";
-
-            const title = document.createElement("div");
-            title.className = "cardpanel-title";
-            title.textContent = this.options.title;
-            left.appendChild(title);
-
-            const actions = document.createElement("div");
-            actions.className = "cardpanel-actions";
-
-            const searchWrap = document.createElement("div");
-            searchWrap.className = "cardpanel-search";
-            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-            svg.setAttribute("width", "18");
-            svg.setAttribute("height", "18");
-            svg.setAttribute("viewBox", "0 0 24 24");
-            svg.setAttribute("fill", "none");
-            svg.innerHTML = `<path d="M21 21l-4.2-4.2" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"></path><circle cx="11" cy="11" r="7" stroke="#94a3b8" stroke-width="2"></circle>`;
-            searchWrap.appendChild(svg);
-
-            this._input = document.createElement("input");
-            this._input.type = "text";
-            this._input.placeholder = "Search data sources...";
-            this._input.id = "cp_search_input";
-            searchWrap.appendChild(this._input);
-
-            this._searchBtn = document.createElement("button");
-            this._searchBtn.className = "cardpanel-search-btn";
-            this._searchBtn.textContent = "Search";
-            searchWrap.appendChild(this._searchBtn);
-
-            if (this.options.searchable !== false) {
-                actions.appendChild(searchWrap);
-            } else {
-                searchWrap.style.display = "none";
-            }
-
-            this._addBtn = document.createElement("button");
-            this._addBtn.className = "cardpanel-add";
-            this._addBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="margin-right:6px;"><path d="M12 5v14M5 12h14" stroke="white" stroke-width="2" stroke-linecap="round"/></svg> Add Data Source`;
-            actions.appendChild(this._addBtn);
-
-            header.appendChild(left);
-            header.appendChild(actions);
-
-            const sub = document.createElement("div");
-            sub.className = "cardpanel-subheader";
-
-            const desc = document.createElement("div");
-            desc.className = "cardpanel-desc";
-            desc.textContent = this.options.description;
-            sub.appendChild(desc);
-
-            this._grid = document.createElement("div");
-            this._grid.className = "cardpanel-grid";
-
-            wrap.appendChild(header);
-            wrap.appendChild(sub);
-            wrap.appendChild(this._grid);
-            this.root.appendChild(wrap);
-
-            this._wireEvents();
-        }
-
-        _wireEvents() {
-            if (this._searchBtn) {
-                this._searchBtn.addEventListener("click", () => {
-                    const query = this._input.value.trim();
-                    this.emit("search", query);
-                    if (this.options.autoFilter) {
-                        this._filter(query);
-                    }
-                });
-            }
-
-            if (this._input) {
-                this._input.addEventListener("keyup", (event) => {
-                    const query = this._input.value.trim();
-
-                    if (event.key === "Enter") {
-                        this.emit("search", query);
-                    }
-
-                    if (this.options.autoFilter) {
-                        this._filter(query);
-                    }
-                });
-            }
-
-            if (this._addBtn) {
-                this._addBtn.addEventListener("click", () => {
-                    this.emit("add");
-                });
-            }
-        }
-
         load(cards) {
-            this.cards = Array.isArray(cards) ? cards.map(card => Object.assign({}, card)) : [];
-            this._renderCards();
+            this._enqueueAction(() => {
+                this.cards = Array.isArray(cards) ? cards.map((card) => Object.assign({}, card)) : [];
+                this._renderCards();
+            });
         }
 
         add(card) {
-            this.cards.push(Object.assign({}, card));
-            this._renderCards();
+            this._enqueueAction(() => {
+                const copy = Object.assign({}, card);
+                this.cards.push(copy);
+                this._renderCards();
+            });
         }
 
         _renderCards() {
-            this._grid.innerHTML = "";
-
-            if (!this.cards.length) {
-                const empty = document.createElement("div");
-                empty.style.padding = "24px";
-                empty.style.color = "var(--muted)";
-                empty.textContent = "No cards to display.";
-                this._grid.appendChild(empty);
+            if (!this._grid) {
                 return;
             }
 
-            this.cards.forEach(card => {
-                const node = this._createCardNode(card);
-                this._grid.appendChild(node);
-            });
-        }
+            this._grid.innerHTML = "";
 
-        _createCardNode(card) {
-            const wrap = document.createElement("div");
-            wrap.className = "card-card";
-            wrap.dataset.cardId = card.id || "";
+            this.cards.forEach((card) => {
+                const cardDiv = document.createElement("div");
+                cardDiv.className = "card-card";
+                cardDiv.dataset.cardId = card.id || "";
 
-            const head = document.createElement("div");
-            head.className = "card-head";
+                const head = document.createElement("div");
+                head.className = "card-head";
 
-            const iconWrap = document.createElement("div");
-            iconWrap.className = "card-icon";
-            if (card.icon) {
-                if (typeof card.icon === "string") {
-                    iconWrap.innerHTML = card.icon;
-                } else if (card.icon instanceof Element) {
-                    iconWrap.appendChild(card.icon);
+                if (card.icon) {
+                    const icon = document.createElement("div");
+                    icon.className = "card-icon";
+                    icon.innerHTML = card.icon;
+                    head.appendChild(icon);
                 }
-            }
-            head.appendChild(iconWrap);
 
-            const meta = document.createElement("div");
-            const title = document.createElement("h3");
-            title.className = "card-title";
-            title.textContent = card.title || "";
+                const titles = document.createElement("div");
+                titles.style.display = "flex";
+                titles.style.flexDirection = "column";
+                titles.style.gap = "4px";
 
-            const sub = document.createElement("div");
-            sub.className = "card-sub";
-            sub.textContent = card.subtitle || "";
+                const title = document.createElement("h3");
+                title.className = "card-title";
+                title.textContent = card.title || "Untitled";
+                titles.appendChild(title);
 
-            meta.appendChild(title);
-            meta.appendChild(sub);
+                if (card.subtitle) {
+                    const subtitle = document.createElement("p");
+                    subtitle.className = "card-sub";
+                    subtitle.textContent = card.subtitle;
+                    titles.appendChild(subtitle);
+                }
 
-            if (card.pill) {
-                const pill = document.createElement("div");
-                pill.className = "card-pill";
-                pill.style.marginTop = "8px";
-                pill.innerHTML = card.pill;
-                meta.appendChild(pill);
-            }
+                if (card.pill) {
+                    const pill = document.createElement("span");
+                    pill.className = "card-pill";
+                    pill.textContent = card.pill;
+                    titles.appendChild(pill);
+                }
 
-            head.appendChild(meta);
+                head.appendChild(titles);
+                cardDiv.appendChild(head);
 
-            const foot = document.createElement("div");
-            foot.className = "card-foot";
+                const foot = document.createElement("div");
+                foot.className = "card-foot";
 
-            const viewBtn = document.createElement("button");
-            viewBtn.className = "card-view";
-            viewBtn.textContent = "View Details";
-            viewBtn.addEventListener("click", (event) => {
-                event.stopPropagation();
-                this.emit("view", card.id);
+                const viewBtn = document.createElement("button");
+                viewBtn.className = "card-view";
+                viewBtn.textContent = "View Details";
+                viewBtn.addEventListener("click", (event) => {
+                    event.stopPropagation();
+                    this.emit("view", card);
+                });
+                foot.appendChild(viewBtn);
+
+                cardDiv.appendChild(foot);
+
+                cardDiv.addEventListener("click", () => {
+                    this.emit("cardClick", card);
+                });
+
+                this._grid.appendChild(cardDiv);
             });
-
-            foot.appendChild(viewBtn);
-
-            wrap.appendChild(head);
-            wrap.appendChild(foot);
-
-            wrap.addEventListener("click", () => {
-                this.emit("cardClick", card.id);
-            });
-
-            return wrap;
         }
 
         _filter(query) {
+            if (!this._grid) {
+                return;
+            }
+
             const term = (query || "").toLowerCase();
             const children = Array.from(this._grid.children);
 
-            children.forEach(child => {
+            children.forEach((child) => {
                 const id = child.dataset.cardId || "";
-                const card = this.cards.find(c => (c.id || "") === id);
+                const card = this.cards.find((c) => (c.id || "") === id);
 
                 if (!card) {
                     return;
@@ -407,12 +597,30 @@
                     card.pill || ""
                 ].join(" ").toLowerCase();
 
-                if (!term || haystack.indexOf(term) !== -1) {
-                    child.style.display = "";
-                } else {
-                    child.style.display = "none";
-                }
+                child.style.display = !term || haystack.indexOf(term) !== -1 ? "" : "none";
             });
+        }
+
+        destroy() {
+            this.destructor();
+        }
+
+        destructor() {
+            if (this.layout && typeof this.layout.destructor === "function") {
+                this.layout.destructor();
+            }
+
+            this._events = {};
+            this.cards = [];
+            this._grid = null;
+
+            if (this._mountId) {
+                const element = document.getElementById(this._mountId);
+                if (element && element.parentElement) {
+                    element.parentElement.removeChild(element);
+                }
+                this._mountId = null;
+            }
         }
     }
 

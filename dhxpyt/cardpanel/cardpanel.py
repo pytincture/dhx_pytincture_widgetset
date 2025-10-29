@@ -1,6 +1,5 @@
 import json
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
-from uuid import uuid4
 
 import js
 from pyodide.ffi import create_proxy
@@ -30,7 +29,6 @@ class CardPanel:
 
         self.config = config or CardPanelConfig()
         self._event_proxies: Dict[str, List[Any]] = {}
-        self._mount_id: Optional[str] = None
         self._container = container
 
         root_element = self._resolve_root(container=container, root=root)
@@ -48,19 +46,7 @@ class CardPanel:
         Resolve the DOM element that will host the CardPanel.
         """
         if container is not None:
-            mount_id = f"cardpanel_{uuid4().hex}"
-            attach_html = getattr(container, "attachHTML", None)
-            if callable(attach_html):
-                attach_html(f'<div id="{mount_id}" style="width:100%;height:100%;"></div>')
-            else:
-                attach = getattr(container, "attach", None)
-                if callable(attach):
-                    attach(f'<div id="{mount_id}" style="width:100%;height:100%;"></div>')
-                else:
-                    raise ValueError("Provided container does not support attachHTML/attach.")
-
-            self._mount_id = mount_id
-            return js.document.getElementById(mount_id)
+            return container
 
         if isinstance(root, str):
             return js.document.querySelector(root)
@@ -71,7 +57,17 @@ class CardPanel:
         """
         Helper that registers an event handler and keeps a proxy alive.
         """
-        proxy = create_proxy(handler)
+        def wrapped(*args, **kwargs):
+            if args:
+                converted = [
+                    arg.to_py() if hasattr(arg, "to_py") else arg
+                    for arg in args
+                ]
+            else:
+                converted = []
+            return handler(*converted, **kwargs)
+
+        proxy = create_proxy(wrapped)
         bucket = self._event_proxies.setdefault(event_name, [])
         bucket.append(proxy)
         self.cardpanel.on(event_name, proxy)
@@ -111,8 +107,10 @@ class CardPanel:
         """
         Tears down DOM content created for the widget (best-effort).
         """
-        if self._mount_id:
-            element = js.document.getElementById(self._mount_id)
-            if element and element.parentElement:
-                element.parentElement.removeChild(element)
-        self._event_proxies.clear()
+        try:
+            if hasattr(self.cardpanel, "destroy"):
+                self.cardpanel.destroy()
+            elif hasattr(self.cardpanel, "destructor"):
+                self.cardpanel.destructor()
+        finally:
+            self._event_proxies.clear()
