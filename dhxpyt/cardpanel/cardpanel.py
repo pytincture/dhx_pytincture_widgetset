@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import js
@@ -7,10 +8,18 @@ from pyodide.ffi import create_proxy
 from .cardpanel_config import CardPanelConfig, CardPanelCardConfig
 
 
+logger = logging.getLogger(__name__)
+WRAPPER_REVISION = "cardpanel-wrapper/2024-02-22"
+logger.info("CardPanel wrapper loaded (%s)", WRAPPER_REVISION)
+print(f"[CardPanel] Wrapper ready ({WRAPPER_REVISION})")
+
+
 class CardPanel:
     """
     Python wrapper for the custom CardPanel widget.
     """
+
+    _template_proxies: Dict[str, List[Any]] = {}
 
     def __init__(
         self,
@@ -40,6 +49,70 @@ class CardPanel:
             root_element,
             js.JSON.parse(json.dumps(config_payload))
         )
+
+    # ---------------------------------------------------------------------
+    # Template registration helpers
+    # ---------------------------------------------------------------------
+
+    @staticmethod
+    def _js_class() -> Any:
+        """
+        Access the underlying JavaScript constructor, raising a helpful error if unavailable.
+        """
+        try:
+            return js.customdhx.CardPanel
+        except AttributeError as exc:
+            raise RuntimeError(
+                "customdhx.CardPanel is not available. Ensure the cardpanel JavaScript has been loaded."
+            ) from exc
+
+    @classmethod
+    def register_template(cls, name: str, factory: Any) -> None:
+        """
+        Register a template factory with the underlying JavaScript widget.
+
+        The `factory` argument may be:
+            * a string containing JS code that evaluates to a factory function
+            * a JsProxy/Function returned from js.eval/js.Function
+            * a Python callable that returns a renderer. The callable will be proxied to JS.
+        """
+        if not name or not isinstance(name, str):
+            raise ValueError("Template name must be a non-empty string.")
+
+        cardpanel_cls = cls._js_class()
+        register = getattr(cardpanel_cls, "registerTemplate", None)
+        if register is None:
+            raise RuntimeError(
+                "CardPanel.registerTemplate is not available. Rebuild your front-end bundle to include the latest widget code."
+            )
+
+        factory_ref = factory
+        if isinstance(factory, str):
+            factory_ref = js.eval(factory)
+        elif callable(factory) and not hasattr(factory, "to_py"):
+            # Proxy the Python callable into JS and keep the proxy alive.
+            proxied = create_proxy(factory)
+            cls._template_proxies.setdefault(name, []).append(proxied)
+            factory_ref = proxied
+        else:
+            print(f"[CardPanel] register_template received factory of type {type(factory)}")
+
+        logger.info(
+            "CardPanel.register_template called for '%s' (%s)", name, WRAPPER_REVISION
+        )
+        print(f"[CardPanel] register_template -> '{name}' ({WRAPPER_REVISION})")
+        register(name, factory_ref)
+
+    @classmethod
+    def get_template(cls, name: str) -> Any:
+        """
+        Retrieve a previously registered template factory from the JS layer (if available).
+        """
+        cardpanel_cls = cls._js_class()
+        getter = getattr(cardpanel_cls, "getTemplate", None)
+        if getter is None:
+            return None
+        return getter(name)
 
     def _resolve_root(self, *, container: Any, root: Optional[Union[str, Any]]) -> Any:
         """

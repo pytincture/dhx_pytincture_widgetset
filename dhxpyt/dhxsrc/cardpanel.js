@@ -37,6 +37,7 @@ function createUniqueId(prefix) {
                 searchInput: `cardpanel_search_input_${uid}`,
                 searchButton: `cardpanel_search_btn_${uid}`,
                 addButton: `cardpanel_add_${uid}`,
+                addButtonLabel: `cardpanel_add_label_${uid}`,
                 grid: `cardpanel_grid_${uid}`
             };
         }
@@ -130,7 +131,7 @@ function createUniqueId(prefix) {
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="margin-right:6px;">
                                 <path d="M12 5v14M5 12h14" stroke="white" stroke-width="2" stroke-linecap="round"></path>
                             </svg>
-                            Add Data Source
+                            <span class="cardpanel-add-label" id="${this._ids.addButtonLabel}">Add Data Source</span>
                         </button>
                     </div>
                 </div>
@@ -158,6 +159,7 @@ function createUniqueId(prefix) {
             this._input = this._input || document.getElementById(this._ids.searchInput);
             this._searchBtn = this._searchBtn || document.getElementById(this._ids.searchButton);
             this._addBtn = this._addBtn || document.getElementById(this._ids.addButton);
+            this._addBtnLabel = this._addBtnLabel || document.getElementById(this._ids.addButtonLabel);
             this._grid = this._grid || document.getElementById(this._ids.grid);
 
             if (this._grid && !this._eventsBound) {
@@ -191,7 +193,16 @@ function createUniqueId(prefix) {
                 title: "Data Sources",
                 description: "Manage and connect to various data sources with intelligent profiling and lineage tracking.",
                 searchable: true,
+                searchPlaceholder: "Search data sources...",
+                searchButtonText: "Search",
+                addButtonText: "Add Data Source",
+                viewButtonText: "View Details",
                 autoFilter: true,
+                cardMinWidth: 260,
+                cardMinHeight: 160,
+                cardGap: 16,
+                cardIconSize: 44,
+                cardTemplate: "default",
                 cards: []
             }, options);
 
@@ -221,17 +232,102 @@ function createUniqueId(prefix) {
                 }
             }
 
+            const showSearch = !(this.options.searchable === false || this.options.showSearch === false);
             if (this._searchWrapEl) {
-                this._searchWrapEl.style.display = this.options.searchable === false ? "none" : "flex";
+                this._searchWrapEl.style.display = showSearch ? "flex" : "none";
             }
 
             if (this._input) {
                 this._input.value = "";
+                if (this.options.searchPlaceholder !== undefined && this.options.searchPlaceholder !== null) {
+                    this._input.setAttribute("placeholder", this.options.searchPlaceholder);
+                }
+                if (this.options.searchAriaLabel) {
+                    this._input.setAttribute("aria-label", this.options.searchAriaLabel);
+                }
+            }
+
+            if (this._searchBtn && this.options.searchButtonText !== undefined && this.options.searchButtonText !== null) {
+                this._searchBtn.textContent = this.options.searchButtonText;
+            }
+
+            if (this._addBtnLabel && this.options.addButtonText !== undefined && this.options.addButtonText !== null) {
+                this._addBtnLabel.textContent = this.options.addButtonText;
+            }
+
+            if (this._addBtn) {
+                this._addBtn.style.marginLeft = showSearch ? "" : "auto";
+            }
+
+            if (this._grid) {
+                const minWidth = this._normalizeCssSize(this.options.cardMinWidth);
+                const minHeight = this._normalizeCssSize(this.options.cardMinHeight);
+                const gap = this._normalizeCssSize(this.options.cardGap);
+                const iconSize = this._normalizeCssSize(this.options.cardIconSize);
+
+                if (minWidth) {
+                    this._grid.style.setProperty("--card-min-width", minWidth);
+                } else {
+                    this._grid.style.removeProperty("--card-min-width");
+                }
+
+                if (minHeight) {
+                    this._grid.style.setProperty("--card-min-height", minHeight);
+                } else {
+                    this._grid.style.removeProperty("--card-min-height");
+                }
+
+                if (gap) {
+                    this._grid.style.setProperty("--card-gap", gap);
+                } else {
+                    this._grid.style.removeProperty("--card-gap");
+                }
+
+                if (iconSize) {
+                    this._grid.style.setProperty("--card-icon-size", iconSize);
+                } else {
+                    this._grid.style.removeProperty("--card-icon-size");
+                }
+
+                if (this.options.cardColumns && Number.isFinite(this.options.cardColumns)) {
+                    const cols = Math.max(1, Math.floor(this.options.cardColumns));
+                    this._grid.style.setProperty("--card-grid-template", `repeat(${cols}, minmax(0, 1fr))`);
+                } else {
+                    this._grid.style.removeProperty("--card-grid-template");
+                }
             }
 
             if (!this._eventsBound) {
                 this._wireEvents();
             }
+        }
+
+        _normalizeCssSize(value, defaultUnit = "px") {
+            if (value === undefined || value === null) {
+                return null;
+            }
+
+            if (typeof value === "number" && !Number.isNaN(value)) {
+                return `${value}${defaultUnit}`;
+            }
+
+            if (typeof value === "string") {
+                return value.trim() ? value : null;
+            }
+
+            return null;
+        }
+
+        _createTemplateContext(index, card) {
+            const panel = this;
+            return {
+                panel,
+                card,
+                index,
+                emit(name, ...args) {
+                    panel.emit(name, ...args);
+                }
+            };
         }
 
         _enqueueAction(action) {
@@ -327,7 +423,7 @@ function createUniqueId(prefix) {
                 return;
             }
 
-            const css = `
+const css = `
 .cardpanel-layout {
     --bg: #f4f6fb;
     --panel: #ffffff;
@@ -343,6 +439,12 @@ function createUniqueId(prefix) {
     --card-border: #d0d8e6;
     --pill-text: #1f2a44;
     --shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+    --card-min-width: 260px;
+    --card-min-height: 160px;
+    --card-gap: 16px;
+    --card-icon-size: 44px;
+    --card-border-hover: #334155;
+    --card-grid-template: repeat(auto-fit, minmax(var(--card-min-width), 1fr));
 
     background: var(--bg);
     height: 100%;
@@ -367,10 +469,16 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
     --btn: #2563eb;
     --btn-hover: #1d4ed8;
     --chip: #0b1220;
-    --surface-border: #233044;
-    --card-border: #1e293b;
+    --surface-border: #2a384c;
+    --card-border: #364760;
+    --card-border-hover: #4e6384;
     --pill-text: #cbd5e1;
     --shadow: 0 8px 24px rgba(0,0,0,.35);
+    --card-min-width: 260px;
+    --card-min-height: 160px;
+    --card-gap: 16px;
+    --card-icon-size: 44px;
+    --card-grid-template: repeat(auto-fit, minmax(var(--card-min-width), 1fr));
 }
 .cardpanel-header {
     display: flex;
@@ -386,7 +494,7 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
     font-weight: 600;
     letter-spacing: .2px;
 }
-.cardpanel-actions { display:flex; gap:12px; align-items:center; width:100%; }
+.cardpanel-actions { display:flex; gap:12px; align-items:center; width:100%; justify-content:flex-end; }
 .cardpanel-search {
     flex: 1;
     display: flex; align-items: center; gap: 10px;
@@ -421,6 +529,8 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
     box-shadow: var(--shadow);
 }
 .cardpanel-add:hover { background: var(--btn-hover); }
+.cardpanel-add svg { flex-shrink: 0; }
+.cardpanel-add-label { display: inline-block; }
 
 .cardpanel-subheader {
     padding: 20px 24px 10px 24px;
@@ -434,19 +544,10 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
 .cardpanel-grid {
     padding: 24px;
     display: grid;
-    grid-template-columns: repeat(4, minmax(260px, 1fr));
-    gap: 16px;
+    grid-template-columns: var(--card-grid-template);
+    gap: var(--card-gap);
     background: transparent;
     overflow: auto;
-}
-@media (max-width: 1300px) {
-    .cardpanel-grid { grid-template-columns: repeat(3, minmax(260px, 1fr)); }
-}
-@media (max-width: 980px) {
-    .cardpanel-grid { grid-template-columns: repeat(2, minmax(260px, 1fr)); }
-}
-@media (max-width: 640px) {
-    .cardpanel-grid { grid-template-columns: 1fr; }
 }
 
 .card-card {
@@ -456,20 +557,21 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
     padding: 18px;
     box-shadow: var(--shadow);
     display: flex; flex-direction: column; gap: 14px;
-    min-height: 160px;
+    min-height: var(--card-min-height);
     transition: transform .15s ease, border-color .15s ease;
     cursor: pointer;
 }
-.card-card:hover { transform: translateY(-4px); border-color: #334155; }
+.card-card:hover { transform: translateY(-4px); border-color: var(--card-border-hover); }
 .card-head { display:flex; align-items:center; gap:14px; }
 .card-icon {
-    width:44px; height:44px; display:grid; place-items:center;
+    width:var(--card-icon-size); height:var(--card-icon-size); display:grid; place-items:center;
     border-radius:12px; background: var(--chip);
     border:1px solid var(--surface-border);
 }
 .card-title { margin:0; font-size:16px; font-weight:700; letter-spacing:.2px; color:var(--text); }
 .card-sub { color: var(--muted); font-size:13px; line-height:1.4; }
 .card-foot { margin-top:auto; display:flex; justify-content:flex-end; }
+.card-content { color: var(--text); font-size:14px; line-height:1.45; }
 
 .card-view {
     background: var(--brand); border: none; color: #fff; font-weight:600;
@@ -504,6 +606,29 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
             });
         }
 
+        _resolveTemplateRenderer() {
+            const ctor = this.constructor;
+            const templateRef = this.options.cardTemplate ?? "default";
+
+            if (typeof templateRef === "function") {
+                return (card, context) => templateRef.call(this, card, context);
+            }
+
+            const factory = typeof ctor.getTemplate === "function" ? ctor.getTemplate(templateRef) : null;
+            const fallback = typeof ctor.getTemplate === "function" ? ctor.getTemplate("default") : null;
+            const effectiveFactory = typeof factory === "function" ? factory : fallback;
+
+            if (typeof effectiveFactory !== "function") {
+                throw new Error(`CardPanel template '${templateRef}' is not registered.`);
+            }
+
+            const renderer = effectiveFactory(this);
+            if (typeof renderer !== "function") {
+                throw new Error("CardPanel template factory must return a renderer function.");
+            }
+            return renderer;
+        }
+
         _renderCards() {
             if (!this._grid) {
                 return;
@@ -511,67 +636,33 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
 
             this._grid.innerHTML = "";
 
-            this.cards.forEach((card) => {
-                const cardDiv = document.createElement("div");
-                cardDiv.className = "card-card";
-                cardDiv.dataset.cardId = card.id || "";
+            const renderer = this._resolveTemplateRenderer();
 
-                const head = document.createElement("div");
-                head.className = "card-head";
-
-                if (card.icon) {
-                    const icon = document.createElement("div");
-                    icon.className = "card-icon";
-                    icon.innerHTML = card.icon;
-                    head.appendChild(icon);
+            this.cards.forEach((card, index) => {
+                let rendered;
+                try {
+                    rendered = renderer(card, this._createTemplateContext(index, card));
+                } catch (err) {
+                    console.error("CardPanel template render failed:", err);
+                    return;
                 }
 
-                const titles = document.createElement("div");
-                titles.style.display = "flex";
-                titles.style.flexDirection = "column";
-                titles.style.gap = "4px";
-
-                const title = document.createElement("h3");
-                title.className = "card-title";
-                title.textContent = card.title || "Untitled";
-                titles.appendChild(title);
-
-                if (card.subtitle) {
-                    const subtitle = document.createElement("p");
-                    subtitle.className = "card-sub";
-                    subtitle.textContent = card.subtitle;
-                    titles.appendChild(subtitle);
+                if (typeof rendered === "string") {
+                    const temp = document.createElement("div");
+                    temp.innerHTML = rendered.trim();
+                    rendered = temp.firstElementChild;
                 }
 
-                if (card.pill) {
-                    const pill = document.createElement("span");
-                    pill.className = "card-pill";
-                    pill.textContent = card.pill;
-                    titles.appendChild(pill);
+                if (!(rendered instanceof HTMLElement)) {
+                    console.warn("CardPanel template must return a DOM element or HTML string.");
+                    return;
                 }
 
-                head.appendChild(titles);
-                cardDiv.appendChild(head);
+                if (!rendered.dataset.cardId && card.id) {
+                    rendered.dataset.cardId = card.id;
+                }
 
-                const foot = document.createElement("div");
-                foot.className = "card-foot";
-
-                const viewBtn = document.createElement("button");
-                viewBtn.className = "card-view";
-                viewBtn.textContent = "View Details";
-                viewBtn.addEventListener("click", (event) => {
-                    event.stopPropagation();
-                    this.emit("view", card);
-                });
-                foot.appendChild(viewBtn);
-
-                cardDiv.appendChild(foot);
-
-                cardDiv.addEventListener("click", () => {
-                    this.emit("cardClick", card);
-                });
-
-                this._grid.appendChild(cardDiv);
+                this._grid.appendChild(rendered);
             });
         }
 
@@ -622,6 +713,107 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
                 this._mountId = null;
             }
         }
+    }
+
+    CardPanel._templateFactories = CardPanel._templateFactories || new Map();
+
+    CardPanel.registerTemplate = function (name, factory) {
+        if (typeof name !== "string" || !name.trim()) {
+            throw new Error("CardPanel.registerTemplate requires a non-empty string name.");
+        }
+        if (typeof factory !== "function") {
+            throw new Error("CardPanel.registerTemplate requires a factory function.");
+        }
+        CardPanel._templateFactories.set(name, factory);
+    };
+
+    CardPanel.getTemplate = function (name) {
+        if (typeof name !== "string") {
+            return null;
+        }
+        return CardPanel._templateFactories.get(name) || null;
+    };
+
+    if (!CardPanel.getTemplate("default")) {
+        CardPanel.registerTemplate("default", (panel) => (card) => {
+            const cardDiv = document.createElement("div");
+            cardDiv.className = "card-card";
+            cardDiv.dataset.cardId = card.id || "";
+
+            const head = document.createElement("div");
+            head.className = "card-head";
+
+            if (card.icon) {
+                const icon = document.createElement("div");
+                icon.className = "card-icon";
+                icon.innerHTML = card.icon;
+                head.appendChild(icon);
+            }
+
+            const titles = document.createElement("div");
+            titles.style.display = "flex";
+            titles.style.flexDirection = "column";
+            titles.style.gap = "4px";
+
+            const title = document.createElement("h3");
+            title.className = "card-title";
+            title.textContent = card.title || "Untitled";
+            titles.appendChild(title);
+
+            if (card.subtitle) {
+                const subtitle = document.createElement("p");
+                subtitle.className = "card-sub";
+                subtitle.textContent = card.subtitle;
+                titles.appendChild(subtitle);
+            }
+
+            if (card.pill) {
+                const pill = document.createElement("span");
+                pill.className = "card-pill";
+                pill.textContent = card.pill;
+                titles.appendChild(pill);
+            }
+
+            head.appendChild(titles);
+            cardDiv.appendChild(head);
+
+            if (card.contentHtml) {
+                const content = document.createElement("div");
+                content.className = "card-content";
+                content.innerHTML = card.contentHtml;
+                cardDiv.appendChild(content);
+            }
+
+            if (card.summary) {
+                const summary = document.createElement("p");
+                summary.className = "card-sub";
+                summary.textContent = card.summary;
+                cardDiv.appendChild(summary);
+            }
+
+            const viewEnabled = card.viewButton !== false && card.hideViewButton !== true;
+            if (viewEnabled) {
+                const foot = document.createElement("div");
+                foot.className = "card-foot";
+
+                const viewBtn = document.createElement("button");
+                viewBtn.className = "card-view";
+                viewBtn.textContent = card.viewButtonText || panel.options.viewButtonText || "View Details";
+                viewBtn.addEventListener("click", (event) => {
+                    event.stopPropagation();
+                    panel.emit("view", card);
+                });
+                foot.appendChild(viewBtn);
+
+                cardDiv.appendChild(foot);
+            }
+
+            cardDiv.addEventListener("click", () => {
+                panel.emit("cardClick", card);
+            });
+
+            return cardDiv;
+        });
     }
 
     globalThis.customdhx.CardPanel = CardPanel;
