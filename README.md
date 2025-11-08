@@ -9,6 +9,7 @@ The **DHX PyTincture Widgetset** is a Python-based library that integrates the [
 - **Cross-Platform**: Build applications that work across various platforms where Pyodide is supported.
 - **Customizable Widgets**: Easily create and manage reusable UI components tailored to your application's needs.
 - **Event-Driven**: Support for event handling to create responsive and interactive user experiences.
+- **AI Chat Widget**: Stream Markdown-rendered assistant responses, surface artifacts in a live preview pane, and react to dark/light theme changes without leaving Python.
 
 ## Installation
 ### Prerequisites
