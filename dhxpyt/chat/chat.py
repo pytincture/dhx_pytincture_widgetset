@@ -1,6 +1,8 @@
+import asyncio
 import json
 import logging
-from typing import Any, Callable, Dict, Iterable, List, Optional, Union
+import inspect
+from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Union
 
 import js
 from pyodide.ffi import create_proxy
@@ -195,6 +197,163 @@ class Chat:
         if hasattr(result, "to_py"):
             return result.to_py()
         return result
+
+    def get_messages(self, chat_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        if chat_id is None:
+            result = self.chat.getMessages()
+        else:
+            result = self.chat.getMessages(chat_id)
+        if hasattr(result, "to_py"):
+            return result.to_py()
+        return result
+
+    # ------------------------------------------------------------------
+    # Conversation helpers
+    # ------------------------------------------------------------------
+
+    def build_history(
+        self,
+        *,
+        chat_id: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+        exclude_ids: Optional[Iterable[str]] = None,
+        include_empty: bool = False,
+    ) -> List[Dict[str, str]]:
+        excluded: Set[str] = set(exclude_ids or [])
+        history: List[Dict[str, str]] = []
+
+        if system_prompt:
+            history.append({"role": "system", "content": system_prompt})
+
+        for entry in self.get_messages(chat_id):
+            if not isinstance(entry, dict):
+                continue
+            if entry.get("id") in excluded:
+                continue
+            content = (entry.get("content") or "")
+            if not include_empty and not content.strip():
+                continue
+            role = (entry.get("role") or "assistant").lower()
+            if role not in {"user", "assistant", "system"}:
+                role = "assistant"
+            history.append({"role": role, "content": content})
+
+        return history
+
+    @staticmethod
+    def extract_stream_text(chunk: Any) -> str:
+        if chunk is None:
+            return ""
+
+        if isinstance(chunk, str):
+            return chunk
+
+        payload = chunk
+        if hasattr(payload, "model_dump"):
+            payload = payload.model_dump(exclude_none=True)
+        elif hasattr(payload, "to_dict"):
+            payload = payload.to_dict()
+
+        if isinstance(payload, str):
+            return payload
+
+        if not isinstance(payload, dict):
+            return ""
+
+        chunk_type = payload.get("type")
+
+        if chunk_type == "chunk":
+            payload = payload.get("chunk", {})
+            choices = payload.get("choices") or []
+        elif chunk_type == "content.delta":
+            return ""
+        elif chunk_type == "response.output_text.delta":
+            delta = payload.get("delta")
+            if isinstance(delta, dict):
+                return delta.get("content") or delta.get("text") or ""
+            return delta or ""
+        else:
+            choices = payload.get("choices")
+            if choices is None and "chunk" in payload:
+                choices = payload["chunk"].get("choices")
+
+        if not choices:
+            return ""
+
+        for choice in choices:
+            delta = (choice or {}).get("delta")
+            if not delta:
+                continue
+            if isinstance(delta, str):
+                return delta
+            if isinstance(delta, dict):
+                text = delta.get("content")
+                if text:
+                    return text
+        return ""
+
+    def consume_stream(
+        self,
+        response_id: str,
+        stream: Any,
+        *,
+        parser: Optional[Callable[[Any], str]] = None,
+        finish: bool = True,
+        on_error: Optional[Callable[[Exception], None]] = None,
+    ) -> None:
+        tokenize = parser or self.extract_stream_text
+
+        def handle_error(exc: Exception) -> None:
+            if on_error:
+                on_error(exc)
+            else:
+                raise
+
+        is_async = inspect.isasyncgen(stream) or (
+            hasattr(stream, "__aiter__") and not hasattr(stream, "__iter__")
+        )
+
+        if is_async:
+
+            async def runner():
+                try:
+                    async for chunk in stream:
+                        text = tokenize(chunk)
+                        if text:
+                            self.append_stream(response_id, text)
+                except Exception as exc:  # pragma: no cover - pass to handler
+                    handle_error(exc)
+                else:
+                    if finish:
+                        self.finish_stream(response_id)
+
+            self._run_async(runner())
+            return
+
+        try:
+            for chunk in stream:
+                text = tokenize(chunk)
+                if not text:
+                    continue
+                self.append_stream(response_id, text)
+        except Exception as exc:  # pragma: no cover - pass to handler
+            handle_error(exc)
+            return
+
+        if finish:
+            self.finish_stream(response_id)
+
+    @staticmethod
+    def _run_async(coro):
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            loop.create_task(coro)
+        else:
+            asyncio.run(coro)
 
     # ------------------------------------------------------------------
     # Lifecycle
