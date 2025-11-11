@@ -206,10 +206,9 @@
             .sidebar-btn:hover { background: rgba(59,130,246,0.22); }
             .sidebar-btn .tooltip { position: absolute; background: rgba(15,23,42,0.85); color: #fff; font-size: 11px; padding: 4px 8px; border-radius: 6px; bottom: -32px; opacity: 0; pointer-events: none; transform: translateY(8px); transition: opacity 0.15s ease, transform 0.15s ease; white-space: nowrap; }
             .sidebar-btn:hover .tooltip { opacity: 1; transform: translateY(0); }
-            .rag-chat-list { flex: 1; overflow-y: auto; padding: 0 12px 16px; display: flex; flex-direction: column; gap: 6px; }
+            .rag-chat-list { position: relative; flex: 1; overflow-y: auto; padding: 0 12px 16px; display: flex; flex-direction: column; gap: 6px; }
             .rag-sidebar.collapsed .rag-chat-list { padding: 8px 6px 12px; align-items: center; gap: 10px; }
             .rag-chat-list::before { content: ""; position: absolute; top: 0; left: 12px; right: 12px; height: 1px; background: rgba(15,23,42,0.08); }
-            .rag-chat-list { position: relative; }
             .rag-chat-item { position: relative; padding: 12px 14px; border-radius: 12px; background: transparent; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: background 0.15s ease, transform 0.15s ease; border-bottom: 1px solid rgba(15,23,42,0.06); }
             .rag-chat-item:last-child { border-bottom: none; }
             .rag-chat-item .chat-title { flex: 1; font-size: 14px; font-weight: 500; }
@@ -246,6 +245,9 @@
             .rag-message .message-header { display: flex; align-items: center; gap: 10px; font-size: 11px; letter-spacing: 0.08em; padding: 0 4px 6px; color: rgba(15,23,42,0.55); width: 100%; }
             .rag-user-message .message-header { color: rgba(11,30,63,0.6); justify-content: flex-end; }
             .rag-message .message-name { font-weight: 600; text-transform: uppercase; }
+            .rag-dark .rag-message .message-header { color: rgba(226,232,240,0.72); }
+            .rag-dark .rag-user-message .message-header { color: rgba(191,219,254,0.82); }
+            .rag-dark .rag-message .message-name { color: inherit; }
             .rag-message .message-timestamp { font-weight: 500; opacity: 0.65; font-size: 11px; text-transform: uppercase; }
             .rag-message .message-timestamp::before { content: "\u00B7"; margin: 0 0 0 0.45em; opacity: 0.6; }
             .message-timestamp.is-hidden { display: none; }
@@ -255,20 +257,50 @@
             .message-copy-btn:hover { background: rgba(59,130,246,0.28); transform: translateY(-1px); }
             .rag-user-message .message-copy-btn { background: rgba(15,23,42,0.1); color: #0b1e3f; }
             .rag-user-message .message-copy-btn:hover { background: rgba(15,23,42,0.18); }
+            .rag-message.is-thinking .message-copy-btn { opacity: 0.4; pointer-events: none; }
             .message-bubble { width: 100%; padding: 16px 20px 18px; border-radius: 20px; background: rgba(255,255,255,0.98); color: #0f172a; border: 1px solid rgba(15,23,42,0.06); box-shadow: 0 18px 38px rgba(15,23,42,0.08); transition: transform 0.2s ease, box-shadow 0.2s ease; }
             .rag-user-message .message-bubble { background: linear-gradient(145deg, #d0e1ff 0%, #bccdfd 55%, #aebefd 100%); color: #0b1e3f; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 18px 32px rgba(79,70,229,0.18); }
             .rag-message .message-content { color: inherit; line-height: 1.65; }
             .rag-user-message .message-content { color: #0b1e3f; }
             .rag-user-message .message-content a { color: #1d4ed8; }
+            .rag-dark .rag-assistant-message .message-content { color: #e2e8f0; }
+            .rag-dark .rag-user-message .message-content { color: #bfdbfe; }
             .message-bubble pre { overflow-x: auto; border-radius: 14px; background: rgba(15,23,42,0.06); padding: 12px 16px; color: inherit; }
             .message-bubble code { word-break: break-word; }
             .rag-user-message .message-bubble pre { background: rgba(15,23,42,0.1); color: #0b1e3f; }
+            .message-thinking { display: none; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; color: rgba(15,23,42,0.48); letter-spacing: 0.012em; }
+            .message-thinking .thinking-label { font-style: italic; }
+            .rag-dark .message-thinking,
+            .rag-dark .composer-help { color: rgba(148,163,184,0.78); }
+            .rag-message.is-thinking .message-thinking { display: flex; }
+            .rag-message.is-thinking .message-content { display: none; }
+            .thinking-dots { display: flex; gap: 4px; }
+            .thinking-dots span { width: 6px; height: 6px; border-radius: 999px; background: currentColor; opacity: 0.32; animation: rag-thinking-bounce 1.2s infinite ease-in-out; }
+            .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+            .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
             .rag-input-container { padding: 16px 24px 24px; }
             .rag-input-form { display: flex; gap: 12px; align-items: flex-end; background: rgba(255,255,255,0.95); border-radius: 18px; border: 1px solid rgba(15,23,42,0.08); padding: 12px 16px; box-shadow: 0 12px 40px rgba(15,23,42,0.12); }
             .rag-input-form textarea { flex: 0 0 auto; width: 100%; border: none; resize: none; background: transparent; font-size: 15px; line-height: 1.5; min-height: 44px; overflow-y: hidden; box-sizing: border-box; }
             .rag-input-form textarea:focus { outline: none; }
             .rag-input-form button { border: none; padding: 12px 20px; border-radius: 12px; background: linear-gradient(135deg, #2563eb, #7c3aed); color: white; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
             .rag-input-form button:disabled { opacity: 0.5; cursor: not-allowed; }
+            .composer-help { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(15,23,42,0.45); margin: 6px 4px 0; }
+            .rag-advanced .rag-message { flex-direction: row; align-items: flex-start; max-width: 100%; min-width: 0; }
+            .rag-advanced .rag-user-message { align-self: stretch; align-items: flex-start; }
+            .rag-advanced .rag-message .message-header { padding: 0; margin-bottom: 4px; color: rgba(15,23,42,0.6); }
+            .rag-advanced.rag-dark .rag-message .message-header { color: rgba(226,232,240,0.78); }
+            .rag-advanced .message-avatar { width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: rgba(148,163,184,0.25); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 11px; color: rgba(15,23,42,0.65); margin-right: 10px; flex-shrink: 0; text-transform: uppercase; }
+            .rag-advanced.rag-dark .message-avatar { background: rgba(148,163,184,0.35); color: rgba(226,232,240,0.85); }
+            .rag-advanced .message-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+            .rag-advanced .message-body { flex: 1; display: flex; flex-direction: column; gap: 6px; padding-bottom: 16px; border-bottom: 1px solid rgba(15,23,42,0.08); }
+            .rag-advanced.rag-dark .message-body { border-bottom-color: rgba(148,163,184,0.22); }
+            .rag-advanced .message-bubble { background: transparent; border: none; box-shadow: none; padding: 0; }
+            .rag-advanced .rag-message:hover .message-bubble { transform: none; box-shadow: none; }
+            .rag-advanced .message-content { color: inherit; }
+            .rag-advanced .message-tray { justify-content: flex-start; padding: 0; margin-top: 4px; gap: 6px; }
+            .rag-advanced .message-copy-btn { background: rgba(148,163,184,0.2); }
+            .rag-advanced.rag-dark .message-copy-btn { background: rgba(148,163,184,0.3); }
+            .rag-advanced .rag-chat-container { gap: 12px; }
             .artifact-panel { position: absolute; top: 0; right: 0; height: 100%; width: 0; background: rgba(15,23,42,0.95); color: #e2e8f0; box-shadow: -12px 0 32px rgba(15,23,42,0.45); display: flex; flex-direction: column; transition: width 0.2s ease, transform 0.2s ease; overflow: hidden; }
             .artifact-panel.visible { width: 40%; min-width: 320px; }
             .artifact-resize-handle { position: absolute; left: -4px; top: 0; bottom: 0; width: 8px; cursor: col-resize; }
@@ -298,6 +330,10 @@
                 .artifact-panel.visible { width: 100%; }
                 .rag-main.with-artifact { margin-right: 0; }
                 .artifact-resize-handle { display: none; }
+            }
+            @keyframes rag-thinking-bounce {
+                0%, 80%, 100% { transform: translateY(0); opacity: 0.25; }
+                40% { transform: translateY(-3px); opacity: 1; }
             }
         `;
         document.head.appendChild(style);
@@ -358,6 +394,14 @@
                 sendButtonText: "Send",
             }, options || {});
 
+            this._ui = this._normalizeUiConfig(this.options.ui);
+            this._layout = this._normalizeLayout(this.options.layout);
+            this._avatars = Object.assign({ user: null, assistant: null }, this._layout.avatars || {});
+            if (!this._avatars.assistant && this.options.agent && this.options.agent.avatar) {
+                this._avatars.assistant = this.options.agent.avatar;
+            }
+            this._userDisplayName = this._resolveUserName(this.options.user);
+
             this._storagePrefix = this.options.storageKey || `${DEFAULT_STORAGE_PREFIX}:${createUniqueId("instance")}`;
             this._storageKeys = {
                 chats: `${this._storagePrefix}:chats`,
@@ -383,6 +427,12 @@
             this.artifactPanelWidth = localStorage.getItem(this._storageKeys.artifactPanelWidth) || (this.options.artifactPanelWidth ? `${this.options.artifactPanelWidth}px` : "40%");
             this.sidebarCollapsed = localStorage.getItem(this._storageKeys.sidebarCollapsed) === "true";
             this.isDarkMode = localStorage.getItem(this._storageKeys.isDarkMode) === "true";
+            const hostTheme = this._detectHostTheme();
+            if (hostTheme) {
+                this.isDarkMode = hostTheme === "dark";
+            }
+            this._persistedDarkMode = this.isDarkMode;
+            this._themeObserver = null;
             this._messageMap = new Map();
             this._artifactMap = new Map();
             this._pendingMessages = [];
@@ -395,6 +445,8 @@
                 chatList: createUniqueId("rag-chat-list"),
                 chatContainer: createUniqueId("rag-chat-container"),
                 chatScroll: createUniqueId("rag-chat-scroll"),
+                headerRight: createUniqueId("rag-header-right"),
+                headerActions: createUniqueId("rag-header-actions"),
                 inputForm: createUniqueId("rag-input-form"),
                 queryInput: createUniqueId("rag-query"),
                 sendButton: createUniqueId("rag-send"),
@@ -420,6 +472,7 @@
 
             this._renderShell();
             this._cacheDom();
+            this._applyLayoutMode();
             this._bindEvents();
             this._initializeState();
         }
@@ -428,44 +481,307 @@
         // Initialization helpers
         // -----------------------------------------------------------------
 
+        _normalizeUiConfig(config) {
+            const asObject = (value) => (value && typeof value === "object" && !Array.isArray(value) ? value : {});
+
+            const ensureButton = (defaults, overrides) => {
+                if (overrides === false) {
+                    return Object.assign({}, defaults, { show: false });
+                }
+                const source = asObject(overrides);
+                const result = Object.assign({}, defaults, source);
+                if (typeof source.show === "boolean") {
+                    result.show = source.show;
+                }
+                return result;
+            };
+
+            const defaults = {
+                sidebar: {
+                    newChat: { show: true, icon: "add_comment", tooltip: "New chat" },
+                    clearChats: { show: true, icon: "delete_sweep", tooltip: "Clear chats" },
+                    toggleTheme: { show: true, icon: "dark_mode", tooltip: "Toggle theme" },
+                    toggleSidebar: {
+                        show: true,
+                        icons: { expanded: "menu_open", collapsed: "menu" },
+                        tooltips: { expanded: "Collapse", collapsed: "Expand" },
+                    },
+                },
+                header: {
+                    demoButton: { show: false, label: "Demo" },
+                    toggleTheme: { show: false, label: "🌙", tooltip: "Toggle theme" },
+                },
+                modelSelect: { show: true },
+            };
+
+            const safeConfig = asObject(config);
+            const sidebarSource = asObject(safeConfig.sidebar);
+            const headerSource = asObject(safeConfig.header);
+            const modelSource = safeConfig.modelSelect === false ? { show: false } : asObject(safeConfig.modelSelect);
+
+            const toggleOverride = sidebarSource.toggleSidebar;
+            const baseToggle = defaults.sidebar.toggleSidebar;
+            let toggleSidebar;
+            if (toggleOverride === false) {
+                toggleSidebar = {
+                    show: false,
+                    icons: Object.assign({}, baseToggle.icons),
+                    tooltips: Object.assign({}, baseToggle.tooltips),
+                };
+            } else {
+                const overrideObj = asObject(toggleOverride);
+                toggleSidebar = Object.assign({}, baseToggle, overrideObj);
+                toggleSidebar.icons = Object.assign({}, baseToggle.icons, asObject(overrideObj.icons));
+                toggleSidebar.tooltips = Object.assign({}, baseToggle.tooltips, asObject(overrideObj.tooltips));
+                if (typeof overrideObj.show === "boolean") {
+                    toggleSidebar.show = overrideObj.show;
+                }
+            }
+
+            return {
+                sidebar: {
+                    newChat: ensureButton(defaults.sidebar.newChat, sidebarSource.newChat),
+                    clearChats: ensureButton(defaults.sidebar.clearChats, sidebarSource.clearChats),
+                    toggleTheme: ensureButton(defaults.sidebar.toggleTheme, sidebarSource.toggleTheme),
+                    toggleSidebar,
+                },
+                header: {
+                    demoButton: ensureButton(defaults.header.demoButton, headerSource.demoButton),
+                    toggleTheme: ensureButton(defaults.header.toggleTheme, headerSource.toggleTheme),
+                },
+                modelSelect: Object.assign({}, defaults.modelSelect, modelSource),
+            };
+        }
+
+        _normalizeLayout(config) {
+            const asObject = (value) => (value && typeof value === "object" && !Array.isArray(value) ? value : {});
+            const defaults = {
+                mode: "classic",
+                avatars: { user: null, assistant: null },
+            };
+            const source = asObject(config);
+            const avatars = asObject(source.avatars);
+            const mode = (source.mode || defaults.mode).toString().toLowerCase();
+            const normalizedMode = ["classic", "advanced"].includes(mode) ? mode : "classic";
+            return {
+                mode: normalizedMode,
+                avatars: {
+                    user: avatars.user || null,
+                    assistant: avatars.assistant || null,
+                },
+            };
+        }
+
+        _normalizeThemeName(theme) {
+            if (!theme && theme !== 0) return null;
+            const value = String(theme).toLowerCase();
+            if (value.includes("dark")) return "dark";
+            if (value.includes("light")) return "light";
+            return null;
+        }
+
+        _resolveUserName(config) {
+            if (config && typeof config === "object") {
+                if (config.avatar && !this._avatars.user) {
+                    this._avatars.user = config.avatar;
+                }
+                const name = (config.name || "").toString().trim();
+                if (name) {
+                    return name;
+                }
+            }
+            return "You";
+        }
+
+        _detectHostTheme() {
+            try {
+                if (typeof window !== "undefined" && window.dhx) {
+                    if (typeof window.dhx.getTheme === "function") {
+                        const result = window.dhx.getTheme();
+                        if (result) {
+                            if (typeof result === "string") {
+                                const normalized = this._normalizeThemeName(result);
+                                if (normalized) return normalized;
+                            } else if (typeof result === "object" && result.name) {
+                                const normalized = this._normalizeThemeName(result.name);
+                                if (normalized) return normalized;
+                            }
+                        }
+                    }
+                    if (typeof window.dhx.theme === "string") {
+                        const normalized = this._normalizeThemeName(window.dhx.theme);
+                        if (normalized) return normalized;
+                    }
+                }
+                const docTheme = document?.documentElement?.getAttribute?.("data-dhx-theme");
+                if (docTheme) {
+                    const normalized = this._normalizeThemeName(docTheme);
+                    if (normalized) return normalized;
+                }
+            } catch (error) {
+                console.warn("[ChatWidget] Failed to detect host theme", error);
+            }
+            return null;
+        }
+
+        _setDarkMode(isDark, options = {}) {
+            const settings = typeof options === "object" && options !== null ? options : {};
+            const persist = settings.persist !== undefined ? settings.persist : true;
+            const forcePersist = Boolean(settings.forcePersist);
+            const next = Boolean(isDark);
+            const changed = this.isDarkMode !== next;
+            this.isDarkMode = next;
+            if (this.els && this.els.container) {
+                this.els.container.classList.toggle("rag-dark", next);
+            }
+            if (persist && (changed || forcePersist || this._persistedDarkMode !== next)) {
+                this.saveState();
+                this._persistedDarkMode = next;
+            }
+        }
+
+        _applyHostTheme(themeName) {
+            const normalized = this._normalizeThemeName(themeName);
+            if (!normalized) return;
+            this._setDarkMode(normalized === "dark", { persist: true });
+        }
+
+        _observeHostTheme() {
+            if (typeof MutationObserver === "undefined" || !document?.documentElement) {
+                return;
+            }
+            if (this._themeObserver) {
+                this._themeObserver.disconnect();
+            }
+            const applyCurrent = () => {
+                const current = this._detectHostTheme();
+                if (current) {
+                    this._applyHostTheme(current);
+                }
+            };
+            this._themeObserver = new MutationObserver((mutations) => {
+                for (let i = 0; i < mutations.length; i += 1) {
+                    if (mutations[i].type === "attributes") {
+                        applyCurrent();
+                        break;
+                    }
+                }
+            });
+            try {
+                this._themeObserver.observe(document.documentElement, {
+                    attributes: true,
+                    attributeFilter: ["data-dhx-theme"],
+                });
+            } catch (error) {
+                console.warn("[ChatWidget] Failed to observe host theme", error);
+            }
+            applyCurrent();
+        }
+
+        _applyLayoutMode() {
+            if (!this.els || !this.els.container) {
+                return;
+            }
+            this.els.container.classList.toggle("rag-advanced", this._layout.mode === "advanced");
+        }
+
+        _getAvatarForRole(role) {
+            const normalized = (role || "").toLowerCase();
+            if (normalized === "user") {
+                return this._avatars.user || null;
+            }
+            if (normalized === "assistant") {
+                if (this._avatars.assistant) {
+                    return this._avatars.assistant;
+                }
+                if (this.options.agent && this.options.agent.avatar) {
+                    return this.options.agent.avatar;
+                }
+            }
+            return null;
+        }
+
         _renderShell() {
             const agentName = (this.options.agent && this.options.agent.name) || "Assistant";
             const agentSubtitle = (this.options.agent && this.options.agent.subtitle) || "";
             const composerHelp = this.options.composerHelpText || "Shift+Enter for newline";
+            const ui = this._ui;
+            const containerClasses = ["rag-container"];
+            if (this.isDarkMode) containerClasses.push("rag-dark");
+            if (this._layout.mode === "advanced") containerClasses.push("rag-advanced");
+            const containerClassName = containerClasses.join(" ");
+
+            const sidebarButtons = [];
+            const appendSidebarButton = (action, cfg) => {
+                if (!cfg || cfg.show === false) return;
+                const icon = cfg.icon ? escapeHtml(cfg.icon) : "";
+                const tooltip = cfg.tooltip ? escapeHtml(cfg.tooltip) : "";
+                const aria = tooltip ? ` aria-label="${tooltip}"` : "";
+                sidebarButtons.push(`
+                    <button class="sidebar-btn" type="button" data-action="${action}"${aria}>
+                        ${icon ? `<span class="material-icons">${icon}</span>` : ""}
+                        ${tooltip ? `<div class="tooltip">${tooltip}</div>` : ""}
+                    </button>
+                `);
+            };
+
+            appendSidebarButton("new-chat", ui.sidebar.newChat);
+            appendSidebarButton("clear-chats", ui.sidebar.clearChats);
+            appendSidebarButton("toggle-theme", ui.sidebar.toggleTheme);
+
+            const toggleCfg = ui.sidebar.toggleSidebar || {};
+            if (toggleCfg.show !== false) {
+                const icons = Object.assign({ expanded: "menu_open", collapsed: "menu" }, toggleCfg.icons || {});
+                const tooltips = Object.assign({ expanded: "Collapse", collapsed: "Expand" }, toggleCfg.tooltips || {});
+                const expandedIcon = escapeHtml(icons.expanded);
+                const collapsedIcon = escapeHtml(icons.collapsed);
+                const expandedTooltip = escapeHtml(tooltips.expanded);
+                const collapsedTooltip = escapeHtml(tooltips.collapsed);
+                const initialIcon = this.sidebarCollapsed ? collapsedIcon : expandedIcon;
+                const initialTooltip = this.sidebarCollapsed ? collapsedTooltip : expandedTooltip;
+                sidebarButtons.push(`
+                    <button class="sidebar-btn" type="button" data-action="toggle-sidebar" data-icon-expanded="${expandedIcon}" data-icon-collapsed="${collapsedIcon}" data-tooltip-expanded="${expandedTooltip}" data-tooltip-collapsed="${collapsedTooltip}" aria-label="${initialTooltip}">
+                        <span class="material-icons">${initialIcon}</span>
+                        <div class="tooltip">${initialTooltip}</div>
+                    </button>
+                `);
+            }
+
+            const sidebarControlsHtml = sidebarButtons.join("");
+
+            const headerActions = [];
+            const demoCfg = ui.header.demoButton || {};
+            if (demoCfg.show !== false) {
+                const label = escapeHtml(demoCfg.label || "Demo");
+                headerActions.push(`<button type="button" data-action="demo">${label}</button>`);
+            }
+            const headerToggleCfg = ui.header.toggleTheme || {};
+            if (headerToggleCfg.show !== false) {
+                const label = escapeHtml(headerToggleCfg.label || "🌙");
+                const tooltip = escapeHtml(headerToggleCfg.tooltip || "Toggle theme");
+                headerActions.push(`<button type="button" data-action="toggle-theme" title="${tooltip}">${label}</button>`);
+            }
+            const headerActionsHtml = headerActions.length ? `<div class="chat-header__actions" id="${this.ids.headerActions}">${headerActions.join("")}</div>` : "";
+
+            const modelSelectHtml = ui.modelSelect && ui.modelSelect.show === false ? "" : `<select id="${this.ids.modelSelect}"><option>Loading models...</option></select>`;
 
             this.root.innerHTML = `
-                <div class="rag-container${this.isDarkMode ? " rag-dark" : ""}" id="${this.ids.container}">
+                <div class="${containerClassName}" id="${this.ids.container}">
                     <div class="rag-sidebar${this.sidebarCollapsed ? " collapsed" : ""}" id="${this.ids.sidebar}">
                         <div class="sidebar-controls" id="${this.ids.sidebarControls}">
-                            <button class="sidebar-btn" data-action="new-chat">
-                                <span class="material-icons">add</span>
-                                <div class="tooltip">New chat</div>
-                            </button>
-                            <button class="sidebar-btn" data-action="clear-chats">
-                                <span class="material-icons">delete</span>
-                                <div class="tooltip">Clear chats</div>
-                            </button>
-                            <button class="sidebar-btn" data-action="toggle-dark">
-                                <span class="material-icons">dark_mode</span>
-                                <div class="tooltip">Toggle theme</div>
-                            </button>
-                            <button class="sidebar-btn" data-action="toggle-sidebar">
-                                <span class="material-icons">${this.sidebarCollapsed ? "menu" : "menu_open"}</span>
-                                <div class="tooltip">${this.sidebarCollapsed ? "Expand" : "Collapse"}</div>
-                            </button>
+                            ${sidebarControlsHtml}
                         </div>
                         <div class="rag-chat-list" id="${this.ids.chatList}"></div>
                     </div>
-                    <div class="rag-main${this.artifactPanelWidth ? "" : ""}" id="${this.ids.mainContent}">
+                    <div class="rag-main" id="${this.ids.mainContent}">
                         <div class="rag-header">
                             <div class="rag-header-left">
                                 <div class="rag-agent-name" id="${this.ids.agentName}">${agentName}</div>
                                 <div class="rag-agent-subtitle" id="${this.ids.agentSubtitle}">${agentSubtitle || ""}</div>
                             </div>
-                            <div class="rag-header-right">
-                                <select id="${this.ids.modelSelect}">
-                                    <option>Loading models...</option>
-                                </select>
+                            <div class="rag-header-right" id="${this.ids.headerRight}">
+                                ${headerActionsHtml}
+                                ${modelSelectHtml}
                             </div>
                         </div>
                         <div class="rag-chat-scroll" id="${this.ids.chatScroll}">
@@ -517,6 +833,8 @@
                 chatList: byId(this.ids.chatList),
                 chatContainer: byId(this.ids.chatContainer),
                 chatScroll: byId(this.ids.chatScroll),
+                headerRight: byId(this.ids.headerRight),
+                headerActions: byId(this.ids.headerActions),
                 inputForm: byId(this.ids.inputForm),
                 queryInput: byId(this.ids.queryInput),
                 sendButton: byId(this.ids.sendButton),
@@ -574,10 +892,7 @@
                 }
             };
 
-            const onSidebarClick = (event) => {
-                const btn = event.target.closest(".sidebar-btn");
-                if (!btn) return;
-                const action = btn.getAttribute("data-action");
+            const handleUiAction = (action) => {
                 switch (action) {
                     case "new-chat":
                         this.startNewChat();
@@ -585,14 +900,38 @@
                     case "clear-chats":
                         this.clearAllChats();
                         break;
+                    case "toggle-theme":
                     case "toggle-dark":
                         this.toggleDarkMode();
                         break;
                     case "toggle-sidebar":
                         this.toggleSidebar();
                         break;
+                    case "demo":
+                        this.streamMockResponse();
+                        break;
                     default:
                         break;
+                }
+            };
+
+            const onSidebarClick = (event) => {
+                const btn = event.target.closest(".sidebar-btn");
+                if (!btn) return;
+                const action = btn.getAttribute("data-action");
+                if (action) {
+                    event.preventDefault();
+                    handleUiAction(action);
+                }
+            };
+
+            const onHeaderActionsClick = (event) => {
+                const btn = event.target.closest("[data-action]");
+                if (!btn) return;
+                const action = btn.getAttribute("data-action");
+                if (action) {
+                    event.preventDefault();
+                    handleUiAction(action);
                 }
             };
 
@@ -648,9 +987,16 @@
             this.els.queryInput.addEventListener("keydown", onKeydown);
             this.els.inputForm.addEventListener("submit", onFormSubmit);
             this.els.chatContainer.addEventListener("click", onChatContainerClick);
-            this.els.sidebarControls.addEventListener("click", onSidebarClick);
+            if (this.els.sidebarControls) {
+                this.els.sidebarControls.addEventListener("click", onSidebarClick);
+            }
+            if (this.els.headerActions) {
+                this.els.headerActions.addEventListener("click", onHeaderActionsClick);
+            }
             this.els.chatList.addEventListener("click", onChatListClick);
-            this.els.modelSelect.addEventListener("change", onModelChange);
+            if (this.els.modelSelect) {
+                this.els.modelSelect.addEventListener("change", onModelChange);
+            }
             this.els.artifactCopy.addEventListener("click", onArtifactCopy);
             this.els.artifactDownload.addEventListener("click", onArtifactDownload);
             this.els.artifactClose.addEventListener("click", onArtifactClose);
@@ -667,6 +1013,7 @@
                 onFormSubmit,
                 onChatContainerClick,
                 onSidebarClick,
+                onHeaderActionsClick,
                 onChatListClick,
                 onModelChange,
                 onArtifactCopy,
@@ -685,6 +1032,7 @@
                 this.initChats();
             });
             this._adjustTextareaHeight();
+            this._observeHostTheme();
         }
 
         _loadState() {
@@ -709,15 +1057,16 @@
             try {
                 localStorage.setItem(this._storageKeys.chats, JSON.stringify(this.chats));
                 if (this.activeChatId) {
-                    localStorage.setItem(this._storageKeys.activeChatId, this.activeChatId);
-                }
-                localStorage.setItem(this._storageKeys.artifactPanelWidth, this.artifactPanelWidth);
-                localStorage.setItem(this._storageKeys.sidebarCollapsed, String(this.sidebarCollapsed));
-                localStorage.setItem(this._storageKeys.isDarkMode, String(this.isDarkMode));
-            } catch (error) {
-                console.warn("[ChatWidget] Failed to save state", error);
+                localStorage.setItem(this._storageKeys.activeChatId, this.activeChatId);
             }
+            localStorage.setItem(this._storageKeys.artifactPanelWidth, this.artifactPanelWidth);
+            localStorage.setItem(this._storageKeys.sidebarCollapsed, String(this.sidebarCollapsed));
+            localStorage.setItem(this._storageKeys.isDarkMode, String(this.isDarkMode));
+            this._persistedDarkMode = this.isDarkMode;
+        } catch (error) {
+            console.warn("[ChatWidget] Failed to save state", error);
         }
+    }
 
         destroy() {
             const handlers = EVENT_HANDLERS.get(this);
@@ -726,9 +1075,16 @@
                 this.els.queryInput.removeEventListener("keydown", handlers.onKeydown);
                 this.els.inputForm.removeEventListener("submit", handlers.onFormSubmit);
                 this.els.chatContainer.removeEventListener("click", handlers.onChatContainerClick);
-                this.els.sidebarControls.removeEventListener("click", handlers.onSidebarClick);
+                if (this.els.sidebarControls) {
+                    this.els.sidebarControls.removeEventListener("click", handlers.onSidebarClick);
+                }
+                if (this.els.headerActions) {
+                    this.els.headerActions.removeEventListener("click", handlers.onHeaderActionsClick);
+                }
                 this.els.chatList.removeEventListener("click", handlers.onChatListClick);
-                this.els.modelSelect.removeEventListener("change", handlers.onModelChange);
+                if (this.els.modelSelect) {
+                    this.els.modelSelect.removeEventListener("change", handlers.onModelChange);
+                }
                 this.els.artifactCopy.removeEventListener("click", handlers.onArtifactCopy);
                 this.els.artifactDownload.removeEventListener("click", handlers.onArtifactDownload);
                 this.els.artifactClose.removeEventListener("click", handlers.onArtifactClose);
@@ -740,6 +1096,10 @@
                 window.removeEventListener("resize", handlers.onInput);
             }
             EVENT_HANDLERS.delete(this);
+            if (this._themeObserver) {
+                this._themeObserver.disconnect();
+                this._themeObserver = null;
+            }
         }
 
         // -----------------------------------------------------------------
@@ -757,6 +1117,45 @@
             const nextHeight = clamp(scrollHeight, minHeight, maxHeight);
             textarea.style.height = `${nextHeight}px`;
             textarea.style.overflowY = scrollHeight > maxHeight ? "auto" : "hidden";
+        }
+
+        _getSelectedModel() {
+            const selectEl = this.els?.modelSelect;
+            if (selectEl && selectEl.value) {
+                return selectEl.value;
+            }
+            if (Array.isArray(this.availableModels) && this.availableModels.length) {
+                return this.availableModels[0];
+            }
+            const preset = Array.isArray(this.options.models) ? this.options.models : [];
+            if (preset.length) {
+                return preset[0];
+            }
+            return "default";
+        }
+
+        _updateSidebarToggleUi() {
+            if (!this.els || !this.els.sidebarControls) {
+                return;
+            }
+            const toggleButton = this.els.sidebarControls.querySelector("[data-action='toggle-sidebar']");
+            if (!toggleButton) {
+                return;
+            }
+            const iconEl = toggleButton.querySelector(".material-icons");
+            const tooltipEl = toggleButton.querySelector(".tooltip");
+            const toggleCfg = this._ui.sidebar.toggleSidebar || {};
+            const icons = Object.assign({ expanded: "menu_open", collapsed: "menu" }, (toggleCfg.icons || {}));
+            const tooltips = Object.assign({ expanded: "Collapse", collapsed: "Expand" }, (toggleCfg.tooltips || {}));
+            const iconValue = this.sidebarCollapsed ? icons.collapsed : icons.expanded;
+            const tooltipValue = this.sidebarCollapsed ? tooltips.collapsed : tooltips.expanded;
+            if (iconEl) {
+                iconEl.textContent = iconValue;
+            }
+            if (tooltipEl) {
+                tooltipEl.textContent = tooltipValue;
+            }
+            toggleButton.setAttribute("aria-label", tooltipValue);
         }
 
         _handleArtifactResize(event) {
@@ -881,7 +1280,7 @@
                 return `<div class="artifact-icon" data-artifact-id="${artifact.id}"><span class="material-icons">code</span><span>${artifact.title}</span></div>`;
             };
 
-            const newPattern = /:::artifact\{([^}]*)\}([\s\S]*?):::/gi;
+            const newPattern = /:{3,4}artifact\{([^}]*)\}([\s\S]*?)(?:\s*:{3,4})/gi;
             processedText = processedText.replace(newPattern, (full, paramsStr, content) => {
                 const params = normalizeParams(paramsStr);
                 const artifact = createArtifact(params, content, params.title);
@@ -889,7 +1288,7 @@
             });
 
             let legacyMatched = false;
-            const legacyPattern = /:::Artifact\s+([^\n|]+)([^\n]*)\n([\s\S]*?):::Artifact\s*/gi;
+            const legacyPattern = /:::Artifact\s+([^\n|]+)([^\n]*)\n([\s\S]*?)(?:::Artifact|::::Artifact)\s*/gi;
             processedText = processedText.replace(legacyPattern, (full, titleSegment, paramSegment, content) => {
                 legacyMatched = true;
                 const params = normalizeParams(paramSegment);
@@ -898,8 +1297,19 @@
                 return injectIcon(artifact);
             });
 
-            const hasNewStart = /:::artifact\{[^}]*\}/i.test(text);
-            const hasLegacyStart = /:::Artifact\s+[^\n]+/i.test(text);
+            const fourColonClassic = /::::Artifact\s+([^\n|]+)([^\n]*)\n([\s\S]*?)::::Artifact\s*/gi;
+            processedText = processedText.replace(fourColonClassic, (full, titleSegment, paramSegment, content) => {
+                legacyMatched = true;
+                const params = normalizeParams(paramSegment);
+                params.title = params.title || titleSegment.trim();
+                const artifact = createArtifact(params, content, titleSegment.trim());
+                return injectIcon(artifact);
+            });
+
+            processedText = processedText.replace(/(<div class="artifact-icon"[^>]*>[\s\S]*?<\/div>)\s*:/g, "$1");
+
+            const hasNewStart = /:{3,4}artifact\{[^}]*\}/i.test(text);
+            const hasLegacyStart = /:::Artifact\s+[^\n]+/i.test(text) || /::::Artifact\s+[^\n]+/i.test(text);
             const hasIncompleteArtifact = (hasNewStart && !hasCompleteArtifacts) || (hasLegacyStart && !legacyMatched);
 
             if (hasIncompleteArtifact) {
@@ -987,12 +1397,35 @@
             } else {
                 contentEl.innerHTML = "";
             }
+
+            const thinkingEl = element.querySelector(".message-thinking");
+            if (thinkingEl) {
+                const labelEl = thinkingEl.querySelector(".thinking-label");
+                if (labelEl) {
+                    const customLabel = message?.meta?.thinkingLabel;
+                    labelEl.textContent = customLabel || "Thinking…";
+                }
+            }
+            const hasRenderableContent = Boolean((displayText || "").trim());
+            const showThinking = message.role !== "user" && Boolean(message.streaming) && !hasRenderableContent;
+            element.classList.toggle("is-thinking", showThinking);
+            if (thinkingEl) {
+                thinkingEl.setAttribute("aria-hidden", showThinking ? "false" : "true");
+            }
+            const copyBtn = element.querySelector(".message-copy-btn");
+            if (copyBtn) {
+                copyBtn.setAttribute("tabindex", showThinking ? "-1" : "0");
+            }
         }
 
         _createMessageElement(message) {
+            const isAdvanced = this._layout.mode === "advanced";
             const wrapper = document.createElement("div");
             wrapper.className = `rag-message ${message.role === "user" ? "rag-user-message" : "rag-assistant-message"}`;
             wrapper.setAttribute("data-message-id", message.id);
+            if (isAdvanced) {
+                wrapper.classList.add("rag-advanced-message");
+            }
 
             const header = document.createElement("div");
             header.className = "message-header";
@@ -1005,38 +1438,62 @@
             timestampSpan.className = "message-timestamp is-hidden";
             header.appendChild(timestampSpan);
 
-            const copyBtn = document.createElement("button");
-            copyBtn.className = "message-copy-btn";
-            copyBtn.innerHTML = '<span class="material-icons">content_copy</span>';
-            copyBtn.setAttribute("aria-label", "Copy message");
-            copyBtn.setAttribute("title", "Copy message");
-            copyBtn.setAttribute("data-message-id", message.id);
-            copyBtn.addEventListener("click", () => {
-                navigator.clipboard.writeText(message.content || "");
-                this.host.emit("copy", { id: message.id, message });
-            });
-
             const bubble = document.createElement("div");
             bubble.className = "message-bubble";
+            const thinking = document.createElement("div");
+            thinking.className = "message-thinking";
+            thinking.setAttribute("role", "status");
+            thinking.setAttribute("aria-hidden", "true");
+            thinking.setAttribute("aria-live", "polite");
+            thinking.innerHTML = '<span class="thinking-label">Thinking…</span><div class="thinking-dots"><span></span><span></span><span></span></div>';
             const content = document.createElement("div");
             content.className = "message-content";
+            bubble.appendChild(thinking);
             bubble.appendChild(content);
 
             const tray = document.createElement("div");
             tray.className = "message-tray";
             const trayCopyBtn = document.createElement("button");
             trayCopyBtn.className = "message-copy-btn";
+            trayCopyBtn.type = "button";
             trayCopyBtn.innerHTML = '<span class="material-icons">content_copy</span>';
             trayCopyBtn.setAttribute("data-message-id", message.id);
-            trayCopyBtn.addEventListener("click", () => {
-                navigator.clipboard.writeText(message.content || "");
-                this.host.emit("copy", { id: message.id, message });
+            trayCopyBtn.setAttribute("aria-label", "Copy message");
+            trayCopyBtn.setAttribute("title", "Copy message");
+            trayCopyBtn.addEventListener("click", (evt) => {
+                evt.preventDefault();
+                evt.stopPropagation();
+                this.copyMessage(message.id);
             });
             tray.appendChild(trayCopyBtn);
 
-            wrapper.appendChild(header);
-            wrapper.appendChild(bubble);
-            wrapper.appendChild(tray);
+            if (isAdvanced) {
+                const body = document.createElement("div");
+                body.className = "message-body";
+                body.appendChild(header);
+                body.appendChild(bubble);
+                body.appendChild(tray);
+
+                const avatarWrapper = document.createElement("div");
+                avatarWrapper.className = "message-avatar";
+                const avatarUrl = message.avatar || this._getAvatarForRole(message.role);
+                if (avatarUrl) {
+                    const img = document.createElement("img");
+                    img.src = avatarUrl;
+                    img.alt = (message.role === "user" ? this._userDisplayName : (this.options.agent && this.options.agent.name) || "Assistant");
+                    avatarWrapper.appendChild(img);
+                } else {
+                    const label = (message.name || (message.role === "user" ? this._userDisplayName : (this.options.agent && this.options.agent.name) || "Assistant")) || "";
+                    avatarWrapper.textContent = label.charAt(0).toUpperCase();
+                }
+
+                wrapper.appendChild(avatarWrapper);
+                wrapper.appendChild(body);
+            } else {
+                wrapper.appendChild(header);
+                wrapper.appendChild(bubble);
+                wrapper.appendChild(tray);
+            }
             return wrapper;
         }
 
@@ -1158,7 +1615,8 @@
             if (!chat) return null;
             const normalized = this._normalizeMessage(message);
             chat.messages.push(normalized);
-            chat.model = this.els.modelSelect.value || chat.model || "default";
+            const selectedModel = (this.els.modelSelect && this.els.modelSelect.value) ? this.els.modelSelect.value : this._getSelectedModel();
+            chat.model = selectedModel || chat.model || "default";
             const element = this._createMessageElement(normalized);
             this._renderMessageContent(normalized, element);
             this.els.chatContainer.appendChild(element);
@@ -1205,9 +1663,11 @@
             const chat = this._ensureActiveChat();
             if (!chat) return payload.id;
             chat.messages.push(payload);
-            chat.model = this.els.modelSelect.value || chat.model || "default";
+            const selectedModel = (this.els.modelSelect && this.els.modelSelect.value) ? this.els.modelSelect.value : this._getSelectedModel();
+            chat.model = selectedModel || chat.model || "default";
             const element = this._createMessageElement(payload);
             element.classList.add("streaming");
+            this._renderMessageContent(payload, element);
             this.els.chatContainer.appendChild(element);
             this._messageMap.set(payload.id, { chatId: chat.id, element, message: payload });
             this._scrollToBottom();
@@ -1247,22 +1707,34 @@
             this.options.agent = Object.assign({}, this.options.agent || {}, agent || {});
             this.els.agentName.textContent = this.options.agent.name || "Assistant";
             this.els.agentSubtitle.textContent = this.options.agent.subtitle || "";
+            if (this.options.agent && this.options.agent.avatar) {
+                this._avatars.assistant = this.options.agent.avatar;
+            }
         }
 
         setTheme(theme) {
-            if (theme === "dark") {
-                this.isDarkMode = true;
-            } else if (theme === "light") {
-                this.isDarkMode = false;
-            } else if (theme === "auto") {
-                // leave as-is
+            const normalized = this._normalizeThemeName(theme);
+            if (!normalized) {
+                const detected = this._detectHostTheme();
+                if (detected) {
+                    this._applyHostTheme(detected);
+                }
+                return;
             }
-            if (this.isDarkMode) {
-                this.els.container.classList.add("rag-dark");
+            const nextIsDark = normalized === "dark";
+            const dhx = typeof window !== "undefined" ? window.dhx : null;
+            if (dhx && typeof dhx.setTheme === "function") {
+                this._setDarkMode(nextIsDark, { persist: false });
+                try {
+                    dhx.setTheme(normalized);
+                    this._setDarkMode(nextIsDark, { persist: true });
+                } catch (error) {
+                    console.warn("[ChatWidget] Failed to set host theme", error);
+                    this._setDarkMode(nextIsDark, { persist: true });
+                }
             } else {
-                this.els.container.classList.remove("rag-dark");
+                this._setDarkMode(nextIsDark, { persist: true });
             }
-            this.saveState();
         }
 
         focusComposer() {
@@ -1281,11 +1753,22 @@
             if (!meta.timestamp) {
                 meta.timestamp = resolvedTimestamp;
             }
+            const role = (message.role || "assistant").toLowerCase();
+            let resolvedName = message.name;
+            if (!resolvedName) {
+                if (role === "user") {
+                    resolvedName = this._userDisplayName;
+                } else {
+                    resolvedName = (this.options.agent && this.options.agent.name) || "Assistant";
+                }
+            }
+            const resolvedAvatar = message.avatar || this._getAvatarForRole(role);
             return {
                 id,
-                role: message.role || "assistant",
+                role,
                 content: message.content || "",
-                name: message.name,
+                name: resolvedName,
+                avatar: resolvedAvatar,
                 timestamp: resolvedTimestamp,
                 streaming: Boolean(message.streaming),
                 meta,
@@ -1301,7 +1784,7 @@
                     title: this._generateChatTitle(),
                     messages: initialMessages,
                     artifacts: [],
-                    model: (this.availableModels[0]) || "default",
+                    model: this._getSelectedModel(),
                 });
                 this.activeChatId = chatId;
             } else if (!this.activeChatId || !this.chats.find((chat) => chat.id === this.activeChatId)) {
@@ -1330,29 +1813,17 @@
             this._renderChatList();
             this._renderMessages();
             this.switchToModelForActiveChat();
-            const toggleBtn = this.els.sidebarControls.querySelector("[data-action='toggle-sidebar'] .material-icons");
-            const toggleTooltip = this.els.sidebarControls.querySelector("[data-action='toggle-sidebar'] .tooltip");
-            if (this.sidebarCollapsed) {
-                this.els.sidebar.classList.add("collapsed");
-                if (toggleBtn) {
-                    toggleBtn.textContent = "menu";
-                }
-                if (toggleTooltip) {
-                    toggleTooltip.textContent = "Expand";
-                }
-            } else {
-                this.els.sidebar.classList.remove("collapsed");
-                if (toggleBtn) {
-                    toggleBtn.textContent = "menu_open";
-                }
-                if (toggleTooltip) {
-                    toggleTooltip.textContent = "Collapse";
+            if (this.els.sidebar) {
+                this.els.sidebar.classList.toggle("collapsed", this.sidebarCollapsed);
+            }
+            if (this.els.container) {
+                this.els.container.classList.toggle("sidebar-collapsed", this.sidebarCollapsed);
+                if (this.isDarkMode) {
+                    this.els.container.classList.add("rag-dark");
                 }
             }
-            this.els.container.classList.toggle("sidebar-collapsed", this.sidebarCollapsed);
-            if (this.isDarkMode) {
-                this.els.container.classList.add("rag-dark");
-            }
+            this._updateSidebarToggleUi();
+            this._applyLayoutMode();
         }
 
         startNewChat() {
@@ -1362,7 +1833,7 @@
                 title: this._generateChatTitle(),
                 messages: [],
                 artifacts: [],
-                model: this.els.modelSelect.value || "default",
+                model: this._getSelectedModel(),
             };
             this.chats.push(newChat);
             this.activeChatId = newId;
@@ -1419,16 +1890,13 @@
 
         toggleSidebar() {
             this.sidebarCollapsed = !this.sidebarCollapsed;
-            this.els.sidebar.classList.toggle("collapsed", this.sidebarCollapsed);
-            const toggleBtn = this.els.sidebarControls.querySelector("[data-action='toggle-sidebar'] .material-icons");
-            const tooltip = this.els.sidebarControls.querySelector("[data-action='toggle-sidebar'] .tooltip");
-            if (toggleBtn) {
-                toggleBtn.textContent = this.sidebarCollapsed ? "menu" : "menu_open";
+            if (this.els.sidebar) {
+                this.els.sidebar.classList.toggle("collapsed", this.sidebarCollapsed);
             }
-            if (tooltip) {
-                tooltip.textContent = this.sidebarCollapsed ? "Expand" : "Collapse";
+            if (this.els.container) {
+                this.els.container.classList.toggle("sidebar-collapsed", this.sidebarCollapsed);
             }
-            this.els.container.classList.toggle("sidebar-collapsed", this.sidebarCollapsed);
+            this._updateSidebarToggleUi();
             this._renderChatList();
             this.saveState();
         }
@@ -1447,15 +1915,28 @@
         }
 
         toggleDarkMode() {
-            this.isDarkMode = !this.isDarkMode;
-            this.els.container.classList.toggle("rag-dark", this.isDarkMode);
-            this.saveState();
+            const nextIsDark = !this.isDarkMode;
+            const dhx = typeof window !== "undefined" ? window.dhx : null;
+            if (dhx && typeof dhx.setTheme === "function") {
+                this._setDarkMode(nextIsDark, { persist: false });
+                try {
+                    dhx.setTheme(nextIsDark ? "dark" : "light");
+                    this._setDarkMode(nextIsDark, { persist: true });
+                } catch (error) {
+                    console.warn("[ChatWidget] Failed to update host theme", error);
+                    this._setDarkMode(nextIsDark, { persist: true });
+                }
+            } else {
+                this._setDarkMode(nextIsDark, { persist: true });
+            }
         }
 
         switchToModelForActiveChat() {
+            if (!this.els.modelSelect) return;
             const chat = this._getActiveChat();
             if (!chat) return;
-            if (chat.model && Array.from(this.els.modelSelect.options).some((opt) => opt.value === chat.model)) {
+            const options = Array.from(this.els.modelSelect.options || []);
+            if (chat.model && options.some((opt) => opt.value === chat.model)) {
                 this.els.modelSelect.value = chat.model;
             }
         }
@@ -1468,6 +1949,25 @@
                 model: chat.model || "default",
                 isActive: chat.id === this.activeChatId,
             }));
+        }
+
+        getMessages(chatId) {
+            const targetId = chatId || this.activeChatId;
+            const chat = this.chats.find((item) => item.id === targetId);
+            if (!chat) return [];
+            return chat.messages.map((msg) => ({
+                id: msg.id,
+                role: msg.role,
+                content: msg.content,
+                name: msg.name,
+                timestamp: msg.timestamp,
+                meta: Object.assign({}, msg.meta || {}),
+                streaming: Boolean(msg.streaming),
+            }));
+        }
+
+        getActiveChatId() {
+            return this.activeChatId;
         }
 
         updateChatTitle(query) {
@@ -1489,13 +1989,19 @@
             const userMessage = {
                 role: "user",
                 content: query,
+                name: this._userDisplayName,
+                avatar: this._getAvatarForRole("user"),
             };
 
             if (this.options.autoAppendUserMessages) {
                 this.addMessage(userMessage);
             }
             this.updateChatTitle(query);
-            activeChat.model = this.els.modelSelect.value || activeChat.model || "default";
+            if (this.els.modelSelect && this.els.modelSelect.value) {
+                activeChat.model = this.els.modelSelect.value;
+            } else if (!activeChat.model) {
+                activeChat.model = this._getSelectedModel();
+            }
             if (activeChat.badge) {
                 delete activeChat.badge;
                 this._renderChatList();
@@ -1516,32 +2022,57 @@
         }
 
         async loadModels() {
+            const preset = Array.isArray(this.options.models) ? this.options.models : null;
+            const selectEl = this.els.modelSelect;
+
+            if (preset && preset.length) {
+                this.availableModels = preset.slice();
+                if (selectEl) {
+                    selectEl.innerHTML = "";
+                    preset.forEach((modelId) => {
+                        const option = document.createElement("option");
+                        option.value = modelId;
+                        option.textContent = modelId;
+                        selectEl.appendChild(option);
+                    });
+                    selectEl.value = preset[0];
+                }
+                return;
+            }
+
+            if (!selectEl) {
+                this.availableModels = [];
+                return;
+            }
+
             try {
                 const response = await fetch("/v1/models");
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.json();
                 const models = Array.isArray(data?.data) ? data.data : [];
                 this.availableModels = models.map((model) => model.id);
-                this.els.modelSelect.innerHTML = "";
+                selectEl.innerHTML = "";
                 if (!models.length) {
                     const option = document.createElement("option");
                     option.textContent = "No models";
-                    this.els.modelSelect.appendChild(option);
+                    selectEl.appendChild(option);
                 } else {
                     models.forEach((model) => {
                         const option = document.createElement("option");
                         option.value = model.id;
                         option.textContent = model.id;
-                        this.els.modelSelect.appendChild(option);
+                        selectEl.appendChild(option);
                     });
                 }
                 if (models.length) {
-                    this.els.modelSelect.value = models[0].id;
+                    selectEl.value = models[0].id;
                 }
             } catch (error) {
                 console.warn("[ChatWidget] Failed to load models", error);
                 this.availableModels = [];
-                this.els.modelSelect.innerHTML = "<option>Default</option>";
+                if (selectEl) {
+                    selectEl.innerHTML = "<option>Default</option>";
+                }
             }
         }
 
@@ -1795,8 +2326,32 @@
         copyMessage(messageId) {
             const record = this._messageMap.get(messageId);
             if (!record) return;
-            navigator.clipboard.writeText(record.message.content || "");
+            const text = record.message.content || "";
+            const attemptClipboard = () => navigator.clipboard.writeText(text);
+            if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+                attemptClipboard().catch(() => {
+                    this._legacyCopy(text);
+                });
+            } else {
+                this._legacyCopy(text);
+            }
             this.host.emit("copy", { id: messageId, message: record.message });
+        }
+
+        _legacyCopy(text) {
+            try {
+                const textarea = document.createElement("textarea");
+                textarea.value = text;
+                textarea.setAttribute("readonly", "readonly");
+                textarea.style.position = "fixed";
+                textarea.style.opacity = "0";
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand("copy");
+                document.body.removeChild(textarea);
+            } catch (error) {
+                console.warn("[ChatWidget] Fallback copy failed", error);
+            }
         }
 
         // -----------------------------------------------------------------
@@ -2056,6 +2611,20 @@
                 return [];
             }
             return this._app.getChatSummaries();
+        }
+
+        getMessages(chatId) {
+            if (!this._app) {
+                return [];
+            }
+            return this._app.getMessages(chatId);
+        }
+
+        getActiveChatId() {
+            if (!this._app) {
+                return null;
+            }
+            return this._app.getActiveChatId();
         }
 
         destroy() {
