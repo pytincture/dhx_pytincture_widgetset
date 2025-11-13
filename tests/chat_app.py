@@ -12,10 +12,14 @@ from dhxpyt.chat import (
     ChatMessageConfig,
 )
 
+OpenAIProxy = None
 try:
-    from openaiproxy import openaiproxy as OpenAIProxy
-except Exception:  # pragma: no cover - stub may not exist during tests
-    OpenAIProxy = None
+    from multiproxy import multiaiproxy as OpenAIProxy  # type: ignore
+except Exception:  # pragma: no cover - fallback to legacy proxy
+    try:
+        from openaiproxy import openaiproxy as OpenAIProxy  # type: ignore
+    except Exception:
+        OpenAIProxy = None
 
 
 SYSTEM_PROMPT = (
@@ -58,6 +62,14 @@ class chatdemo(MainWindow):
         assistant_avatar = assistant.avatar
         layout_mode = os.getenv("CHATDEMO_LAYOUT_MODE", "advanced")
 
+        if OpenAIProxy is not None:
+            try:
+                self._openai_proxy = OpenAIProxy()
+            except Exception as exc:  # pragma: no cover - diagnostic only
+                print(f"[chat_app] Failed to initialise MultiAIProxy: {exc}")
+                self._openai_proxy = None
+
+
         # UI controls can be toggled or styled from Python.
         ui_config = {
             "sidebar": {
@@ -76,6 +88,23 @@ class chatdemo(MainWindow):
             "modelSelect": {"show": False},
         }
 
+        available_models = [self._default_model]
+        if self._openai_proxy:
+            try:
+                providers = self._openai_proxy.get_available_models()
+                flat = []
+                if isinstance(providers, dict):
+                    for values in providers.values():
+                        if isinstance(values, dict):
+                            for nested in values.values():
+                                if isinstance(nested, (list, tuple)):
+                                    flat.extend(nested)
+                        elif isinstance(values, (list, tuple)):
+                            flat.extend(values)
+                flat.append(self._default_model)
+                available_models = sorted({model for model in flat if isinstance(model, str) and model})
+            except Exception as exc:  # pragma: no cover - diagnostics only
+                print(f"[chat_app] Unable to load model catalog: {exc}")
         chat_config = ChatConfig(
             agent=assistant,
             messages=[],
@@ -87,7 +116,7 @@ class chatdemo(MainWindow):
             composer_max_height=240,
             storage_key="chatdemo_state_v1",
             extra={
-                "models": [self._default_model],
+                "models": available_models,
                 "ui": ui_config,
                 "user": {"name": self._user_name, "avatar": user_avatar},
                 "layout": {
@@ -102,13 +131,6 @@ class chatdemo(MainWindow):
 
         self._chat_widget = self.add_chat("chat", chat_config)
         self._chat_widget.on_send(self._handle_send)
-
-        if OpenAIProxy is not None:
-            try:
-                self._openai_proxy = OpenAIProxy()
-            except Exception as exc:  # pragma: no cover - diagnostic only
-                print(f"[chat_app] Failed to initialise OpenAIProxy: {exc}")
-                self._openai_proxy = None
 
     # ------------------------------------------------------------------
     # Event handlers
@@ -156,7 +178,20 @@ class chatdemo(MainWindow):
         if not any(msg.get("role") == "user" and msg.get("content") == prompt for msg in context):
             context.append({"role": "user", "content": prompt})
 
-        stream = self._openai_proxy.chat_stream(context, model=self._default_model)
+        selected_model = None
+        if self._chat_widget and hasattr(self._chat_widget, "get_chats"):
+            try:
+                chats = self._chat_widget.get_chats()
+                active = next((chat for chat in chats if chat.get("isActive")), None)
+                if active:
+                    selected_model = active.get("model")
+            except Exception as exc:  # pragma: no cover - diagnostics only
+                print(f"[chat_app] Unable to determine active model: {exc}")
+
+        stream = self._openai_proxy.chat_stream(
+            context,
+            model=selected_model or self._default_model,
+        )
         self._chat_widget.consume_stream(response_id, stream)
 
 
