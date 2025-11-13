@@ -306,14 +306,17 @@ class Chat:
         def handle_error(exc: Exception) -> None:
             if on_error:
                 on_error(exc)
-            else:
-                raise
+                return
+            warning = f"Backend error: {exc}"
+            try:
+                self.append_stream(response_id, warning)
+            finally:
+                self.finish_stream(response_id)
+            logging.warning("[Chat] stream failed: %s", exc)
 
-        is_async = inspect.isasyncgen(stream) or (
+        if inspect.isasyncgen(stream) or (
             hasattr(stream, "__aiter__") and not hasattr(stream, "__iter__")
-        )
-
-        if is_async:
+        ):
 
             async def runner():
                 try:
@@ -331,7 +334,12 @@ class Chat:
             return
 
         try:
-            for chunk in stream:
+            iterator = iter(stream)
+        except TypeError:
+            raise ValueError("stream must be an iterable or async iterable") from None
+
+        try:
+            for chunk in iterator:
                 text = tokenize(chunk)
                 if not text:
                     continue

@@ -50,6 +50,24 @@
         });
     }
 
+    function encodeBase64Utf8(input) {
+        if (typeof window === "undefined" || typeof window.btoa !== "function") {
+            return "";
+        }
+        try {
+            if (typeof TextEncoder !== "undefined") {
+                const encoder = new TextEncoder();
+                const bytes = encoder.encode(input);
+                let binary = "";
+                bytes.forEach((b) => { binary += String.fromCharCode(b); });
+                return window.btoa(binary);
+            }
+            return window.btoa(unescape(encodeURIComponent(input)));
+        } catch (_err) {
+            return "";
+        }
+    }
+
     function renderInlineMarkdown(text) {
         let html = escapeHtml(text);
         html = html.replace(/\[([^\]]+)\]\(([^\s)]+)(?:\s+"([^"]+)")?\)/g, (_match, label, href, title) => {
@@ -146,6 +164,29 @@
         flushParagraph();
 
         return blocks.join("");
+    }
+
+    let pyodideReady = null;
+    function ensurePyodide() {
+        if (pyodideReady) {
+            return pyodideReady;
+        }
+        if (window.pyodide && typeof window.pyodide.runPython === "function") {
+            pyodideReady = Promise.resolve(window.pyodide);
+            return pyodideReady;
+        }
+        if (typeof loadPyodide !== "function") {
+            return Promise.reject(new Error("loadPyodide is not available on window."));
+        }
+        const indexURL = window.PYODIDE_BASE_URL || "https://cdn.jsdelivr.net/pyodide/v0.28.0/full/";
+        pyodideReady = loadPyodide({ indexURL }).then((pyodide) => {
+            window.pyodide = pyodide;
+            return pyodide;
+        }).catch((error) => {
+            pyodideReady = null;
+            throw error;
+        });
+        return pyodideReady;
     }
 
     function basicMarkdown(input) {
@@ -1236,6 +1277,9 @@
                         return "application/vnd.mermaid";
                     case "svg":
                         return "image/svg+xml";
+                    case "python":
+                    case "py":
+                        return "text/x-python";
                     case "markdown":
                     case "md":
                         return "text/markdown";
@@ -1277,7 +1321,7 @@
             const injectIcon = (artifact) => {
                 hasCompleteArtifacts = true;
                 artifacts.push(artifact);
-                return `<div class="artifact-icon" data-artifact-id="${artifact.id}"><span class="material-icons">code</span><span>${artifact.title}</span></div>`;
+                return `\n\n<div class="artifact-icon" data-artifact-id="${artifact.id}"><span class="material-icons">code</span><span>${artifact.title}</span></div>\n\n`;
             };
 
             const newPattern = /:{3,4}artifact\{([^}]*)\}([\s\S]*?)(?:\s*:{3,4})/gi;
@@ -1390,7 +1434,19 @@
                 }
             }
             if (displayText.includes("artifact-icon")) {
-                contentEl.innerHTML = displayText;
+                const parts = displayText.split(/(<div class="artifact-icon"[^>]*>[\s\S]*?<\/div>)/);
+                const renderedParts = parts.map((segment) => {
+                    if (!segment) return "";
+                    if (segment.includes("artifact-icon")) {
+                        return segment;
+                    }
+                    if (!segment.trim()) {
+                        return "";
+                    }
+                    const rendered = renderMarkdown(segment);
+                    return rendered || escapeHtml(segment).replace(/\n/g, "<br>");
+                });
+                contentEl.innerHTML = renderedParts.join("") || displayText;
             } else if (displayText.trim()) {
                 const html = renderMarkdown(displayText);
                 contentEl.innerHTML = html || displayText.replace(/\n/g, "<br>");
@@ -2108,16 +2164,74 @@
         updateArtifactPreview() {
             if (!this.currentArtifact) return;
             const iframe = this.els.artifactIframe;
-            if (this.currentArtifact.type === "text/html") {
+            const type = (this.currentArtifact.type || "").toLowerCase();
+            if (type === "text/html") {
                 const blob = new Blob([this.currentArtifact.content], { type: "text/html" });
                 iframe.src = URL.createObjectURL(blob);
-            } else if (this.currentArtifact.type === "image/svg+xml") {
-                const svgContent = `<!DOCTYPE html><html><body style="margin:0;padding:20px;display:flex;justify-content:center;align-items:center;min-height:100vh;">${this.currentArtifact.content}</body></html>`;
+                return;
+            }
+            if (type === "image/svg+xml") {
+                const svgContent = `<!DOCTYPE html><html><body style=\"margin:0;padding:20px;display:flex;justify-content:center;align-items:center;min-height:100vh;\">${this.currentArtifact.content}</body></html>`;
                 const blob = new Blob([svgContent], { type: "text/html" });
                 iframe.src = URL.createObjectURL(blob);
-            } else {
-                iframe.src = "data:text/html,<body style='padding:20px;font-family:monospace;'>Preview not available for this file type</body>";
+                return;
             }
+            if (type === "text/x-python" || type === "application/x-python" || type === "application/python" || type === "text/python") {
+                this._loadPythonArtifactPreview(this.currentArtifact.content);
+                return;
+            }
+            iframe.src = "data:text/html,<body style='padding:20px;font-family:monospace;'>Preview not available for this file type</body>";
+        }
+
+        _loadPythonArtifactPreview(source) {
+            const iframe = this.els.artifactIframe;
+            const baseHtmlStart = `<!DOCTYPE html><html><head><style>
+                body{background:#0f172a;color:#e2e8f0;font-family:Inter, sans-serif;margin:0;padding:24px;}
+                h3{margin-top:0;margin-bottom:12px;}
+                pre{background:rgba(15,23,42,0.65);padding:16px;border-radius:8px;white-space:pre-wrap;word-break:break-word;font-size:14px;color:#f1f5f9;}
+            </style></head><body>`;
+            const baseHtmlEnd = "</body></html>";
+
+            const showHtml = (body) => {
+                const blob = new Blob([baseHtmlStart + body + baseHtmlEnd], { type: "text/html" });
+                iframe.src = URL.createObjectURL(blob);
+            };
+
+            showHtml("<h3>Python Execution Output</h3><pre>Running...</pre>");
+
+            const encodedSource = encodeBase64Utf8(source || "");
+
+            ensurePyodide().then((pyodide) => {
+                try {
+                    if (!pyodide.__dhxHelperInstalled) {
+                        pyodide.runPython(`
+import base64, io, sys, textwrap
+
+def _dhx_run_py_artifact(code_b64: str) -> str:
+    code = base64.b64decode(code_b64).decode("utf-8")
+    buffer = io.StringIO()
+    old_stdout = sys.stdout
+    sys.stdout = buffer
+    try:
+        exec(textwrap.dedent(code), {})
+    finally:
+        sys.stdout = old_stdout
+    return buffer.getvalue()
+                        `);
+                        pyodide.__dhxHelperInstalled = true;
+                    }
+                    const renderedResult = pyodide.runPython(`_dhx_run_py_artifact("${encodedSource}")`);
+                    const withoutAnsi = (renderedResult || "").replace(/\u001b\[[0-9;]*[A-Za-z]/g, "");
+                    const normalized = withoutAnsi.replace(/\r/g, "\n");
+                    const hasVisible = /[\S]/.test(normalized);
+                    const displayResult = hasVisible ? normalized : (withoutAnsi.length ? normalized : "(no output)");
+                    showHtml(`<h3>Python Execution Output</h3><pre>${escapeHtml(String(displayResult))}</pre>`);
+                } catch (executionError) {
+                    showHtml(`<h3>Python Execution Output</h3><pre style="color:#fca5a5;">${escapeHtml(String(executionError))}</pre>`);
+                }
+            }).catch((error) => {
+                showHtml(`<h3>Python Execution Output</h3><pre style="color:#fca5a5;">${escapeHtml(String(error))}</pre>`);
+            });
         }
 
         switchArtifactTab(tab) {
@@ -2135,6 +2249,7 @@
             } else {
                 previewTab.classList.add("active");
                 previewPanel.classList.add("visible");
+                this.updateArtifactPreview();
             }
         }
 
