@@ -89,20 +89,21 @@ class Layout(object, metaclass=LoadUICaller):
     def add_kanban(self, id: str = "mainwindow", kanban_config: KanbanConfig = None, kanban_callback: callable = None) -> None:
         self.kanban_callback = kanban_callback
         self.kanban_config = kanban_config
-        self.kanban_div_id = "kanban_root_" + str(uuid4()).replace("-", "") #"kanban_root"
+        self.kanban_div_id = "kanban_root_" + str(uuid4()).replace("-", "")
         self.attach_html(id, f'<div id="{self.kanban_div_id}" style="width:100%;height:100%;"></div>')
         self.wait_for_element(f"#{self.kanban_div_id}", self.create_kanban)
 
     def create_kanban(self):
-        return_kanban = Kanban(self.kanban_config, f"#{self.kanban_div_id}")
+        return_kanban = Kanban(config=self.kanban_config, root=f"#{self.kanban_div_id}")
         current_theme = js.document.documentElement.getAttribute('data-dhx-theme')
         if current_theme == "dark":
-            theme = "willow-dark"
+            theme = "dark"
         else:
-            theme = "willow"
+            theme = "light"
 
-        return_kanban.kanban.setTheme(js.JSON.parse(json.dumps({"name": theme, "fonts": True})))
-        self.kanban_callback(return_kanban)
+        return_kanban.set_theme(theme)
+        if self.kanban_callback:
+            self.kanban_callback(return_kanban)
     
     def add_layout(self, id: str = "mainwindow", layout_config: LayoutConfig = None) -> TLayout:
         """ Adds a Layout into a Layout cell """
