@@ -1,5 +1,6 @@
 """Minimal Chat widget harness that streams responses from the backend."""
 
+import copy
 import os
 import sys
 from typing import Any, Optional
@@ -20,6 +21,66 @@ except Exception:  # pragma: no cover - fallback to legacy proxy
         from openaiproxy import openaiproxy as OpenAIProxy  # type: ignore
     except Exception:
         OpenAIProxy = None
+
+
+DEFAULT_PROVIDER_CONFIG = {
+    "providers": {
+        "aws_bedrock": {
+            "anthropic": [
+                "us.anthropic.claude-sonnet-4-20250514-v1:0",
+                "us.anthropic.claude-opus-4-20250514-v1:0",
+                "us.anthropic.claude-opus-4-1-20250805-v1:0",
+                "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
+                "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+            ],
+            "meta": [
+                "us.meta.llama3-3-70b-instruct-v1:0",
+                "us.meta.llama4-maverick-17b-instruct-v1:0",
+                "us.meta.llama4-scout-17b-instruct-v1:0",
+            ],
+            "amazon": [
+                "us.amazon.nova-pro-v1:0",
+                "us.amazon.nova-premier-v1:0",
+                "us.amazon.nova-micro-v1:0",
+                "us.amazon.nova-lite-v1:0",
+            ],
+        },
+        "anthropic": [
+            "claude-sonnet-4-20250514",
+            "claude-opus-4-20250514",
+            "claude-opus-4-1-20250805",
+            "claude-3-7-sonnet-latest",
+            "claude-3-5-sonnet-latest",
+        ],
+        "openai": [
+            "gpt-5",
+            "gpt-5-mini",
+            "o4-mini",
+            "gpt-4o-mini",
+            "gpt-4o",
+            "gpt-4.1",
+            "gpt-4.1-mini",
+            "o3",
+            "o3-mini",
+            "o1",
+            "o1-mini",
+            "chatgpt-4o-latest",
+            "gpt-3.5-turbo",
+        ],
+        "xai": [
+            "xai/grok-3-mini-beta",
+            "xai/grok-3-beta",
+            "xai/grok-2",
+            "xai/grok-2-mini",
+        ],
+        "google": [
+            "gemini-pro",
+            "gemini-pro-vision",
+            "gemini-1.5-pro",
+            "gemini-1.5-flash",
+        ],
+    }
+}
 
 
 SYSTEM_PROMPT = (
@@ -61,6 +122,7 @@ class chatdemo(MainWindow):
         user_avatar = os.getenv("CHATDEMO_USER_AVATAR", "https://avatars.githubusercontent.com/u/139426?v=4")
         assistant_avatar = assistant.avatar
         layout_mode = os.getenv("CHATDEMO_LAYOUT_MODE", "advanced")
+        layout_density = os.getenv("CHATDEMO_LAYOUT_DENSITY", "comfortable")
 
         if OpenAIProxy is not None:
             try:
@@ -85,7 +147,7 @@ class chatdemo(MainWindow):
                 "demoButton": {"show": False},
                 "toggleTheme": {"show": False},
             },
-            "modelSelect": {"show": False},
+            "modelSelect": {"show": True},
         }
 
         available_models = [self._default_model]
@@ -105,6 +167,12 @@ class chatdemo(MainWindow):
                 available_models = sorted({model for model in flat if isinstance(model, str) and model})
             except Exception as exc:  # pragma: no cover - diagnostics only
                 print(f"[chat_app] Unable to load model catalog: {exc}")
+
+        models_config = copy.deepcopy(DEFAULT_PROVIDER_CONFIG)
+        models_config.setdefault("providers", {})
+        session_models = [model for model in available_models if isinstance(model, str) and model]
+        if session_models:
+            models_config["providers"]["session"] = session_models
         chat_config = ChatConfig(
             agent=assistant,
             messages=[],
@@ -117,10 +185,12 @@ class chatdemo(MainWindow):
             storage_key="chatdemo_state_v1",
             extra={
                 "models": available_models,
+                "providerConfig": models_config,
                 "ui": ui_config,
                 "user": {"name": self._user_name, "avatar": user_avatar},
                 "layout": {
                     "mode": layout_mode,
+                    "density": layout_density,
                     "avatars": {
                         "user": user_avatar,
                         "assistant": assistant_avatar,

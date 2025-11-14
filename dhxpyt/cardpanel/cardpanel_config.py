@@ -30,6 +30,18 @@ class CardPanelCardConfig:
 class CardPanelConfig:
     """
     High-level configuration for the CardPanel widget.
+
+    The ``card_template`` option may be:
+
+    * the name of a registered template (string)
+    * a callable/JS function handle
+    * a nested dictionary describing DOM structure. The descriptor supports keys:
+        - ``tag``: element tag name (default ``div``)
+        - ``class``/``className``/``classes``: string or list of classes
+        - ``text`` or ``html``: content strings. Placeholders like ``{title}``
+          or ``{card.subtitle}`` are interpolated from the card/context.
+        - ``attrs``/``dataset``/``style``: mapping of attributes with placeholders
+        - ``children``: list of nested descriptor nodes
     """
     title: str = "Data Sources"
     description: str = "Manage and connect to various data sources with intelligent profiling and lineage tracking."
@@ -47,7 +59,7 @@ class CardPanelConfig:
     card_gap: Optional[Union[int, float, str]] = None
     card_columns: Optional[int] = None
     card_icon_size: Optional[Union[int, float, str]] = None
-    card_template: Optional[Any] = None
+    card_template: Optional[Any] = None  # accepts string name, callable, or descriptor dict
 
     def to_dict(self) -> Dict[str, Any]:
         cards_payload: List[Dict[str, Any]] = []
