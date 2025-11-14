@@ -338,6 +338,72 @@
             .rag-advanced .message-bubble { background: transparent; border: none; box-shadow: none; padding: 0; }
             .rag-advanced .rag-message:hover .message-bubble { transform: none; box-shadow: none; }
             .rag-advanced .message-content { color: inherit; }
+            .rag-container.rag-thin { font-size: 14px; }
+            .rag-thin .rag-sidebar { width: 220px; min-width: 180px; padding-top: 10px; }
+            .rag-thin .rag-sidebar.collapsed { width: 56px; min-width: 56px; max-width: 56px; }
+            .rag-thin .rag-chat-list { padding: 0 10px 12px; gap: 4px; }
+            .rag-thin .rag-chat-item { padding: 9px 12px; gap: 8px; border-radius: 10px; }
+            .rag-thin .rag-chat-item .chat-title { font-size: 13px; }
+            .rag-thin .rag-chat-item .chat-model { font-size: 10px; }
+            .rag-thin .rag-chat-item[data-initial]::before { width: 28px; height: 28px; border-radius: 9px; font-size: 13px; }
+            .rag-thin .rag-header { padding: 12px 18px 8px; }
+            .rag-thin .rag-agent-name { font-size: 18px; }
+            .rag-thin .rag-agent-subtitle { font-size: 12px; }
+            .rag-thin .rag-chat-scroll { padding: 0 18px 12px; }
+            .rag-thin .rag-chat-container { gap: 12px; }
+            .rag-thin .rag-message { max-width: 72%; min-width: 200px; }
+            .rag-thin .rag-message .message-header { font-size: 10px; gap: 6px; padding: 0 2px 4px; }
+            .rag-thin .message-bubble { padding: 14px 16px; border-radius: 18px; }
+            .rag-thin .rag-message .message-content { font-size: 14px; line-height: 1.55; }
+            .rag-thin .message-bubble pre { padding: 10px 14px; font-size: 13px; }
+            .rag-thin .message-bubble code { font-size: 13px; }
+            .rag-thin .message-thinking { font-size: 12px; }
+            .rag-thin .message-copy-btn { width: 24px; height: 24px; }
+            .rag-thin .rag-input-container { padding: 12px 18px 18px; }
+            .rag-thin .rag-input-form { padding: 10px 14px; gap: 10px; border-radius: 14px; }
+            .rag-thin .rag-input-form textarea { font-size: 14px; line-height: 1.45; min-height: 38px; }
+            .rag-thin .rag-input-form button { padding: 10px 18px; border-radius: 10px; font-size: 14px; }
+            .rag-thin .composer-help { font-size: 10px; letter-spacing: 0.06em; margin: 4px 2px 0; }
+            .rag-thin .artifact-panel { width: clamp(220px, 32%, 360px); }
+            .rag-thin .artifact-tabs button { padding: 6px 10px; font-size: 12px; }
+            .rag-thin .artifact-actions button { padding: 8px 12px; font-size: 12px; }
+            .model-selector { position: relative; display: inline-flex; flex-direction: column; min-width: 240px; }
+            .model-selector__trigger { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(15,23,42,0.12); background: rgba(255,255,255,0.9); color: inherit; cursor: pointer; font-size: 13px; font-weight: 500; transition: box-shadow 0.15s ease, border-color 0.15s ease; }
+            .model-selector__trigger .material-icons { font-size: 18px; transition: transform 0.2s ease; }
+            .model-selector[data-open="true"] .model-selector__trigger .material-icons { transform: rotate(180deg); }
+            .model-selector__trigger:focus-visible { outline: 2px solid rgba(59,130,246,0.45); outline-offset: 2px; }
+            .model-selector__text { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+            .model-selector__label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.6; }
+            .model-selector__value { font-size: 13px; font-weight: 600; }
+            .model-selector__menu { position: absolute; top: calc(100% + 6px); right: 0; display: flex; min-width: 460px; max-height: 380px; background: rgba(255,255,255,0.98); border-radius: 14px; border: 1px solid rgba(15,23,42,0.08); box-shadow: 0 18px 40px rgba(15,23,42,0.16); overflow: hidden; z-index: 40; }
+            .model-selector__columns { display: flex; align-items: stretch; min-width: 100%; max-height: inherit; overflow-x: auto; }
+            .model-selector__column { flex: 0 0 220px; max-height: inherit; border-right: 1px solid rgba(15,23,42,0.08); overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; background: rgba(255,255,255,0.92); }
+            .model-selector__column:last-child { border-right: none; }
+            .model-selector__node { width: 100%; border: none; background: transparent; text-align: left; padding: 9px 12px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-radius: 10px; transition: background 0.15s ease, transform 0.15s ease; }
+            .model-selector__node:hover { background: rgba(59,130,246,0.1); transform: translateX(2px); }
+            .model-selector__node.active { background: rgba(59,130,246,0.18); font-weight: 600; }
+            .model-selector__group-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.6; margin: 4px 2px 0; }
+            .model-selector__option { width: 100%; border: none; border-radius: 10px; padding: 8px 12px; text-align: left; background: rgba(59,130,246,0.1); cursor: pointer; font-size: 13px; transition: background 0.15s ease, transform 0.15s ease; }
+            .model-selector__option:hover { background: rgba(59,130,246,0.18); transform: translateY(-1px); }
+            .model-selector__option.active { background: rgba(59,130,246,0.28); font-weight: 600; color: #0b1e3f; }
+            .model-selector__empty { padding: 14px; font-size: 12px; color: rgba(15,23,42,0.6); }
+            .model-selector__menu[hidden] { display: none; }
+            .rag-dark .model-selector__trigger { background: rgba(15,23,42,0.7); border-color: rgba(148,163,184,0.28); color: #e2e8f0; }
+            .rag-dark .model-selector__menu { background: rgba(15,23,42,0.95); border-color: rgba(148,163,184,0.24); }
+            .rag-dark .model-selector__column { border-right-color: rgba(148,163,184,0.2); background: rgba(15,23,42,0.9); }
+            .rag-dark .model-selector__node { color: #e2e8f0; }
+            .rag-dark .model-selector__node:hover { background: rgba(96,165,250,0.2); }
+            .rag-dark .model-selector__node.active { background: rgba(96,165,250,0.28); color: #fff; }
+            .rag-dark .model-selector__group-label { color: rgba(226,232,240,0.68); }
+            .rag-dark .model-selector__option { background: rgba(96,165,250,0.18); color: #e2e8f0; }
+            .rag-dark .model-selector__option:hover { background: rgba(96,165,250,0.26); }
+            .rag-dark .model-selector__option.active { background: rgba(96,165,250,0.36); color: #fff; }
+            .rag-dark .model-selector__empty { color: rgba(226,232,240,0.7); }
+            .rag-thin .model-selector { min-width: 200px; }
+            .rag-thin .model-selector__trigger { padding: 8px 12px; font-size: 12px; gap: 8px; }
+            .rag-thin .model-selector__value { font-size: 12px; }
+            .rag-thin .model-selector__menu { min-width: 380px; }
+            .rag-thin .model-selector__column { flex-basis: 190px; padding: 10px 12px; }
             .rag-advanced .message-tray { justify-content: flex-start; padding: 0; margin-top: 4px; gap: 6px; }
             .rag-advanced .message-copy-btn { background: rgba(148,163,184,0.2); }
             .rag-advanced.rag-dark .message-copy-btn { background: rgba(148,163,184,0.3); }
@@ -479,6 +545,11 @@
             this._pendingMessages = [];
             this._pendingStreams = [];
             this._boundHandlers = [];
+            this.modelHierarchy = null;
+            this._modelNodeIndex = null;
+            this._selectedModel = null;
+            this._activePath = [];
+            this._isModelMenuOpen = false;
 
             this.ids = {
                 container: createUniqueId("rag-container"),
@@ -492,6 +563,10 @@
                 queryInput: createUniqueId("rag-query"),
                 sendButton: createUniqueId("rag-send"),
                 modelSelect: createUniqueId("rag-model-select"),
+                modelSelectTrigger: createUniqueId("rag-model-trigger"),
+                modelSelectMenu: createUniqueId("rag-model-menu"),
+                modelSelectColumns: createUniqueId("rag-model-columns"),
+                modelSelectValue: createUniqueId("rag-model-value"),
                 mainContent: createUniqueId("rag-main"),
                 artifactPanel: createUniqueId("artifact-panel"),
                 artifactResize: createUniqueId("artifact-resize"),
@@ -598,14 +673,26 @@
             const asObject = (value) => (value && typeof value === "object" && !Array.isArray(value) ? value : {});
             const defaults = {
                 mode: "classic",
+                density: "comfortable",
                 avatars: { user: null, assistant: null },
             };
             const source = asObject(config);
             const avatars = asObject(source.avatars);
             const mode = (source.mode || defaults.mode).toString().toLowerCase();
             const normalizedMode = ["classic", "advanced"].includes(mode) ? mode : "classic";
+            const densityValue = (source.density || defaults.density).toString().toLowerCase();
+            const normalizedDensity = (() => {
+                if (["comfortable", "relaxed"].includes(densityValue)) {
+                    return "comfortable";
+                }
+                if (["thin", "compact", "dense", "cozy"].includes(densityValue)) {
+                    return "thin";
+                }
+                return defaults.density;
+            })();
             return {
                 mode: normalizedMode,
+                density: normalizedDensity,
                 avatars: {
                     user: avatars.user || null,
                     assistant: avatars.assistant || null,
@@ -724,6 +811,7 @@
                 return;
             }
             this.els.container.classList.toggle("rag-advanced", this._layout.mode === "advanced");
+            this.els.container.classList.toggle("rag-thin", this._layout.density === "thin");
         }
 
         _getAvatarForRole(role) {
@@ -750,6 +838,7 @@
             const containerClasses = ["rag-container"];
             if (this.isDarkMode) containerClasses.push("rag-dark");
             if (this._layout.mode === "advanced") containerClasses.push("rag-advanced");
+            if (this._layout.density === "thin") containerClasses.push("rag-thin");
             const containerClassName = containerClasses.join(" ");
 
             const sidebarButtons = [];
@@ -804,7 +893,25 @@
             }
             const headerActionsHtml = headerActions.length ? `<div class="chat-header__actions" id="${this.ids.headerActions}">${headerActions.join("")}</div>` : "";
 
-            const modelSelectHtml = ui.modelSelect && ui.modelSelect.show === false ? "" : `<select id="${this.ids.modelSelect}"><option>Loading models...</option></select>`;
+            const shouldRenderModelSelect = !(ui.modelSelect && ui.modelSelect.show === false);
+            const modelSelectHtml = shouldRenderModelSelect
+                ? `
+                    <div class="model-selector" id="${this.ids.modelSelect}" data-open="false">
+                        <button type="button" class="model-selector__trigger" id="${this.ids.modelSelectTrigger}" aria-haspopup="listbox" aria-expanded="false">
+                            <span class="model-selector__text">
+                                <span class="model-selector__label">Model</span>
+                                <span class="model-selector__value" id="${this.ids.modelSelectValue}">Loading models...</span>
+                            </span>
+                            <span class="material-icons">expand_more</span>
+                        </button>
+                        <div class="model-selector__menu" id="${this.ids.modelSelectMenu}" hidden tabindex="-1">
+                            <div class="model-selector__columns" id="${this.ids.modelSelectColumns}">
+                                <div class="model-selector__empty">No models</div>
+                            </div>
+                        </div>
+                    </div>
+                `
+                : "";
 
             this.root.innerHTML = `
                 <div class="${containerClassName}" id="${this.ids.container}">
@@ -880,6 +987,10 @@
                 queryInput: byId(this.ids.queryInput),
                 sendButton: byId(this.ids.sendButton),
                 modelSelect: byId(this.ids.modelSelect),
+                modelSelectTrigger: byId(this.ids.modelSelectTrigger),
+                modelSelectMenu: byId(this.ids.modelSelectMenu),
+                modelSelectColumns: byId(this.ids.modelSelectColumns),
+                modelSelectValue: byId(this.ids.modelSelectValue),
                 mainContent: byId(this.ids.mainContent),
                 artifactPanel: byId(this.ids.artifactPanel),
                 artifactResize: byId(this.ids.artifactResize),
@@ -990,12 +1101,44 @@
                 this.switchChat(chatId);
             };
 
-            const onModelChange = (event) => {
-                const chat = this._getActiveChat();
-                if (chat) {
-                    chat.model = event.target.value;
-                    this.saveState();
-                    this._renderChatList();
+            const onModelTriggerClick = (event) => {
+                event.preventDefault();
+                this._toggleModelMenu();
+            };
+
+            const onModelNodePointer = (event) => {
+                const nodeBtn = event.target.closest(".model-selector__node");
+                if (!nodeBtn) return;
+                const nodeId = nodeBtn.getAttribute("data-node-id");
+                const depth = Number(nodeBtn.getAttribute("data-depth"));
+                if (!nodeId || Number.isNaN(depth)) return;
+                this._setActivePathForDepth(depth, nodeId);
+            };
+
+            const onModelOptionClick = (event) => {
+                const option = event.target.closest(".model-selector__option");
+                if (!option) return;
+                const modelId = option.getAttribute("data-model");
+                if (!modelId) return;
+                event.preventDefault();
+                event.stopPropagation();
+                this._setSelectedModel(modelId, { updateActiveChat: true, updateChatList: true, persist: true, closeMenu: true });
+            };
+
+            const onDocumentClick = (event) => {
+                if (!this._isModelMenuOpen) return;
+                const root = this.els.modelSelect;
+                if (!root) return;
+                if (root.contains(event.target)) return;
+                this._closeModelMenu();
+            };
+
+            const onModelMenuKeydown = (event) => {
+                if (event.key === "Escape") {
+                    this._closeModelMenu();
+                    if (this.els.modelSelectTrigger) {
+                        this.els.modelSelectTrigger.focus();
+                    }
                 }
             };
 
@@ -1035,8 +1178,19 @@
                 this.els.headerActions.addEventListener("click", onHeaderActionsClick);
             }
             this.els.chatList.addEventListener("click", onChatListClick);
+            if (this.els.modelSelectTrigger) {
+                this.els.modelSelectTrigger.addEventListener("click", onModelTriggerClick);
+            }
+            if (this.els.modelSelectColumns) {
+                this.els.modelSelectColumns.addEventListener("mouseover", onModelNodePointer);
+                this.els.modelSelectColumns.addEventListener("focusin", onModelNodePointer);
+                this.els.modelSelectColumns.addEventListener("click", onModelOptionClick);
+            }
+            if (this.els.modelSelectMenu) {
+                this.els.modelSelectMenu.addEventListener("keydown", onModelMenuKeydown);
+            }
             if (this.els.modelSelect) {
-                this.els.modelSelect.addEventListener("change", onModelChange);
+                document.addEventListener("click", onDocumentClick);
             }
             this.els.artifactCopy.addEventListener("click", onArtifactCopy);
             this.els.artifactDownload.addEventListener("click", onArtifactDownload);
@@ -1056,7 +1210,11 @@
                 onSidebarClick,
                 onHeaderActionsClick,
                 onChatListClick,
-                onModelChange,
+                onModelTriggerClick,
+                onModelNodePointer,
+                onModelOptionClick,
+                onDocumentClick,
+                onModelMenuKeydown,
                 onArtifactCopy,
                 onArtifactDownload,
                 onArtifactClose,
@@ -1123,8 +1281,16 @@
                     this.els.headerActions.removeEventListener("click", handlers.onHeaderActionsClick);
                 }
                 this.els.chatList.removeEventListener("click", handlers.onChatListClick);
-                if (this.els.modelSelect) {
-                    this.els.modelSelect.removeEventListener("change", handlers.onModelChange);
+                if (this.els.modelSelectTrigger) {
+                    this.els.modelSelectTrigger.removeEventListener("click", handlers.onModelTriggerClick);
+                }
+                if (this.els.modelSelectColumns) {
+                    this.els.modelSelectColumns.removeEventListener("mouseover", handlers.onModelNodePointer);
+                    this.els.modelSelectColumns.removeEventListener("focusin", handlers.onModelNodePointer);
+                    this.els.modelSelectColumns.removeEventListener("click", handlers.onModelOptionClick);
+                }
+                if (this.els.modelSelectMenu) {
+                    this.els.modelSelectMenu.removeEventListener("keydown", handlers.onModelMenuKeydown);
                 }
                 this.els.artifactCopy.removeEventListener("click", handlers.onArtifactCopy);
                 this.els.artifactDownload.removeEventListener("click", handlers.onArtifactDownload);
@@ -1134,6 +1300,7 @@
                 this.els.artifactResize.removeEventListener("mousedown", handlers.onResizeMouseDown);
                 document.removeEventListener("mousemove", handlers.resizeHandler);
                 document.removeEventListener("mouseup", handlers.stopResizeHandler);
+                document.removeEventListener("click", handlers.onDocumentClick);
                 window.removeEventListener("resize", handlers.onInput);
             }
             EVENT_HANDLERS.delete(this);
@@ -1160,17 +1327,418 @@
             textarea.style.overflowY = scrollHeight > maxHeight ? "auto" : "hidden";
         }
 
+        _getModelConfigSource() {
+            if (this.options && this.options.providerConfig) {
+                return this.options.providerConfig;
+            }
+            return this.options ? this.options.models : null;
+        }
+
+        _formatModelLabel(value) {
+            if (!value) return "";
+            return value
+                .toString()
+                .replace(/[_\-]/g, " ")
+                .replace(/\s+/g, " ")
+                .trim()
+                .replace(/\b\w/g, (char) => char.toUpperCase());
+        }
+
+        _normalizeModelData(raw) {
+            if (!raw) {
+                return null;
+            }
+
+            const source =
+                raw && typeof raw === "object" && !Array.isArray(raw) && raw.providers && typeof raw.providers === "object"
+                    ? raw.providers
+                    : raw;
+
+            const nodesById = new Map();
+
+            const buildNode = (key, value, path) => {
+                const nodePath = [...path, key].filter(Boolean);
+                const id = nodePath.length ? nodePath.join("::") : "__root__";
+                const label = key ? this._formatModelLabel(key) : null;
+
+                const node = {
+                    id,
+                    key,
+                    label,
+                    children: [],
+                    models: [],
+                    path: nodePath,
+                };
+
+                if (Array.isArray(value)) {
+                    node.models = value
+                        .filter((model) => typeof model === "string" && model.trim())
+                        .map((model) => model.trim());
+                } else if (value && typeof value === "object") {
+                    Object.entries(value).forEach(([childKey, childValue]) => {
+                        const childNode = buildNode(childKey, childValue, nodePath);
+                        if (childNode.children.length || childNode.models.length) {
+                            node.children.push(childNode);
+                        }
+                    });
+                } else if (value && typeof value === "string" && value.trim()) {
+                    node.models = [value.trim()];
+                }
+
+                node.children = node.children.filter(Boolean);
+                node.models = Array.from(new Set(node.models));
+
+                if (key && !node.children.length && !node.models.length) {
+                    return null;
+                }
+
+                nodesById.set(id, node);
+                return node;
+            };
+
+            const rootNode = buildNode(null, source, []);
+            if (!rootNode || (!rootNode.children.length && !rootNode.models.length)) {
+                return null;
+            }
+
+            return { root: rootNode, nodesById };
+        }
+
+        _flattenModels(structure) {
+            if (!structure || !structure.root) {
+                return [];
+            }
+            const result = new Set();
+            const walk = (node) => {
+                (node.models || []).forEach((modelId) => {
+                    result.add(modelId);
+                });
+                (node.children || []).forEach((child) => walk(child));
+            };
+            walk(structure.root);
+            return Array.from(result);
+        }
+
+        _setModelSelectorEmpty(message) {
+            if (this.els.modelSelectValue) {
+                const display = this._selectedModel || message || "No models";
+                this.els.modelSelectValue.textContent = display;
+            }
+            if (this.els.modelSelectColumns) {
+                this.els.modelSelectColumns.innerHTML = `<div class="model-selector__empty">${message || "No models"}</div>`;
+            }
+            this._activePath = [];
+            this.modelHierarchy = null;
+            this._modelNodeIndex = null;
+            this.availableModels = [];
+            this._selectedModel = null;
+        }
+
+        _sanitizeActivePath() {
+            if (!this._modelNodeIndex || !this.modelHierarchy || !this.modelHierarchy.root) {
+                this._activePath = [];
+                return;
+            }
+            const sanitized = [];
+            let parent = this.modelHierarchy.root;
+            for (let i = 0; i < this._activePath.length; i += 1) {
+                const nodeId = this._activePath[i];
+                const node = this._modelNodeIndex.get(nodeId);
+                if (!node || !parent || !Array.isArray(parent.children) || !parent.children.some((child) => child.id === nodeId)) {
+                    break;
+                }
+                sanitized.push(nodeId);
+                parent = node;
+            }
+            this._activePath = sanitized;
+        }
+
+        _getActivePathNodes() {
+            if (!this._modelNodeIndex || !Array.isArray(this._activePath)) {
+                return [];
+            }
+            return this._activePath
+                .map((nodeId) => this._modelNodeIndex.get(nodeId))
+                .filter((node) => Boolean(node));
+        }
+
+        _renderModelColumns() {
+            if (!this.els.modelSelectColumns) return;
+            this._sanitizeActivePath();
+
+            const container = this.els.modelSelectColumns;
+            container.innerHTML = "";
+
+            const root = this.modelHierarchy?.root;
+            if (!root || (!root.children.length && !root.models.length)) {
+                container.innerHTML = `<div class="model-selector__empty">No models</div>`;
+                return;
+            }
+
+            const columns = [];
+            let nextPathIndex = 0;
+            if (root.children && root.children.length) {
+                columns.push({ type: "nodes", nodes: root.children, pathIndex: nextPathIndex });
+                nextPathIndex += 1;
+            }
+            if (root.models && root.models.length) {
+                columns.push({ type: "models", models: root.models });
+            }
+
+            const pathNodes = this._getActivePathNodes();
+            pathNodes.forEach((node) => {
+                if (!node) return;
+                if (node.children && node.children.length) {
+                    columns.push({ type: "nodes", nodes: node.children, pathIndex: nextPathIndex });
+                    nextPathIndex += 1;
+                }
+                if (node.models && node.models.length) {
+                    columns.push({ type: "models", models: node.models });
+                }
+            });
+
+            if (!columns.length) {
+                container.innerHTML = `<div class="model-selector__empty">No models</div>`;
+                return;
+            }
+
+            columns.forEach((column, columnIndex) => {
+                const columnEl = document.createElement("div");
+                columnEl.className = "model-selector__column";
+                columnEl.setAttribute("data-index", String(columnIndex));
+
+                if (column.type === "nodes") {
+                    columnEl.setAttribute("role", "listbox");
+                    columnEl.setAttribute("aria-label", columnIndex === 0 ? "Providers" : "Groups");
+                    column.nodes.forEach((node) => {
+                        const button = document.createElement("button");
+                        button.type = "button";
+                        button.className = "model-selector__node";
+                        button.textContent = node.label || this._formatModelLabel(node.key || node.id);
+                        button.setAttribute("data-node-id", node.id);
+                        button.setAttribute("data-depth", String(column.pathIndex));
+                        button.setAttribute("tabindex", "0");
+                        if (this._activePath[column.pathIndex] === node.id) {
+                            button.classList.add("active");
+                        }
+                        columnEl.appendChild(button);
+                    });
+                } else if (column.type === "models") {
+                    columnEl.setAttribute("role", "listbox");
+                    columnEl.setAttribute("aria-label", "Models");
+                    column.models.forEach((modelId) => {
+                        const button = document.createElement("button");
+                        button.type = "button";
+                        button.className = "model-selector__option";
+                        button.setAttribute("data-model", modelId);
+                        button.setAttribute("tabindex", "0");
+                        button.textContent = modelId;
+                        if (modelId === this._selectedModel) {
+                            button.classList.add("active");
+                        }
+                        columnEl.appendChild(button);
+                    });
+                }
+
+                if (!columnEl.children.length) {
+                    columnEl.innerHTML = `<div class="model-selector__empty">No options</div>`;
+                }
+
+                container.appendChild(columnEl);
+            });
+        }
+
+        _setActivePathForDepth(depth, nodeId) {
+            if (!this._modelNodeIndex || !this._modelNodeIndex.has(nodeId)) {
+                return;
+            }
+            const nextPath = this._activePath.slice(0, depth);
+            nextPath[depth] = nodeId;
+            this._activePath = nextPath;
+            this._renderModelColumns();
+        }
+
+        _findPathForModel(modelId, node = this.modelHierarchy?.root) {
+            if (!node) {
+                return null;
+            }
+            if (node.models && node.models.includes(modelId)) {
+                return [];
+            }
+            for (const child of node.children || []) {
+                if (child.models && child.models.includes(modelId)) {
+                    return [child.id];
+                }
+                const childPath = this._findPathForModel(modelId, child);
+                if (childPath) {
+                    return [child.id, ...childPath];
+                }
+            }
+            return null;
+        }
+
+        _updateModelSelectorDisplay() {
+            if (!this.els.modelSelectValue) return;
+            let text = this._selectedModel || "Select model";
+            if (this._selectedModel && this.modelHierarchy && this.modelHierarchy.root) {
+                const providerLabel = this._getProviderLabelForModel(this._selectedModel);
+                if (providerLabel) {
+                    text = `${providerLabel} · ${this._selectedModel}`;
+                }
+            }
+            this.els.modelSelectValue.textContent = text;
+        }
+
+        _getProviderLabelForModel(modelId) {
+            if (!this._modelNodeIndex || !this.modelHierarchy) {
+                return null;
+            }
+            const path = this._findPathForModel(modelId);
+            if (!path || !path.length) {
+                return null;
+            }
+            const firstNode = this._modelNodeIndex.get(path[0]);
+            return firstNode ? firstNode.label || this._formatModelLabel(firstNode.key || firstNode.id) : null;
+        }
+
+        _setSelectedModel(modelId, options = {}) {
+            if (!modelId) {
+                return;
+            }
+            if (modelId === "default" && Array.isArray(this.availableModels) && this.availableModels.length) {
+                modelId = this.availableModels[0];
+            }
+            if (Array.isArray(this.availableModels) && !this.availableModels.includes(modelId) && this.availableModels.length) {
+                modelId = this.availableModels[0];
+            }
+            if (this.availableModels && this.availableModels.length && !this.availableModels.includes(modelId)) {
+                this.availableModels.push(modelId);
+            }
+
+            this._selectedModel = modelId;
+            const path = this._findPathForModel(modelId);
+            this._activePath = Array.isArray(path) ? path : [];
+            this._updateModelSelectorDisplay();
+            this._sanitizeActivePath();
+            this._renderModelColumns();
+
+            if (options.updateActiveChat !== false) {
+                const chat = this._getActiveChat();
+                if (chat) {
+                    chat.model = modelId;
+                }
+            }
+            if (options.updateChatList) {
+                this._renderChatList();
+            }
+            if (options.persist) {
+                this.saveState();
+            }
+            if (options.closeMenu) {
+                this._closeModelMenu();
+            }
+        }
+
+        _toggleModelMenu(force) {
+            if (!this.els.modelSelect || !this.els.modelSelectMenu || !this.els.modelSelectTrigger) return;
+            const next = typeof force === "boolean" ? force : !this._isModelMenuOpen;
+            if (next) {
+                this._openModelMenu();
+            } else {
+                this._closeModelMenu();
+            }
+        }
+
+        _openModelMenu() {
+            if (!this.els.modelSelectMenu || !this.els.modelSelectTrigger) return;
+            this._isModelMenuOpen = true;
+            this.els.modelSelect.setAttribute("data-open", "true");
+            this.els.modelSelectMenu.hidden = false;
+            this.els.modelSelectTrigger.setAttribute("aria-expanded", "true");
+            const path = this._findPathForModel(this._selectedModel);
+            this._activePath = Array.isArray(path) ? path : [];
+            this._sanitizeActivePath();
+            this._renderModelColumns();
+            if (this.els.modelSelectMenu) {
+                this.els.modelSelectMenu.focus();
+            }
+        }
+
+        _closeModelMenu() {
+            if (!this.els.modelSelectMenu || !this.els.modelSelectTrigger) return;
+            this._isModelMenuOpen = false;
+            this.els.modelSelect.setAttribute("data-open", "false");
+            this.els.modelSelectMenu.hidden = true;
+            this.els.modelSelectTrigger.setAttribute("aria-expanded", "false");
+        }
+
+        _applyModelHierarchy(structure) {
+            if (!structure || !structure.root || (!structure.root.children.length && !structure.root.models.length)) {
+                this.modelHierarchy = null;
+                this._modelNodeIndex = null;
+                this.availableModels = [];
+                this.options.models = [];
+                this._selectedModel = null;
+                this._activePath = [];
+                this._setModelSelectorEmpty("No models");
+                return;
+            }
+
+            this.modelHierarchy = structure;
+            this._modelNodeIndex = structure.nodesById || new Map();
+            this.availableModels = this._flattenModels(structure);
+            this.options.models = this.availableModels.slice();
+            if (Array.isArray(this.availableModels) && this.availableModels.length) {
+                this.options.models = this.availableModels.slice();
+            }
+
+            if (!this.availableModels.length) {
+                this._selectedModel = null;
+                this._setModelSelectorEmpty("No models");
+                return;
+            }
+
+            if (!this._selectedModel || !this.availableModels.includes(this._selectedModel)) {
+                const activeChat = this._getActiveChat();
+                if (activeChat && activeChat.model && this.availableModels.includes(activeChat.model)) {
+                    this._selectedModel = activeChat.model;
+                } else {
+                    this._selectedModel = this.availableModels[0];
+                }
+            }
+
+            const path = this._findPathForModel(this._selectedModel);
+            this._activePath = Array.isArray(path) ? path : [];
+            this.chats.forEach((chat) => {
+                if (!chat.model || !this.availableModels.includes(chat.model)) {
+                    chat.model = this._selectedModel;
+                }
+            });
+            this._updateModelSelectorDisplay();
+            this._renderModelColumns();
+            this._renderChatList();
+        }
+
         _getSelectedModel() {
-            const selectEl = this.els?.modelSelect;
-            if (selectEl && selectEl.value) {
-                return selectEl.value;
+            if (this._selectedModel) {
+                return this._selectedModel;
             }
             if (Array.isArray(this.availableModels) && this.availableModels.length) {
-                return this.availableModels[0];
+                this._selectedModel = this.availableModels[0];
+                return this._selectedModel;
             }
             const preset = Array.isArray(this.options.models) ? this.options.models : [];
             if (preset.length) {
-                return preset[0];
+                this._selectedModel = preset[0];
+                return this._selectedModel;
+            }
+            const presetStructure = this._normalizeModelData(this._getModelConfigSource());
+            if (presetStructure) {
+                const flattened = this._flattenModels(presetStructure);
+                if (flattened.length) {
+                    this._selectedModel = flattened[0];
+                    return this._selectedModel;
+                }
             }
             return "default";
         }
@@ -1671,7 +2239,7 @@
             if (!chat) return null;
             const normalized = this._normalizeMessage(message);
             chat.messages.push(normalized);
-            const selectedModel = (this.els.modelSelect && this.els.modelSelect.value) ? this.els.modelSelect.value : this._getSelectedModel();
+            const selectedModel = this._getSelectedModel();
             chat.model = selectedModel || chat.model || "default";
             const element = this._createMessageElement(normalized);
             this._renderMessageContent(normalized, element);
@@ -1719,7 +2287,7 @@
             const chat = this._ensureActiveChat();
             if (!chat) return payload.id;
             chat.messages.push(payload);
-            const selectedModel = (this.els.modelSelect && this.els.modelSelect.value) ? this.els.modelSelect.value : this._getSelectedModel();
+            const selectedModel = this._getSelectedModel();
             chat.model = selectedModel || chat.model || "default";
             const element = this._createMessageElement(payload);
             element.classList.add("streaming");
@@ -1907,6 +2475,7 @@
             if (current && current.badge) {
                 delete current.badge;
             }
+            this._closeModelMenu();
             this.closeArtifactPanel();
             this._renderChatList();
             this._renderMessages();
@@ -1988,12 +2557,12 @@
         }
 
         switchToModelForActiveChat() {
-            if (!this.els.modelSelect) return;
             const chat = this._getActiveChat();
             if (!chat) return;
-            const options = Array.from(this.els.modelSelect.options || []);
-            if (chat.model && options.some((opt) => opt.value === chat.model)) {
-                this.els.modelSelect.value = chat.model;
+            const hasAvailable = Array.isArray(this.availableModels) && this.availableModels.includes(chat.model);
+            const target = hasAvailable ? chat.model : this._getSelectedModel();
+            if (target) {
+                this._setSelectedModel(target, { updateActiveChat: false, updateChatList: false, persist: false });
             }
         }
 
@@ -2053,10 +2622,9 @@
                 this.addMessage(userMessage);
             }
             this.updateChatTitle(query);
-            if (this.els.modelSelect && this.els.modelSelect.value) {
-                activeChat.model = this.els.modelSelect.value;
-            } else if (!activeChat.model) {
-                activeChat.model = this._getSelectedModel();
+            const selectedModel = this._getSelectedModel();
+            if (selectedModel) {
+                activeChat.model = selectedModel;
             }
             if (activeChat.badge) {
                 delete activeChat.badge;
@@ -2078,26 +2646,10 @@
         }
 
         async loadModels() {
-            const preset = Array.isArray(this.options.models) ? this.options.models : null;
-            const selectEl = this.els.modelSelect;
-
-            if (preset && preset.length) {
-                this.availableModels = preset.slice();
-                if (selectEl) {
-                    selectEl.innerHTML = "";
-                    preset.forEach((modelId) => {
-                        const option = document.createElement("option");
-                        option.value = modelId;
-                        option.textContent = modelId;
-                        selectEl.appendChild(option);
-                    });
-                    selectEl.value = preset[0];
-                }
-                return;
-            }
-
-            if (!selectEl) {
-                this.availableModels = [];
+            const presetStructure = this._normalizeModelData(this._getModelConfigSource());
+            if (presetStructure) {
+                this._applyModelHierarchy(presetStructure);
+                this.switchToModelForActiveChat();
                 return;
             }
 
@@ -2106,29 +2658,29 @@
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.json();
                 const models = Array.isArray(data?.data) ? data.data : [];
-                this.availableModels = models.map((model) => model.id);
-                selectEl.innerHTML = "";
-                if (!models.length) {
-                    const option = document.createElement("option");
-                    option.textContent = "No models";
-                    selectEl.appendChild(option);
+                const ids = models
+                    .map((model) => (typeof model === "string" ? model : model?.id))
+                    .filter((id) => typeof id === "string" && id.trim());
+
+                const structure = this._normalizeModelData(ids);
+                if (structure) {
+                    this._applyModelHierarchy(structure);
                 } else {
-                    models.forEach((model) => {
-                        const option = document.createElement("option");
-                        option.value = model.id;
-                        option.textContent = model.id;
-                        selectEl.appendChild(option);
-                    });
-                }
-                if (models.length) {
-                    selectEl.value = models[0].id;
+                    this.availableModels = ids;
+                    if (this.availableModels.length) {
+                        this._selectedModel = this.availableModels[0];
+                        this._updateModelSelectorDisplay();
+                    } else {
+                        this._setModelSelectorEmpty("No models");
+                    }
                 }
             } catch (error) {
                 console.warn("[ChatWidget] Failed to load models", error);
                 this.availableModels = [];
-                if (selectEl) {
-                    selectEl.innerHTML = "<option>Default</option>";
-                }
+                this._selectedModel = null;
+                this._setModelSelectorEmpty("No models");
+            } finally {
+                this.switchToModelForActiveChat();
             }
         }
 

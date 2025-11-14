@@ -614,6 +614,10 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
                 return (card, context) => templateRef.call(this, card, context);
             }
 
+            if (templateRef && typeof templateRef === "object") {
+                return this._createDescriptorRenderer(templateRef);
+            }
+
             const factory = typeof ctor.getTemplate === "function" ? ctor.getTemplate(templateRef) : null;
             const fallback = typeof ctor.getTemplate === "function" ? ctor.getTemplate("default") : null;
             const effectiveFactory = typeof factory === "function" ? factory : fallback;
@@ -627,6 +631,192 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
                 throw new Error("CardPanel template factory must return a renderer function.");
             }
             return renderer;
+        }
+
+        _createDescriptorRenderer(descriptor) {
+            const panel = this;
+
+            const isPlainObject = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
+
+            const resolvePath = (source, path) => {
+                if (!source || !path) {
+                    return undefined;
+                }
+                const parts = path.split(".");
+                let current = source;
+                for (const part of parts) {
+                    if (current == null) {
+                        return undefined;
+                    }
+                    current = current[part];
+                }
+                return current;
+            };
+
+            const resolvePlaceholder = (token, card, context) => {
+                if (!token) {
+                    return "";
+                }
+
+                const directFromCard = resolvePath(card, token);
+                if (directFromCard !== undefined) {
+                    return directFromCard;
+                }
+
+                const directFromContext = resolvePath(context, token);
+                if (directFromContext !== undefined) {
+                    return directFromContext;
+                }
+
+                if (token.startsWith("card.")) {
+                    return resolvePath(card, token.slice(5));
+                }
+                if (token.startsWith("context.")) {
+                    return resolvePath(context, token.slice(8));
+                }
+                if (token.startsWith("panel.")) {
+                    return resolvePath(panel, token.slice(6));
+                }
+
+                if (token === "index") {
+                    return context?.index ?? "";
+                }
+
+                return "";
+            };
+
+            const interpolate = (value, card, context) => {
+                if (typeof value !== "string") {
+                    return value;
+                }
+                return value.replace(/\{([^}]+)\}/g, (_, token) => {
+                    const resolved = resolvePlaceholder(token.trim(), card, context);
+                    return resolved == null ? "" : String(resolved);
+                });
+            };
+
+            const normalizeClassList = (value, card, context) => {
+                if (!value) {
+                    return [];
+                }
+                if (typeof value === "string") {
+                    return interpolate(value, card, context)
+                        .split(" ")
+                        .map((part) => part.trim())
+                        .filter(Boolean);
+                }
+                if (Array.isArray(value)) {
+                    return value
+                        .map((entry) => interpolate(entry, card, context))
+                        .join(" ")
+                        .split(" ")
+                        .map((part) => part.trim())
+                        .filter(Boolean);
+                }
+                return [];
+            };
+
+            const buildNode = (nodeDescriptor, card, context) => {
+                if (nodeDescriptor == null) {
+                    return document.createTextNode("");
+                }
+
+                if (typeof nodeDescriptor === "string") {
+                    const html = interpolate(nodeDescriptor, card, context).trim();
+                    if (!html) {
+                        return document.createTextNode("");
+                    }
+                    const temp = document.createElement("div");
+                    temp.innerHTML = html;
+                    return temp.firstElementChild || document.createTextNode("");
+                }
+
+                if (Array.isArray(nodeDescriptor)) {
+                    const fragment = document.createDocumentFragment();
+                    nodeDescriptor.forEach((child) => {
+                        const built = buildNode(child, card, context);
+                        if (built) {
+                            fragment.appendChild(built);
+                        }
+                    });
+                    return fragment;
+                }
+
+                if (!isPlainObject(nodeDescriptor)) {
+                    return document.createTextNode(String(nodeDescriptor));
+                }
+
+                const tag = nodeDescriptor.tag || "div";
+                const element = document.createElement(tag);
+
+                const classValues =
+                    nodeDescriptor.className || nodeDescriptor.class || nodeDescriptor.classes;
+                normalizeClassList(classValues, card, context).forEach((cls) => {
+                    element.classList.add(cls);
+                });
+
+                if (nodeDescriptor.style && isPlainObject(nodeDescriptor.style)) {
+                    Object.entries(nodeDescriptor.style).forEach(([prop, rawValue]) => {
+                        const resolved = interpolate(rawValue, card, context);
+                        if (resolved !== undefined) {
+                            element.style[prop] = resolved;
+                        }
+                    });
+                }
+
+                if (nodeDescriptor.attrs && isPlainObject(nodeDescriptor.attrs)) {
+                    Object.entries(nodeDescriptor.attrs).forEach(([attr, rawValue]) => {
+                        const resolved = interpolate(rawValue, card, context);
+                        if (resolved !== undefined) {
+                            element.setAttribute(attr, resolved);
+                        }
+                    });
+                }
+
+                if (nodeDescriptor.dataset && isPlainObject(nodeDescriptor.dataset)) {
+                    Object.entries(nodeDescriptor.dataset).forEach(([key, rawValue]) => {
+                        const resolved = interpolate(rawValue, card, context);
+                        if (resolved !== undefined) {
+                            element.dataset[key] = resolved;
+                        }
+                    });
+                }
+
+                if (nodeDescriptor.text !== undefined) {
+                    element.textContent = interpolate(nodeDescriptor.text, card, context);
+                } else if (nodeDescriptor.html !== undefined) {
+                    element.innerHTML = interpolate(nodeDescriptor.html, card, context);
+                }
+
+                if (Array.isArray(nodeDescriptor.children)) {
+                    nodeDescriptor.children.forEach((child) => {
+                        const built = buildNode(child, card, context);
+                        if (built) {
+                            element.appendChild(built);
+                        }
+                    });
+                }
+
+                return element;
+            };
+
+            return (card, context) => {
+                const built = buildNode(descriptor, card, context);
+                if (built instanceof HTMLElement) {
+                    return built;
+                }
+                if (built instanceof DocumentFragment) {
+                    const wrapper = document.createElement("div");
+                    wrapper.appendChild(built);
+                    return wrapper;
+                }
+                if (typeof built === "string") {
+                    const temp = document.createElement("div");
+                    temp.innerHTML = built.trim();
+                    return temp.firstElementChild || document.createElement("div");
+                }
+                return built;
+            };
         }
 
         _renderCards() {
