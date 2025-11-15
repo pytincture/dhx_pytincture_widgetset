@@ -93,6 +93,7 @@ class CardFlowConfig:
         showDataHeaders: bool = True,
         showOptions: bool = True,
         fontSize: str = "",
+        toolbar_font_family: str = "",
         cardHeight: str = None,  # Height of collapsed cards
         stacked: bool = False,
         defaultExpandedHeight: str = "300px"  # NEW: Default height for expanded cards
@@ -130,6 +131,7 @@ class CardFlowConfig:
         self.showSort = showSort
         self.showDataHeaders = showDataHeaders
         self.fontSize = fontSize
+        self.toolbar_font_family = toolbar_font_family
         self.showOptions = showOptions
 
     def to_dict(self) -> Dict[str, Any]:
@@ -157,6 +159,7 @@ class CardFlowConfig:
             "showSort": self.showSort,
             "showDataHeaders": self.showDataHeaders,
             "fontSize": self.fontSize,
+            "toolbarFontFamily": self.toolbar_font_family,
             "showOptions": self.showOptions,
             # new parameter
             "defaultExpandedHeight": self.defaultExpandedHeight

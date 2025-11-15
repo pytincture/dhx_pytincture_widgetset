@@ -65,6 +65,7 @@
     --kanban-progress-bg: rgba(148, 163, 184, 0.3);
     --kanban-progress-fg: #14b8a6;
     --kanban-lane-label-width: 220px;
+    --kanban-column-width: 280px;
     background: var(--kanban-bg);
     color: var(--kanban-text);
     display: flex;
@@ -96,6 +97,10 @@
     --kanban-scroll-thumb: rgba(148, 163, 184, 0.45);
     --kanban-progress-bg: rgba(148, 163, 184, 0.18);
     --kanban-progress-fg: #34d399;
+}
+
+.kanban-wrapper[data-kanban-theme="dark"] .kanban-lane-label {
+    box-shadow: 12px 0 18px -18px rgba(15, 23, 42, 0.7);
 }
 
 .kanban-wrapper * {
@@ -153,10 +158,12 @@
 }
 
 .kanban-board-header {
-    display: flex;
+    display: grid;
+    grid-template-columns: var(--kanban-lane-label-width) 1fr;
     gap: 20px;
     align-items: flex-end;
     padding: 0 0 8px;
+    border-bottom: 1px solid var(--kanban-border);
 }
 
 .kanban-board-header-columns {
@@ -173,18 +180,27 @@
 }
 
 .kanban-lane {
-    display: flex;
+    display: grid;
+    grid-template-columns: var(--kanban-lane-label-width) 1fr;
     gap: 20px;
-    align-items: stretch;
+    align-items: flex-start;
 }
 
 .kanban-lane-label {
     width: var(--kanban-lane-label-width);
+    min-width: var(--kanban-lane-label-width);
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     gap: 4px;
-    padding: 6px 0 0;
+    padding: 6px 8px 0 0;
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: linear-gradient(90deg, var(--kanban-bg) 70%, transparent);
+    border-right: 1px solid var(--kanban-border);
+    box-shadow: 12px 0 18px -18px rgba(15, 23, 42, 0.45);
 }
 
 .kanban-lane-label.is-empty {
@@ -204,6 +220,10 @@
 
 .kanban-board-header .kanban-lane-label {
     visibility: hidden;
+    pointer-events: none;
+    background: inherit;
+    border-right: none;
+    box-shadow: none;
 }
 
 .kanban-columns {
@@ -211,11 +231,14 @@
     align-items: flex-start;
     gap: 20px;
     flex: 1;
+    position: relative;
+    min-width: 0;
 }
 
 .kanban-column {
-    width: 280px;
+    width: var(--kanban-column-width);
     min-width: 260px;
+    flex: 0 0 var(--kanban-column-width);
     background: var(--kanban-column-bg);
     border: 1px solid var(--kanban-column-border);
     border-radius: 16px;
@@ -246,8 +269,9 @@
 }
 
 .kanban-column-headeronly {
-    width: 280px;
+    width: var(--kanban-column-width);
     min-width: 260px;
+    flex: 0 0 var(--kanban-column-width);
 }
 
 .kanban-column-headeronly .kanban-column-header {
