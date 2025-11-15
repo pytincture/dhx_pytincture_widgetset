@@ -896,8 +896,8 @@
             const shouldRenderModelSelect = !(ui.modelSelect && ui.modelSelect.show === false);
             const modelSelectHtml = shouldRenderModelSelect
                 ? `
-                    <div class="model-selector" id="${this.ids.modelSelect}" data-open="false">
-                        <button type="button" class="model-selector__trigger" id="${this.ids.modelSelectTrigger}" aria-haspopup="listbox" aria-expanded="false">
+                    <div class="model-selector" id="${this.ids.modelSelect}" data-open="false" role="combobox">
+                        <button type="button" class="model-selector__trigger" id="${this.ids.modelSelectTrigger}" aria-haspopup="listbox" aria-expanded="false" aria-controls="${this.ids.modelSelectMenu}">
                             <span class="model-selector__text">
                                 <span class="model-selector__label">Model</span>
                                 <span class="model-selector__value" id="${this.ids.modelSelectValue}">Loading models...</span>
@@ -1653,6 +1653,7 @@
             if (!this.els.modelSelectMenu || !this.els.modelSelectTrigger) return;
             this._isModelMenuOpen = true;
             this.els.modelSelect.setAttribute("data-open", "true");
+            this.els.modelSelect.setAttribute("aria-expanded", "true");
             this.els.modelSelectMenu.hidden = false;
             this.els.modelSelectTrigger.setAttribute("aria-expanded", "true");
             const path = this._findPathForModel(this._selectedModel);
@@ -1668,6 +1669,7 @@
             if (!this.els.modelSelectMenu || !this.els.modelSelectTrigger) return;
             this._isModelMenuOpen = false;
             this.els.modelSelect.setAttribute("data-open", "false");
+            this.els.modelSelect.setAttribute("aria-expanded", "false");
             this.els.modelSelectMenu.hidden = true;
             this.els.modelSelectTrigger.setAttribute("aria-expanded", "false");
         }

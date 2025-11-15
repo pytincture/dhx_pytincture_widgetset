@@ -45,6 +45,7 @@
             this.sortDisabled = this.config.sortDisabled || false;
             this.showDataHeaders = this.config.showDataHeaders !== false;
             this.fontSize = this.config.fontSize || "12px";
+            this.toolbarFontFamily = this.config.toolbarFontFamily || "Arial, sans-serif";
             this.showOptions = this.config.showOptions !== false;
 
             if (this.config.columns && this.config.columns.length > 0) {
@@ -235,6 +236,7 @@
             const toolbarSelector = `[data-dhx-widget-id="${toolbar._uid}"]`;
             this.waitForElement(toolbarSelector, 4000)
                 .then(toolbarElem => {
+                    this._applyFontFamilyToElement(toolbarElem);
                     const dataCells = toolbarElem.querySelectorAll(".toolbar-cell:not(.hideable)");
                     dataCells.forEach(cell => {
                         cell.style.fontSize = fontSize;
@@ -545,6 +547,7 @@
                 currentToolbar.stat = "up";
                 currentToolbar.contentCell = currentContent;
                 this.rowMapping[currentToolbar.id] = currentContent;
+                this._applyToolbarFontFamily(currentToolbar);
 
                 if (rowData && rowData._color) {
                     const toolbarSelector = `[data-dhx-widget-id="${currentToolbar._uid}"]`;
@@ -646,6 +649,31 @@
             });
         }
 
+        _applyFontFamilyToElement(element) {
+            if (!element || !this.toolbarFontFamily) {
+                return;
+            }
+            element.style.fontFamily = this.toolbarFontFamily;
+            const cells = element.querySelectorAll(".toolbar-cell");
+            cells.forEach(cell => {
+                cell.style.fontFamily = this.toolbarFontFamily;
+            });
+        }
+
+        _applyToolbarFontFamily(toolbarInstance) {
+            if (!toolbarInstance) {
+                return;
+            }
+            const selector = `[data-dhx-widget-id="${toolbarInstance._uid}"]`;
+            this.waitForElement(selector, 4000)
+                .then(toolbarElem => {
+                    this._applyFontFamilyToElement(toolbarElem);
+                })
+                .catch(error => {
+                    console.error(`Toolbar element for ${toolbarInstance._uid} not found:`, error);
+                });
+        }
+
         getToolbarData(columns, rowData) {
             let headerCells = "";
             let dataCells = "";
@@ -676,7 +704,7 @@
                 const hideableClass = cellIndex >= 2 ? " hideable" : "";
                 const colWidth = col.width || "100px";
                 if (this.showDataHeaders) {
-                    headerCells += `<div class="toolbar-cell${hideableClass}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: ${colWidth}; font-weight: bold; padding-bottom: 2px;">
+                    headerCells += `<div class="toolbar-cell${hideableClass}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: ${colWidth}; font-weight: bold; padding-bottom: 2px; font-family: ${this.toolbarFontFamily};">
                                       ${col.header}
                                     </div>`;
                 }
@@ -684,14 +712,14 @@
                 if (col.dataType === "time" && col.applyFormat && col.dataFormat) {
                     value = formatTimeValue(value, col.dataFormat);
                 }
-                dataCells += `<div class="toolbar-cell${hideableClass}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: ${colWidth}; font-size: ${rowData._fontSize || this.fontSize};">
+                dataCells += `<div class="toolbar-cell${hideableClass}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: ${colWidth}; font-size: ${rowData._fontSize || this.fontSize}; font-family: ${this.toolbarFontFamily};">
                                 ${value}
                               </div>`;
                 cellIndex++;
             }
 
             let htmlContent = `
-              <div style="width: 100%; background-color: inherit; padding: 10px 20px; font-family: Arial, sans-serif; box-sizing: border-box;">
+              <div style="width: 100%; background-color: inherit; padding: 10px 20px; font-family: ${this.toolbarFontFamily}; box-sizing: border-box;">
                 <style>
                   @media (max-width: 600px) {
                     .hideable {
