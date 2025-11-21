@@ -306,6 +306,39 @@
             .rag-user-message .message-content a { color: #1d4ed8; }
             .rag-dark .rag-assistant-message .message-content { color: #e2e8f0; }
             .rag-dark .rag-user-message .message-content { color: #bfdbfe; }
+            .rag-message .message-tools { margin-top: 16px; width: 100%; display: flex; flex-direction: column; gap: 10px; }
+            .rag-message .message-tools.is-hidden { display: none; }
+            .tool-event { border: 1px solid rgba(15,23,42,0.12); border-radius: 12px; background: rgba(15,23,42,0.02); overflow: hidden; transition: border-color 0.2s ease, background 0.2s ease; }
+            .rag-dark .tool-event { border-color: rgba(148,163,184,0.35); background: rgba(15,23,42,0.45); }
+            .tool-event-toggle { width: 100%; border: none; background: none; color: inherit; font: inherit; cursor: pointer; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+            .tool-event-title { display: flex; flex-direction: column; gap: 2px; text-align: left; }
+            .tool-event-name { font-size: 13px; font-weight: 600; }
+            .tool-event-meta { font-size: 11px; opacity: 0.65; }
+            .tool-event-status { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 10px; border-radius: 999px; background: rgba(59,130,246,0.18); color: #1d4ed8; display: inline-flex; align-items: center; gap: 6px; }
+            .tool-event-status::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; display: inline-block; }
+            .tool-event-status.status-running { background: rgba(251,191,36,0.28); color: #b45309; }
+            .tool-event-status.status-succeeded { background: rgba(34,197,94,0.28); color: #047857; }
+            .tool-event-status.status-failed { background: rgba(248,113,113,0.35); color: #b91c1c; }
+            .rag-dark .tool-event-status { color: #bfdbfe; }
+            .tool-event-chevron { transition: transform 0.18s ease; font-size: 18px; }
+            .tool-event.is-open .tool-event-chevron { transform: rotate(180deg); }
+            .tool-event-body { display: none; border-top: 1px solid rgba(15,23,42,0.08); padding: 14px 16px; background: rgba(15,23,42,0.03); }
+            .rag-dark .tool-event-body { border-top-color: rgba(148,163,184,0.25); background: rgba(15,23,42,0.6); }
+            .tool-event.is-open .tool-event-body { display: block; }
+            .tool-event-section { margin-bottom: 14px; }
+            .tool-event-section:last-child { margin-bottom: 0; }
+            .tool-event-section label { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; opacity: 0.8; }
+            .tool-event-pre { margin: 0; padding: 10px 12px; background: rgba(15,23,42,0.05); border-radius: 10px; font-family: "JetBrains Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace; font-size: 12px; line-height: 1.5; white-space: pre-wrap; max-height: 320px; overflow: auto; border: 1px solid rgba(15,23,42,0.05); }
+            .rag-dark .tool-event-pre { background: rgba(15,23,42,0.75); border-color: rgba(148,163,184,0.2); color: #e2e8f0; }
+            .tool-event-section.is-error label { color: #b91c1c; }
+            .tool-event-section.is-error .tool-event-pre { border-color: rgba(248,113,113,0.5); background: rgba(248,113,113,0.08); color: #991b1b; }
+            .rag-dark .tool-event-section.is-error .tool-event-pre { color: #fecaca; }
+            @keyframes tool-status-pulse {
+                0% { opacity: 0.4; transform: scale(0.9); }
+                50% { opacity: 1; transform: scale(1); }
+                100% { opacity: 0.4; transform: scale(0.9); }
+            }
+            .tool-event-status.status-running::before { animation: tool-status-pulse 1.2s ease-in-out infinite; }
             .message-bubble pre { overflow-x: auto; border-radius: 14px; background: rgba(15,23,42,0.06); padding: 12px 16px; color: inherit; }
             .message-bubble code { word-break: break-word; }
             .rag-user-message .message-bubble pre { background: rgba(15,23,42,0.1); color: #0b1e3f; }
@@ -2042,6 +2075,186 @@
             if (copyBtn) {
                 copyBtn.setAttribute("tabindex", showThinking ? "-1" : "0");
             }
+            this._renderToolEvents(message, element);
+        }
+
+        _renderToolEvents(message, element) {
+            const container = element.querySelector(".message-tools");
+            if (!container) {
+                return;
+            }
+            const tools = Array.isArray(message?.tools) ? message.tools.filter(Boolean) : [];
+            if (!tools.length || message.role === "user") {
+                container.innerHTML = "";
+                container.classList.add("is-hidden");
+                return;
+            }
+            const previousState = new Map();
+            container.querySelectorAll(".tool-event").forEach((node) => {
+                previousState.set(node.getAttribute("data-tool-id"), node.classList.contains("is-open"));
+            });
+            container.innerHTML = "";
+            container.classList.remove("is-hidden");
+            tools.forEach((tool, index) => {
+                const toolId = tool.id || createUniqueId(`tool-${index}`);
+                tool.id = toolId;
+                const wrapper = document.createElement("div");
+                wrapper.className = "tool-event";
+                wrapper.setAttribute("data-tool-id", toolId);
+                const wasOpen = previousState.get(toolId) || false;
+                if (wasOpen) {
+                    wrapper.classList.add("is-open");
+                }
+
+                const toggle = document.createElement("button");
+                toggle.type = "button";
+                toggle.className = "tool-event-toggle";
+                toggle.setAttribute("aria-expanded", wasOpen ? "true" : "false");
+
+                const titleWrap = document.createElement("div");
+                titleWrap.className = "tool-event-title";
+                const nameSpan = document.createElement("span");
+                nameSpan.className = "tool-event-name";
+                nameSpan.textContent = tool.label || tool.name || `Tool ${index + 1}`;
+                titleWrap.appendChild(nameSpan);
+                const metaLine = this._formatToolMeta(tool);
+                if (metaLine) {
+                    const metaSpan = document.createElement("span");
+                    metaSpan.className = "tool-event-meta";
+                    metaSpan.textContent = metaLine;
+                    titleWrap.appendChild(metaSpan);
+                }
+
+                const statusInfo = this._resolveToolStatus(tool);
+                const statusSpan = document.createElement("span");
+                statusSpan.className = `tool-event-status ${statusInfo.className}`.trim();
+                statusSpan.textContent = statusInfo.label;
+
+                const chevron = document.createElement("span");
+                chevron.className = "material-icons tool-event-chevron";
+                chevron.textContent = "expand_more";
+
+                toggle.appendChild(titleWrap);
+                toggle.appendChild(statusSpan);
+                toggle.appendChild(chevron);
+
+                toggle.addEventListener("click", () => {
+                    const nextState = !wrapper.classList.contains("is-open");
+                    wrapper.classList.toggle("is-open", nextState);
+                    toggle.setAttribute("aria-expanded", nextState ? "true" : "false");
+                });
+
+                const body = document.createElement("div");
+                body.className = "tool-event-body";
+                const addSection = (label, value, { isError } = {}) => {
+                    if (value === undefined || value === null || value === "") {
+                        return;
+                    }
+                    const section = document.createElement("div");
+                    section.className = "tool-event-section";
+                    if (isError) {
+                        section.classList.add("is-error");
+                    }
+                    const sectionLabel = document.createElement("label");
+                    sectionLabel.textContent = label;
+                    const pre = document.createElement("pre");
+                    pre.className = "tool-event-pre";
+                    pre.textContent = this._formatToolPayload(value);
+                    section.appendChild(sectionLabel);
+                    section.appendChild(pre);
+                    body.appendChild(section);
+                };
+
+                addSection("Input", tool.input);
+                if (tool.error) {
+                    addSection("Error", tool.error, { isError: true });
+                }
+                const outputValue = tool.error ? null : tool.output;
+                addSection("Output", outputValue);
+
+                if (!body.hasChildNodes()) {
+                    const section = document.createElement("div");
+                    section.className = "tool-event-section";
+                    const sectionLabel = document.createElement("label");
+                    sectionLabel.textContent = "Details";
+                    const pre = document.createElement("pre");
+                    pre.className = "tool-event-pre";
+                    pre.textContent = tool.status && tool.status.toLowerCase() === "succeeded"
+                        ? "No additional output."
+                        : "Tool is running…";
+                    section.appendChild(sectionLabel);
+                    section.appendChild(pre);
+                    body.appendChild(section);
+                }
+
+                wrapper.appendChild(toggle);
+                wrapper.appendChild(body);
+                container.appendChild(wrapper);
+            });
+        }
+
+        _formatToolPayload(value) {
+            if (value === undefined || value === null) {
+                return "";
+            }
+            if (typeof value === "string") {
+                return value;
+            }
+            try {
+                return JSON.stringify(value, null, 2);
+            } catch (_err) {
+                return String(value);
+            }
+        }
+
+        _resolveToolStatus(tool) {
+            const raw = (tool?.status || "").toLowerCase();
+            if (raw === "failed" || raw === "error") {
+                return { label: "Failed", className: "status-failed" };
+            }
+            if (["success", "succeeded", "completed", "done", "ok"].includes(raw)) {
+                return { label: "Completed", className: "status-succeeded" };
+            }
+            if (raw === "queued") {
+                return { label: "Queued", className: "status-running" };
+            }
+            if (raw) {
+                const title = raw.charAt(0).toUpperCase() + raw.slice(1);
+                return { label: title, className: "status-running" };
+            }
+            return { label: tool?.streaming === false ? "Completed" : "Running", className: tool?.streaming === false ? "status-succeeded" : "status-running" };
+        }
+
+        _formatToolMeta(tool) {
+            const parts = [];
+            const started = tool?.startedAt ? this._formatTimestamp(tool.startedAt) : "";
+            if (started) {
+                parts.push(`Started ${started}`);
+            }
+            const finished = tool?.finishedAt ? this._formatTimestamp(tool.finishedAt) : "";
+            if (finished) {
+                parts.push(`Finished ${finished}`);
+            }
+            const latency = Number(tool?.latencyMs ?? tool?.durationMs);
+            if (!Number.isNaN(latency) && latency > 0) {
+                parts.push(latency >= 1000 ? `${(latency / 1000).toFixed(latency >= 10000 ? 0 : 1)} s` : `${Math.round(latency)} ms`);
+            }
+            return parts.join(" · ");
+        }
+
+        _cloneToolEvent(tool) {
+            if (!tool || typeof tool !== "object") {
+                return tool;
+            }
+            try {
+                return JSON.parse(JSON.stringify(tool));
+            } catch (_err) {
+                const clone = Object.assign({}, tool);
+                if (tool.meta && typeof tool.meta === "object") {
+                    clone.meta = Object.assign({}, tool.meta);
+                }
+                return clone;
+            }
         }
 
         _createMessageElement(message) {
@@ -2076,6 +2289,9 @@
             content.className = "message-content";
             bubble.appendChild(thinking);
             bubble.appendChild(content);
+            const toolsContainer = document.createElement("div");
+            toolsContainer.className = "message-tools is-hidden";
+            bubble.appendChild(toolsContainer);
 
             const tray = document.createElement("div");
             tray.className = "message-tray";
@@ -2255,7 +2471,11 @@
         updateMessage(messageId, updates) {
             const record = this._messageMap.get(messageId);
             if (!record) return;
-            Object.assign(record.message, updates || {});
+            if (updates && typeof updates === "object") {
+                Object.assign(record.message, updates);
+            }
+            const normalized = this._normalizeMessage(record.message);
+            Object.assign(record.message, normalized);
             this._renderMessageContent(record.message, record.element);
             this.saveState();
         }
@@ -2371,6 +2591,287 @@
         // Chat operations
         // -----------------------------------------------------------------
 
+        _normalizeMessageContent(rawContent, toolAccumulator = []) {
+            if (Array.isArray(rawContent)) {
+                const textSegments = [];
+                rawContent.forEach((segment) => {
+                    if (segment == null) {
+                        return;
+                    }
+                    if (typeof segment === "string") {
+                        textSegments.push(segment);
+                        return;
+                    }
+                    if (Array.isArray(segment)) {
+                        const nested = this._normalizeMessageContent(segment, toolAccumulator);
+                        if (nested.text) {
+                            textSegments.push(nested.text);
+                        }
+                        return;
+                    }
+                    const type = (segment.type || segment.kind || segment.role || "").toLowerCase();
+                    if (!type && typeof segment.text === "string") {
+                        textSegments.push(segment.text);
+                        return;
+                    }
+                    if (type === "text" || type === "output_text" || type === "message") {
+                        const value = segment.text || segment.value || segment.content || "";
+                        if (value) {
+                            textSegments.push(value);
+                        }
+                        return;
+                    }
+                    if (type === "tool_use" || type === "tool_call" || type === "function_call") {
+                        toolAccumulator.push({
+                            id: segment.id || segment.tool_use_id || segment.call_id,
+                            name: segment.name || segment.tool || (segment.function && segment.function.name),
+                            label: segment.display_name || segment.title || segment.label || segment.name,
+                            input: segment.input ?? segment.arguments ?? (segment.function && segment.function.arguments),
+                            status: segment.status || "running",
+                            streaming: segment.streaming ?? true,
+                            meta: Object.assign({}, segment.meta || {}),
+                            type: "tool_use",
+                        });
+                        return;
+                    }
+                    if (type === "tool_result" || type === "tool_output" || type === "tool_response") {
+                        toolAccumulator.push({
+                            id: segment.tool_use_id || segment.id || segment.call_id,
+                            name: segment.name || segment.tool || (segment.function && segment.function.name),
+                            label: segment.display_name || segment.title || segment.label || segment.name,
+                            output: segment.output ?? this._flattenToolContent(segment.content) ?? segment.text,
+                            error: segment.error,
+                            status: segment.status || (segment.error ? "failed" : "succeeded"),
+                            streaming: false,
+                            meta: Object.assign({}, segment.meta || {}),
+                            type: "tool_result",
+                        });
+                        return;
+                    }
+                    const fallback = segment.text || segment.value || segment.content;
+                    if (fallback) {
+                        textSegments.push(typeof fallback === "string" ? fallback : JSON.stringify(fallback));
+                    }
+                });
+                return { text: textSegments.join("\n\n").trim(), rawSegments: rawContent };
+            }
+            if (rawContent && typeof rawContent === "object") {
+                if (typeof rawContent.text === "string") {
+                    return { text: rawContent.text, rawSegments: [rawContent] };
+                }
+                if (Array.isArray(rawContent.content)) {
+                    return this._normalizeMessageContent(rawContent.content, toolAccumulator);
+                }
+                if (typeof rawContent.content === "string") {
+                    return { text: rawContent.content, rawSegments: [rawContent] };
+                }
+            }
+            if (typeof rawContent === "string") {
+                return { text: rawContent, rawSegments: null };
+            }
+            if (rawContent == null) {
+                return { text: "", rawSegments: null };
+            }
+            return { text: String(rawContent), rawSegments: null };
+        }
+
+        _flattenToolContent(content) {
+            if (content == null) {
+                return "";
+            }
+            if (typeof content === "string") {
+                return content;
+            }
+            if (Array.isArray(content)) {
+                return content
+                    .map((item) => {
+                        if (typeof item === "string") {
+                            return item;
+                        }
+                        if (item && typeof item === "object") {
+                            if (typeof item.text === "string") {
+                                return item.text;
+                            }
+                            if (typeof item.content === "string") {
+                                return item.content;
+                            }
+                        }
+                        return "";
+                    })
+                    .filter(Boolean)
+                    .join("\n")
+                    .trim();
+            }
+            if (content && typeof content === "object") {
+                if (typeof content.text === "string") {
+                    return content.text;
+                }
+                if (typeof content.content === "string") {
+                    return content.content;
+                }
+            }
+            return "";
+        }
+
+        _extractToolCollections(message) {
+            const buckets = [];
+            if (!message || typeof message !== "object") {
+                return buckets;
+            }
+            const possibleKeys = ["tools", "tool_calls", "toolCalls", "tool_events", "toolEvents", "function_calls", "functions"];
+            possibleKeys.forEach((key) => {
+                if (Array.isArray(message[key])) {
+                    buckets.push(...message[key]);
+                }
+            });
+            if (message.tool_call) {
+                buckets.push(message.tool_call);
+            }
+            if (message.meta) {
+                if (Array.isArray(message.meta.toolEvents)) {
+                    buckets.push(...message.meta.toolEvents);
+                }
+                if (Array.isArray(message.meta.tools)) {
+                    buckets.push(...message.meta.tools);
+                }
+            }
+            return buckets;
+        }
+
+        _normalizeToolEvents(rawTools) {
+            const list = Array.isArray(rawTools) ? rawTools : rawTools ? [rawTools] : [];
+            if (!list.length) {
+                return [];
+            }
+            const merged = new Map();
+            list.forEach((entry, index) => {
+                const normalized = this._coerceToolEvent(entry, index);
+                if (!normalized) {
+                    return;
+                }
+                const key = normalized.id || `${normalized.name || "tool"}-${index}`;
+                if (merged.has(key)) {
+                    const existing = merged.get(key);
+                    this._mergeToolEvent(existing, normalized);
+                } else {
+                    if (!normalized.id) {
+                        normalized.id = key;
+                    }
+                    merged.set(key, normalized);
+                }
+            });
+            return Array.from(merged.values());
+        }
+
+        _coerceToolEvent(entry, index) {
+            if (entry == null) {
+                return null;
+            }
+            if (typeof entry === "string") {
+                return {
+                    id: createUniqueId(`tool-${index}`),
+                    name: entry,
+                    label: entry,
+                    status: "running",
+                    streaming: true,
+                };
+            }
+            if (Array.isArray(entry)) {
+                return {
+                    id: createUniqueId(`tool-${index}`),
+                    name: `Tool ${index + 1}`,
+                    label: `Tool ${index + 1}`,
+                    output: this._flattenToolContent(entry),
+                    status: "succeeded",
+                    streaming: false,
+                };
+            }
+            const functionPayload = entry.function || entry.fn || entry.func;
+            const id =
+                entry.id ||
+                entry.tool_use_id ||
+                entry.toolUseId ||
+                entry.call_id ||
+                entry.callId ||
+                entry.function_call_id ||
+                entry.request_id ||
+                createUniqueId(`tool-${index}`);
+            const name = entry.name || entry.tool || entry.tool_name || entry.function_name || (functionPayload && functionPayload.name) || "Tool";
+            const label = entry.label || entry.display_name || entry.title || name;
+            const statusRaw = (entry.status || entry.state || (entry.error ? "failed" : entry.type === "tool_result" ? "succeeded" : "")).toLowerCase();
+            const input =
+                entry.input ??
+                entry.arguments ??
+                entry.params ??
+                (functionPayload && functionPayload.arguments !== undefined ? functionPayload.arguments : undefined);
+            let output =
+                entry.output ??
+                entry.result ??
+                entry.response ??
+                entry.data ??
+                (entry.type === "tool_result" ? entry.text : undefined);
+            if (output === undefined && entry.content !== undefined) {
+                output = this._flattenToolContent(entry.content);
+            }
+            return {
+                id,
+                name,
+                label,
+                status: statusRaw || (output !== undefined ? "succeeded" : "running"),
+                input,
+                output,
+                error: entry.error || null,
+                meta: entry.meta ? Object.assign({}, entry.meta) : undefined,
+                startedAt: entry.startedAt || entry.startTime || (entry.meta && entry.meta.startedAt) || null,
+                finishedAt: entry.finishedAt || entry.endTime || (entry.meta && entry.meta.finishedAt) || null,
+                latencyMs: entry.latencyMs || entry.durationMs || null,
+                streaming: entry.streaming ?? (!statusRaw || statusRaw === "running"),
+            };
+        }
+
+        _mergeToolEvent(target, incoming) {
+            if (!incoming) {
+                return target;
+            }
+            if (!target) {
+                return incoming;
+            }
+            if (incoming.input !== undefined && target.input === undefined) {
+                target.input = incoming.input;
+            }
+            if (incoming.output !== undefined) {
+                target.output = incoming.output;
+            }
+            if (incoming.error) {
+                target.error = incoming.error;
+            }
+            if (incoming.status) {
+                target.status = incoming.status;
+            }
+            if (incoming.streaming !== undefined) {
+                target.streaming = incoming.streaming;
+            }
+            if (incoming.meta) {
+                target.meta = Object.assign({}, target.meta || {}, incoming.meta);
+            }
+            if (incoming.startedAt && !target.startedAt) {
+                target.startedAt = incoming.startedAt;
+            }
+            if (incoming.finishedAt) {
+                target.finishedAt = incoming.finishedAt;
+            }
+            if (incoming.latencyMs) {
+                target.latencyMs = incoming.latencyMs;
+            }
+            if (!target.name && incoming.name) {
+                target.name = incoming.name;
+            }
+            if (!target.label && incoming.label) {
+                target.label = incoming.label;
+            }
+            return target;
+        }
+
         _normalizeMessage(message) {
             const id = message.id || createUniqueId("message");
             const meta = Object.assign({}, message.meta || {});
@@ -2380,6 +2881,18 @@
                 meta.timestamp = resolvedTimestamp;
             }
             const role = (message.role || "assistant").toLowerCase();
+            const toolAccumulator = [];
+            const contentInfo = this._normalizeMessageContent(message.content, toolAccumulator);
+            const extraTools = this._extractToolCollections(message);
+            if (extraTools.length) {
+                toolAccumulator.push(...extraTools);
+            }
+            const tools = this._normalizeToolEvents(toolAccumulator);
+            if (tools.length) {
+                meta.toolEvents = tools;
+            } else if (meta.toolEvents) {
+                delete meta.toolEvents;
+            }
             let resolvedName = message.name;
             if (!resolvedName) {
                 if (role === "user") {
@@ -2392,12 +2905,14 @@
             return {
                 id,
                 role,
-                content: message.content || "",
+                content: contentInfo.text || "",
                 name: resolvedName,
                 avatar: resolvedAvatar,
                 timestamp: resolvedTimestamp,
                 streaming: Boolean(message.streaming),
                 meta,
+                tools,
+                segments: Array.isArray(contentInfo.rawSegments) ? contentInfo.rawSegments : null,
             };
         }
 
@@ -2590,6 +3105,16 @@
                 timestamp: msg.timestamp,
                 meta: Object.assign({}, msg.meta || {}),
                 streaming: Boolean(msg.streaming),
+                tools: Array.isArray(msg.tools) ? msg.tools.map((tool) => this._cloneToolEvent(tool)) : [],
+                segments: Array.isArray(msg.segments)
+                    ? (() => {
+                        try {
+                            return JSON.parse(JSON.stringify(msg.segments));
+                        } catch (_err) {
+                            return msg.segments.slice();
+                        }
+                    })()
+                    : null,
             }));
         }
 
@@ -2635,10 +3160,13 @@
             this.els.queryInput.value = "";
             this._adjustTextareaHeight();
 
+            const contextMessages = this.getMessages(activeChat.id);
             const sendResult = this.host.emit("send", {
                 id: createUniqueId("prompt"),
                 text: query,
                 message: userMessage,
+                context: contextMessages,
+                chatId: activeChat.id,
             });
 
             if (!sendResult || !sendResult.handled) {
