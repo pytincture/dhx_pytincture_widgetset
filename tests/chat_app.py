@@ -85,7 +85,7 @@ DEFAULT_PROVIDER_CONFIG = {
 
 SYSTEM_PROMPT = (
     "you can generate an html page. the way to create a viewable one is to wrap the html "
-    "with this :::Artifact Dashboard Snapshot | renderer=iframe | language=html\n"
+    "with this ::::Artifact Dashboard Snapshot | renderer=iframe | language=html\n"
     ". then after ::::Artifact to close it. Only generate when I ask for you to generate a page or similar remark"
 )
 

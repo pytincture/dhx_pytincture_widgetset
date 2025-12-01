@@ -1,7 +1,7 @@
 (function () {
     "use strict";
 
-    const DEFAULT_DEMO_RESPONSE = `Here's a sample HTML artifact:\n\n:::artifact{identifier="sample-page" type="text/html" title="Sample HTML Page"}\n<!DOCTYPE html>\n<html>\n<head>\n    <title>Sample Page</title>\n    <style>\n        body { font-family: Arial, sans-serif; padding: 20px; background: linear-gradient(45deg, #667eea, #764ba2); color: white; }\n        .container { max-width: 600px; margin: 0 auto; text-align: center; }\n        .card { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 15px; backdrop-filter: blur(10px); }\n    </style>\n</head>\n<body>\n    <div class="container">\n        <div class="card">\n            <h1>Hello from Tenzin!</h1>\n            <p>This is a sample HTML artifact that demonstrates the artifact system.</p>\n            <button onclick="alert('Hello!')">Click me!</button>\n        </div>\n    </div>\n</body>\n</html>\n:::\n\nThis demonstrates how artifacts work in the chat interface.`;
+    const DEFAULT_DEMO_RESPONSE = `Here's a sample HTML artifact:\n\n::::artifact{identifier="sample-page" type="text/html" title="Sample HTML Page"}\n<!DOCTYPE html>\n<html>\n<head>\n    <title>Sample Page</title>\n    <style>\n        body { font-family: Arial, sans-serif; padding: 20px; background: linear-gradient(45deg, #667eea, #764ba2); color: white; }\n        .container { max-width: 600px; margin: 0 auto; text-align: center; }\n        .card { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 15px; backdrop-filter: blur(10px); }\n    </style>\n</head>\n<body>\n    <div class="container">\n        <div class="card">\n            <h1>Hello from Tenzin!</h1>\n            <p>This is a sample HTML artifact that demonstrates the artifact system.</p>\n            <button onclick="alert('Hello!')">Click me!</button>\n        </div>\n    </div>\n</body>\n</html>\n::::\n\nThis demonstrates how artifacts work in the chat interface.`;
 
     const DEFAULT_STORAGE_PREFIX = "customdhx:rag-chat";
     const EVENT_HANDLERS = new WeakMap();
@@ -1927,7 +1927,7 @@
                 return `\n\n<div class="artifact-icon" data-artifact-id="${artifact.id}"><span class="material-icons">code</span><span>${artifact.title}</span></div>\n\n`;
             };
 
-            const newPattern = /:{3,4}artifact\{([^}]*)\}([\s\S]*?)(?:\s*:{3,4})/gi;
+            const newPattern = /:{4}artifact\{([^}]*)\}([\s\S]*?)(?:\s*:{4})/gi;
             processedText = processedText.replace(newPattern, (full, paramsStr, content) => {
                 const params = normalizeParams(paramsStr);
                 const artifact = createArtifact(params, content, params.title);
@@ -1935,17 +1935,8 @@
             });
 
             let legacyMatched = false;
-            const legacyPattern = /:::Artifact\s+([^\n|]+)([^\n]*)\n([\s\S]*?)(?:::Artifact|::::Artifact)\s*/gi;
+            const legacyPattern = /::::Artifact\s+([^\n|]+)([^\n]*)\n([\s\S]*?)::::Artifact\s*/gi;
             processedText = processedText.replace(legacyPattern, (full, titleSegment, paramSegment, content) => {
-                legacyMatched = true;
-                const params = normalizeParams(paramSegment);
-                params.title = params.title || titleSegment.trim();
-                const artifact = createArtifact(params, content, titleSegment.trim());
-                return injectIcon(artifact);
-            });
-
-            const fourColonClassic = /::::Artifact\s+([^\n|]+)([^\n]*)\n([\s\S]*?)::::Artifact\s*/gi;
-            processedText = processedText.replace(fourColonClassic, (full, titleSegment, paramSegment, content) => {
                 legacyMatched = true;
                 const params = normalizeParams(paramSegment);
                 params.title = params.title || titleSegment.trim();
@@ -1955,14 +1946,14 @@
 
             processedText = processedText.replace(/(<div class="artifact-icon"[^>]*>[\s\S]*?<\/div>)\s*:/g, "$1");
 
-            const hasNewStart = /:{3,4}artifact\{[^}]*\}/i.test(text);
-            const hasLegacyStart = /:::Artifact\s+[^\n]+/i.test(text) || /::::Artifact\s+[^\n]+/i.test(text);
+            const hasNewStart = /:{4}artifact\{[^}]*\}/i.test(text);
+            const hasLegacyStart = /::::Artifact\s+[^\n]+/i.test(text);
             const hasIncompleteArtifact = (hasNewStart && !hasCompleteArtifacts) || (hasLegacyStart && !legacyMatched);
 
             if (hasIncompleteArtifact) {
                 const artifactStart = Math.max(
-                    text.search(/:::artifact\{/i),
-                    text.search(/:::Artifact\s+[^\n]+/i),
+                    text.search(/::::artifact\{/i),
+                    text.search(/::::Artifact\s+[^\n]+/i),
                 );
                 if (artifactStart >= 0) {
                     processedText = text.substring(0, artifactStart);
@@ -3415,7 +3406,7 @@ def _dhx_run_py_artifact(code_b64: str) -> str:
                 const previousBuffer = this.streamContext.buffer || "";
                 const startIndex = previousBuffer.length > text.length ? text.length : previousBuffer.length;
                 const newSegment = text.substring(startIndex);
-                if (!/:::artifact\{|:::Artifact\s+[^\n]+/i.test(newSegment)) {
+                if (!/::::artifact\{|::::Artifact\s+[^\n]+/i.test(newSegment)) {
                     return;
                 }
             }
@@ -3438,11 +3429,11 @@ def _dhx_run_py_artifact(code_b64: str) -> str:
             if (this.streamContext.isRedirecting) {
                 this.streamContext.buffer = text;
                 const lower = text.toLowerCase();
-                const modernMatch = /:::artifact\{[^}]*\}/i.exec(text);
-                const legacyMatch = /:::Artifact\s+([^\n]+)([^\n]*)\n/i.exec(text);
+                const modernMatch = /::::artifact\{[^}]*\}/i.exec(text);
+                const legacyMatch = /::::Artifact\s+([^\n]+)([^\n]*)\n/i.exec(text);
                 if (modernMatch) {
                     const headerEnd = modernMatch.index + modernMatch[0].length;
-                    const closeIndex = lower.indexOf(":::", headerEnd);
+                    const closeIndex = lower.indexOf("::::", headerEnd);
                     if (closeIndex !== -1) {
                         const artifactContent = text.substring(headerEnd, closeIndex);
                         this.streamContext.target.textContent = artifactContent;
@@ -3453,7 +3444,7 @@ def _dhx_run_py_artifact(code_b64: str) -> str:
                     }
                 } else if (legacyMatch) {
                     const headerEnd = legacyMatch.index + legacyMatch[0].length;
-                    const closeIndex = lower.indexOf(":::artifact", headerEnd);
+                    const closeIndex = lower.indexOf("::::artifact", headerEnd);
                     if (closeIndex !== -1) {
                         const artifactContent = text.substring(headerEnd, closeIndex);
                         this.streamContext.target.textContent = artifactContent;
@@ -3515,8 +3506,8 @@ def _dhx_run_py_artifact(code_b64: str) -> str:
                 return false;
             }
             if (!text) return false;
-            const hasModernMarker = /:::artifact\{/i.test(text);
-            const hasLegacyMarker = /:::Artifact\s+[^\n]+/i.test(text);
+            const hasModernMarker = /::::artifact\{/i.test(text);
+            const hasLegacyMarker = /::::Artifact\s+[^\n]+/i.test(text);
             return hasModernMarker || hasLegacyMarker;
         }
 
