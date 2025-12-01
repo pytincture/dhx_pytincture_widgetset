@@ -148,7 +148,9 @@ function createUniqueId(prefix) {
 
         _cardsTemplate() {
             return `
-                <div class="cardpanel-grid" id="${this._ids.grid}"></div>
+                <div class="cardpanel-cards">
+                    <div class="cardpanel-grid" id="${this._ids.grid}"></div>
+                </div>
             `;
         }
 
@@ -541,6 +543,13 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
 }
 .cardpanel-desc { color: var(--muted); font-size: 14px; max-width: 900px; }
 
+.cardpanel-cards {
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
 .cardpanel-grid {
     padding: 24px;
     display: grid;
@@ -548,6 +557,9 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
     gap: var(--card-gap);
     background: transparent;
     overflow: auto;
+    flex: 1;
+    min-height: 0;
+    box-sizing: border-box;
 }
 
 .card-card {
