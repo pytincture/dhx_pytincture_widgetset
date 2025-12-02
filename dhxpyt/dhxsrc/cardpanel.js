@@ -556,10 +556,17 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
     grid-template-columns: var(--card-grid-template);
     gap: var(--card-gap);
     background: transparent;
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
     flex: 1;
     min-height: 0;
     box-sizing: border-box;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.cardpanel-grid::-webkit-scrollbar {
+    display: none;
 }
 
 .card-card {
