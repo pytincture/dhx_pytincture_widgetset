@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>CardPanel Widget</title>
+    <style>
+        body { font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif; margin: 0 auto; padding: 32px; max-width: 900px; line-height: 1.6; color: #0f172a; }
+        h1, h2, h3 { color: #111826; }
+        pre { background: #0f172a; color: #f8fafc; padding: 16px; border-radius: 8px; overflow-x: auto; }
+        code { font-family: "SFMono-Regular", Consolas, Menlo, monospace; }
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+        th, td { border: 1px solid #cbd5f5; padding: 8px 12px; text-align: left; vertical-align: top; }
+        th { background: #e0e7ff; }
+        ul { padding-left: 24px; }
+    </style>
+</head>
+<body>
+    <h1>DHX PyTincture &mdash; CardPanel Widget</h1>
+    <p>
+        The CardPanel widget renders responsive, masonry-style cards with built-in search, add buttons and custom
+        templates. It is ideal for data source catalogs, connector galleries, model registries or any “card grid” view
+        you want to control from Python.
+    </p>
+
+    <h2>Quick start</h2>
+<pre><code>from dhxpyt.cardpanel.cardpanel import CardPanel
+from dhxpyt.cardpanel.cardpanel_config import CardPanelConfig, CardPanelCardConfig
+
+cards = [
+    CardPanelCardConfig(id="snowflake", title="Snowflake", subtitle="Data Warehouse", pill="Connected"),
+    CardPanelCardConfig(id="bigquery", title="BigQuery", subtitle="Analytics", pill="Pending"),
+]
+
+panel = CardPanel(
+    CardPanelConfig(
+        title="Data Sources",
+        description="Manage connections and launch profiling from a single surface",
+        cards=cards,
+        search_placeholder="Search connectors",
+    ),
+    root="#cardpanel-host",
+)
+
+def handle_view(card):
+    open_profile_drawer(card["id"])
+
+panel.on_view(handle_view)
+</code></pre>
+
+    <h2>Configuration highlights</h2>
+    <table>
+        <thead>
+            <tr><th>Field</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>title</code>, <code>description</code></td><td>Header and supporting text shown above the grid.</td></tr>
+            <tr><td><code>searchable</code>, <code>show_search</code>, <code>search_placeholder</code>, <code>search_button_text</code></td><td>Control the search bar visibility and labeling.</td></tr>
+            <tr><td><code>add_button_text</code></td><td>Overrides the “Add Data Source” button label.</td></tr>
+            <tr><td><code>view_button_text</code></td><td>Global fallback for the button rendered inside each card.</td></tr>
+            <tr><td><code>card_min_width</code>, <code>card_min_height</code>, <code>card_gap</code>, <code>card_columns</code>, <code>card_icon_size</code></td><td>Expose the CSS variables that define responsive sizing.</td></tr>
+            <tr><td><code>card_template</code></td><td>Name of a registered template, a callable, or a descriptor dict to render each card.</td></tr>
+            <tr><td><code>cards</code></td><td>Iterable of <code>CardPanelCardConfig</code> or dicts. Each entry accepts <code>id</code>, <code>title</code>, <code>subtitle</code>, <code>pill</code>, <code>icon</code> plus arbitrary <code>extra</code> keys.</td></tr>
+        </tbody>
+    </table>
+
+    <h2>Events</h2>
+    <ul>
+        <li><code>on_search(handler)</code> &mdash; Fired after the search form is submitted. Receives the query string.</li>
+        <li><code>on_add(handler)</code> &mdash; Runs when the “Add” button is pressed.</li>
+        <li><code>on_view(handler)</code> &mdash; Called when a card’s action button is clicked (handler receives the card dict).</li>
+        <li><code>on_card_click(handler)</code> &mdash; Invoked for clicks anywhere on the card body.</li>
+    </ul>
+
+    <h2>Data &amp; filtering API</h2>
+    <p>The wrapper exposes the same helpers as the JavaScript widget:</p>
+    <ul>
+        <li><code>load(cards)</code> &mdash; Replace the entire data set.</li>
+        <li><code>add_card(card)</code> &mdash; Append a new entry at runtime.</li>
+        <li><code>filter(query)</code> &mdash; Call the built-in fuzzy matcher (<code>auto_filter</code> must be true for automatic updates).</li>
+        <li><code>destroy()</code> &mdash; Tear down DOM nodes when navigating away.</li>
+    </ul>
+
+    <h2>Custom templates</h2>
+    <p>
+        Use <code>CardPanel.register_template(name, factory)</code> to inject a JavaScript (or proxied Python) renderer. For simple
+        layouts, pass a descriptor dictionary in <code>card_template</code>:
+    </p>
+
+<pre><code>custom_descriptor = {
+    "tag": "div",
+    "class": "card-card",
+    "children": [
+        {"tag": "h3", "class": "card-title", "text": "{title}"},
+        {"tag": "p", "class": "card-sub", "text": "{card.subtitle}"},
+        {
+            "tag": "button",
+            "class": "card-view",
+            "text": "Inspect",
+            "dataset": {"cardId": "{card.id}"}
+        },
+    ],
+}
+
+panel = CardPanel(CardPanelConfig(card_template=custom_descriptor, cards=cards), root="#cardpanel-host")
+</code></pre>
+
+    <h2>Accessibility &amp; scrolling</h2>
+    <p>
+        The card grid is rendered inside a flex wrapper that grows within its layout cell and scrolls vertically. We hide
+        the scroll bar via CSS variables so the buttons remain aligned while still honoring keyboard scrolling. Update the
+        stylesheet in <code>dhxpyt/dhxsrc/cardpanel.js</code> if your embedding needs different behavior.
+    </p>
+
+    <p>Refer to <code>dhxpyt/cardpanel/cardpanel.py</code> and <code>dhxpyt/dhxsrc/cardpanel.js</code> for advanced integrations.</p>
+</body>
+</html>

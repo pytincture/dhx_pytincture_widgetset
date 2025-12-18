@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Chat Widget</title>
+    <style>
+        body { font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif; margin: 0 auto; padding: 32px; max-width: 900px; line-height: 1.6; color: #0f172a; }
+        h1, h2, h3 { color: #111826; }
+        pre { background: #0f172a; color: #f8fafc; padding: 16px; border-radius: 8px; overflow-x: auto; }
+        code { font-family: "SFMono-Regular", Consolas, Menlo, monospace; }
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+        th, td { border: 1px solid #cbd5f5; padding: 8px 12px; text-align: left; vertical-align: top; }
+        th { background: #e0e7ff; }
+        .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #dbeafe; color: #1e3a8a; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+        ul { padding-left: 24px; }
+    </style>
+</head>
+<body>
+    <h1>DHX PyTincture &mdash; Chat Widget</h1>
+    <p>
+        The Chat widget pairs the PyTincture Python runtime with the <code>customdhx.ChatWidget</code> front-end. It
+        provides a polished conversational surface with streaming responses, message badges, agent theming and rich
+        artifact panels. Use it to embed AI assistants, copilot flows or support bots inside any DHTMLX layout cell or
+        DOM node.
+    </p>
+
+    <h2>Quick start</h2>
+    <ol>
+        <li>Load the chat JavaScript bundle so <code>customdhx.ChatWidget</code> is available in the browser.</li>
+        <li>Create a <code>ChatConfig</code> describing the agent, placeholder text and any initial messages.</li>
+        <li>Instantiate <code>Chat</code> with either a DHTMLX layout cell (<code>container</code>) or a CSS selector (<code>root</code>).</li>
+        <li>Wire the high-level events (<code>on_send</code>, <code>on_artifact_save</code>, etc.) to your application logic.</li>
+    </ol>
+
+<pre><code>from dhxpyt.chat.chat import Chat
+from dhxpyt.chat.chat_config import ChatConfig, ChatMessageConfig
+
+config = ChatConfig(
+    agent={"name": "Research Copilot", "tagline": "Grounded answers, instant artifacts"},
+    input_placeholder="Ask me anything about your data platform",
+    enable_artifacts=True,
+)
+
+chat = Chat(config, root="#chat-host")
+
+def handle_send(payload):
+    question = payload.get("content", "")
+    job_id = submit_llm_job(question)
+    chat.add_message(ChatMessageConfig(role="assistant", content="Working on it…", streaming=True))
+
+chat.on_send(handle_send)
+</code></pre>
+
+    <h2>Key configuration fields</h2>
+    <table>
+        <thead>
+            <tr><th>Field</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>agent</code> (<span class="pill">ChatAgentConfig</span>)</td><td>Name, avatar, accent color and tagline for the assistant. Shown in the header and composer.</td></tr>
+            <tr><td><code>messages</code></td><td>List of <code>ChatMessageConfig</code> (or dicts) to seed the transcript.</td></tr>
+            <tr><td><code>input_placeholder</code>, <code>send_button_text</code></td><td>Composer labels for localized experiences.</td></tr>
+            <tr><td><code>composer_help_text</code></td><td>Hint rendered under the composer (example: “Shift+Enter for newline”).</td></tr>
+            <tr><td><code>composer_max_height</code></td><td>Hard limit for composer growth before it begins to scroll.</td></tr>
+            <tr><td><code>theme</code></td><td><code>"light"</code>, <code>"dark"</code>, or <code>"auto"</code> to inherit the system preference.</td></tr>
+            <tr><td><code>auto_append_user_messages</code></td><td>When true, user prompts are added to the timeline automatically after <code>send</code>.</td></tr>
+            <tr><td><code>enable_artifacts</code> &amp; <code>artifact_panel_width</code></td><td>Toggles the side-by-side artifact viewer and sets its width in pixels.</td></tr>
+            <tr><td><code>max_messages</code></td><td>Optional hard limit (the widget drops the oldest entries).</td></tr>
+            <tr><td><code>streaming_debounce_ms</code></td><td>Controls how frequently streaming chunks update the DOM.</td></tr>
+            <tr><td><code>demo_response</code></td><td>Optional canned reply used by demos when no backend is wired up.</td></tr>
+            <tr><td><code>storage_key</code></td><td>When set, the widget persists draft input and composer state in <code>localStorage</code>.</td></tr>
+        </tbody>
+    </table>
+
+    <h2>Events</h2>
+    <ul>
+        <li><code>on_send(handler)</code> &mdash; Fired when the user submits a prompt. Receive the parsed payload and start your LLM request.</li>
+        <li><code>on_artifact_save(handler)</code> &mdash; Invoked when the user downloads or copies a rendered artifact.</li>
+        <li><code>on_artifact_load(handler)</code> &mdash; Triggered after the user provides an external file for the preview pane.</li>
+        <li><code>on_copy(handler)</code> &mdash; Runs when a transcript row’s copy button is pressed.</li>
+    </ul>
+
+    <h2>Data helpers</h2>
+    <p>The wrapper mirrors the underlying JavaScript API so you can fully control the transcript:</p>
+    <ul>
+        <li><code>set_messages()</code>, <code>add_message()</code>, <code>update_message()</code>, <code>remove_message()</code>, <code>clear_messages()</code></li>
+        <li><code>start_stream()</code> → <code>append_stream()</code> → <code>finish_stream()</code> for incremental assistant responses.</li>
+        <li><code>set_agent()</code>, <code>set_theme()</code>, <code>focus_composer()</code>, <code>set_chat_badge()</code>, <code>get_chats()</code></li>
+    </ul>
+
+    <h2>Artifacts</h2>
+    <p>
+        When <code>enable_artifacts</code> is true, assistant messages can emit blocks wrapped in
+        <code>::::Artifact Title | renderer=iframe | language=html</code> markers. The widget extracts the payload, renders a
+        preview and exposes “Copy” / “Download” buttons via the <code>artifact:save</code> event. Use this to return HTML dashboards,
+        SVG diagrams, CSV files or Python scripts side-by-side with the chat.
+    </p>
+
+    <p>See <code>dhxpyt/dhxsrc/chat.js</code> for the full UI implementation if you need to extend styling or behavior.</p>
+</body>
+</html>
