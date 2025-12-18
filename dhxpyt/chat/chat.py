@@ -180,8 +180,23 @@ class Chat:
             raise TypeError(f"Unsupported agent representation: {type(agent)!r}")
         self.chat.setAgent(js.JSON.parse(json.dumps(agent_payload)))
 
-    def set_theme(self, theme: str) -> None:
-        self.chat.setTheme(theme)
+    def set_theme(
+        self,
+        theme: Union[str, Dict[str, Any]],
+        css_vars: Optional[Dict[str, Dict[str, Any]]] = None,
+    ) -> None:
+        """
+        Apply a theme to the chat widget.
+
+        - theme: string name or dict payload accepted by dhx.setTheme
+        - css_vars: optional mapping of selectors to CSS custom properties
+        """
+        try:
+            from .. import theme as _theme_helper
+            _theme_helper.apply_theme(theme, css_vars)
+        except Exception:
+            # Fall back to widget theme name only
+            self.chat.setTheme(theme)
 
     def focus_composer(self) -> None:
         if hasattr(self.chat, "focusComposer"):

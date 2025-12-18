@@ -471,6 +471,69 @@
                 .rag-main.with-artifact { margin-right: 0; }
                 .artifact-resize-handle { display: none; }
             }
+            /* Theme variables and overrides */
+            :root {
+                --rag-bg: #f6f8fb;
+                --rag-text: #1f2937;
+                --rag-surface: rgba(255,255,255,0.92);
+                --rag-surface-strong: rgba(255,255,255,0.98);
+                --rag-border: rgba(15,23,42,0.12);
+                --rag-border-strong: rgba(15,23,42,0.18);
+                --rag-accent: #3b82f6;
+                --rag-accent-strong: #2563eb;
+                --rag-danger: #ef4444;
+                --rag-warn: #f97316;
+                --rag-muted: rgba(15,23,42,0.6);
+                --rag-bubble: rgba(255,255,255,0.98);
+                --rag-bubble-border: rgba(15,23,42,0.08);
+                --rag-bubble-user: linear-gradient(145deg, #d0e1ff 0%, #bccdfd 55%, #aebefd 100%);
+                --rag-bubble-user-border: rgba(59,130,246,0.22);
+                --rag-shadow: 0 18px 38px rgba(15,23,42,0.08);
+                --rag-shadow-strong: 0 22px 44px rgba(15,23,42,0.12);
+                --rag-composer-bg: rgba(255,255,255,0.96);
+                --rag-composer-border: rgba(15,23,42,0.08);
+            }
+            .rag-dark {
+                --rag-bg: #1e2534;
+                --rag-text: #e2e8f0;
+                --rag-surface: rgba(26,32,44,0.82);
+                --rag-surface-strong: rgba(26,32,44,0.95);
+                --rag-border: rgba(148,163,184,0.18);
+                --rag-border-strong: rgba(148,163,184,0.32);
+                --rag-accent: #60a5fa;
+                --rag-accent-strong: #3b82f6;
+                --rag-muted: rgba(226,232,240,0.72);
+                --rag-bubble: rgba(30,37,52,0.98);
+                --rag-bubble-border: rgba(148,163,184,0.32);
+                --rag-bubble-user: linear-gradient(145deg, #1f2a44 0%, #263553 100%);
+                --rag-bubble-user-border: rgba(59,130,246,0.35);
+                --rag-shadow: 0 18px 32px rgba(0,0,0,0.28);
+                --rag-shadow-strong: 0 22px 44px rgba(0,0,0,0.32);
+                --rag-composer-bg: rgba(26,32,44,0.92);
+                --rag-composer-border: rgba(148,163,184,0.28);
+            }
+            .rag-container { background: var(--rag-bg); color: var(--rag-text); }
+            .rag-sidebar { background: var(--rag-surface); border-right-color: var(--rag-border); }
+            .rag-chat-list::before { background: var(--rag-border); }
+            .rag-chat-item { border-bottom-color: var(--rag-border); }
+            .rag-chat-item:hover { background: color-mix(in srgb, var(--rag-accent) 14%, transparent); }
+            .rag-chat-item.active { background: color-mix(in srgb, var(--rag-accent) 22%, transparent); }
+            .rag-chat-item .chat-badge { background: var(--rag-danger); }
+            .rag-chat-item.active .chat-badge { background: var(--rag-warn); }
+            .rag-header-right select { border-color: var(--rag-border-strong); background: var(--rag-surface-strong); color: inherit; }
+            .message-bubble { background: var(--rag-bubble); color: var(--rag-text); border-color: var(--rag-bubble-border); box-shadow: var(--rag-shadow); }
+            .rag-user-message .message-bubble { background: var(--rag-bubble-user); border-color: var(--rag-bubble-user-border); }
+            .message-copy-btn { background: color-mix(in srgb, var(--rag-text) 16%, transparent); }
+            .message-copy-btn:hover { background: color-mix(in srgb, var(--rag-accent) 32%, transparent); }
+            .composer { background: linear-gradient(180deg, color-mix(in srgb, var(--rag-bg) 0%, transparent) 0%, color-mix(in srgb, var(--rag-bg) 82%, transparent) 40%, var(--rag-bg) 100%); border-top-color: var(--rag-border); }
+            .composer-inner { background: var(--rag-composer-bg); border-color: var(--rag-composer-border); box-shadow: var(--rag-shadow); }
+            .composer-send { background: var(--rag-accent-strong); box-shadow: 0 14px 24px color-mix(in srgb, var(--rag-accent-strong) 32%, transparent); }
+            .composer-send:hover { box-shadow: 0 16px 28px color-mix(in srgb, var(--rag-accent-strong) 38%, transparent); }
+            .composer-send:active { box-shadow: 0 12px 22px color-mix(in srgb, var(--rag-accent-strong) 28%, transparent); }
+            .artifact-panel { background: var(--rag-surface); color: var(--rag-text); border-left-color: var(--rag-border-strong); }
+            .artifact-header { border-bottom-color: var(--rag-border-strong); }
+            .artifact-tab { background: color-mix(in srgb, var(--rag-text) 12%, transparent); }
+            .artifact-tab.active { background: color-mix(in srgb, var(--rag-accent) 18%, transparent); color: var(--rag-accent-strong); border-bottom-color: var(--rag-accent-strong); }
             @keyframes rag-thinking-bounce {
                 0%, 80%, 100% { transform: translateY(0); opacity: 0.25; }
                 40% { transform: translateY(-3px); opacity: 1; }
@@ -2551,6 +2614,8 @@
 
         setTheme(theme) {
             const normalized = this._normalizeThemeName(theme);
+            const dhx = typeof window !== "undefined" ? window.dhx : null;
+
             if (!normalized) {
                 const detected = this._detectHostTheme();
                 if (detected) {
@@ -2558,20 +2623,17 @@
                 }
                 return;
             }
-            const nextIsDark = normalized === "dark";
-            const dhx = typeof window !== "undefined" ? window.dhx : null;
+
+            const nextIsDark = normalized === "dark" || /dark/i.test(normalized);
             if (dhx && typeof dhx.setTheme === "function") {
                 this._setDarkMode(nextIsDark, { persist: false });
                 try {
                     dhx.setTheme(normalized);
-                    this._setDarkMode(nextIsDark, { persist: true });
                 } catch (error) {
                     console.warn("[ChatWidget] Failed to set host theme", error);
-                    this._setDarkMode(nextIsDark, { persist: true });
                 }
-            } else {
-                this._setDarkMode(nextIsDark, { persist: true });
             }
+            this._setDarkMode(nextIsDark, { persist: true });
         }
 
         focusComposer() {

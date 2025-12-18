@@ -405,9 +405,18 @@ class MainWindow(Layout):
         self.initialized = True
         self.cookie_status = None
 
-    def set_theme(self, theme: str) -> None:
-        """Sets the layout theme."""
-        js.dhx.setTheme(theme)
+    def set_theme(self, theme: str, css_vars=None) -> None:
+        """
+        Sets the layout theme.
+
+        :param theme: Theme name or dict payload accepted by dhx.setTheme
+        :param css_vars: Optional mapping of selectors to CSS custom properties
+        """
+        try:
+            from .. import theme as _theme_helper
+            _theme_helper.set_theme(theme, css_vars)
+        except Exception:
+            js.dhx.setTheme(theme)
 
     def show_cookie_banner(self):
         # Suppose you've got a <div id="cookie-banner"> in your HTML
