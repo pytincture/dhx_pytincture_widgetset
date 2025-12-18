@@ -1,5 +1,5 @@
 import json
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, Dict, Optional, TypeVar, Union
 from pyodide.ffi import create_proxy
 import js
 
@@ -98,13 +98,17 @@ class CardFlow:
         """
         self.cardflow.setCardExpandedHeight(card_id, height)
 
-    def set_theme(self, theme: str) -> None:
-        """
-        If your JS code supports a setTheme method, or if you have a theme mechanism, call it here.
-        Otherwise, remove.
-        """
-        if hasattr(self.cardflow, "setTheme"):
-            self.cardflow.setTheme(js.JSON.parse(json.dumps({"name": theme, "fonts": True})))
+    def set_theme(self, theme: Union[str, Dict[str, Any]], css_vars: Optional[Dict[str, Dict[str, Any]]] = None) -> None:
+        """Apply a theme to the underlying cardflow widget and optional CSS variable overrides."""
+        try:
+            from .. import theme as _theme_helper
+            _theme_helper.apply_theme(theme, css_vars)
+        except Exception:
+            if hasattr(self.cardflow, "setTheme"):
+                if isinstance(theme, dict):
+                    self.cardflow.setTheme(js.JSON.parse(json.dumps(theme)))
+                else:
+                    self.cardflow.setTheme(js.JSON.parse(json.dumps({"name": theme, "fonts": True})))
 
     def export_to_json(self) -> str:
         """
