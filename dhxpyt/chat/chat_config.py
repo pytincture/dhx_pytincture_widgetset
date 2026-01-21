@@ -70,6 +70,8 @@ class ChatConfig:
     High-level configuration object for the Chat widget.
     """
     agent: ChatAgentConfig = field(default_factory=ChatAgentConfig)
+    gpu: bool = False
+    gpu_widget_id: Optional[str] = None
     messages: List[Union[ChatMessageConfig, Dict[str, Any]]] = field(default_factory=list)
     input_placeholder: str = "Message the assistant…"
     send_button_text: str = "Send"
@@ -112,6 +114,8 @@ class ChatConfig:
             "idPrefix": self.id_prefix,
             "demoResponse": self.demo_response,
             "storageKey": self.storage_key,
+            "gpu": self.gpu,
+            "gpuWidgetId": self.gpu_widget_id,
         }
         payload.update(self.extra or {})
         return _clean_dict(payload)

@@ -47,6 +47,8 @@
             this.fontSize = this.config.fontSize || "12px";
             this.toolbarFontFamily = this.config.toolbarFontFamily || "Arial, sans-serif";
             this.showOptions = this.config.showOptions !== false;
+            this.useGpu = !!this.config.gpu;
+            this.gpuWidgetId = this.config.gpuWidgetId || null;
 
             if (this.config.columns && this.config.columns.length > 0) {
                 this.sortColumnId = "";
@@ -81,6 +83,7 @@
                 rows: layoutRows,
             });
             container.attach(this.layout);
+            this.registerGpuPreference();
 
             if (this.showHeader || (!this.sortDisabled && this.showSort)) {
                 this.createSortToolbar();
@@ -205,6 +208,25 @@
             } else {
                 console.error(`Card with id ${id} not found.`);
             }
+        }
+
+        registerGpuPreference() {
+            if (!this.useGpu) return;
+            const helper = globalThis.customdhx && globalThis.customdhx.webgpu;
+            if (!helper || !helper.enableWidget) return;
+            const widgetId = this.gpuWidgetId || this._gpuFallbackId();
+            this.gpuWidgetId = widgetId;
+            helper.enableWidget(widgetId, true);
+        }
+
+        isGpuReady() {
+            const helper = globalThis.customdhx && globalThis.customdhx.webgpu;
+            if (!helper || !helper.widgetEnabled) return false;
+            return helper.widgetEnabled(this.gpuWidgetId || this._gpuFallbackId());
+        }
+
+        _gpuFallbackId() {
+            return `cardflow-${Math.random().toString(16).slice(2)}`;
         }
 
         setRowColor(rowId, color) {

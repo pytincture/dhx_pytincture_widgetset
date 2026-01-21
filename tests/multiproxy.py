@@ -7,8 +7,18 @@ PyTincture compatibility.
 
 import json
 import os
+import sys
+import types
 
 import litellm
+
+# Ensure the module is registered for inspect.getfile when loaded via SourceFileLoader.
+if __name__ not in sys.modules:
+    module_stub = types.ModuleType(__name__)
+    module_stub.__file__ = __file__
+    sys.modules[__name__] = module_stub
+elif not getattr(sys.modules[__name__], "__file__", None):
+    sys.modules[__name__].__file__ = __file__
 
 from pytincture.dataclass import backend_for_frontend, bff_stream
 
@@ -52,7 +62,7 @@ DEFAULT_PROVIDER_CONFIG = {
             "gpt-4o-mini",
             "gpt-4o",
             "gpt-4.1",
-            "gpt-4.1-mini"
+            "gpt-4.1-mini",
             "o3",
             "o3-mini",
             "o1",
@@ -77,6 +87,7 @@ DEFAULT_PROVIDER_CONFIG = {
 
 DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4o")
 REQUEST_TIMEOUT = float(os.getenv("REQUEST_TIMEOUT", "60"))
+DEBUG_STREAM = os.getenv("MULTIPROXY_DEBUG_STREAM", "").lower() in {"1", "true", "yes"}
 
 # ---------------------------------------------------------------------------
 # LiteLLM provider helpers
@@ -187,6 +198,33 @@ class UnifiedAIProvider:
             for chunk in response:
                 yield chunk
 
+    def complete(self, model, messages, **kwargs):
+        litellm_model = self.get_litellm_model(model)
+
+        if self.is_xai_model(model):
+            original_base_url = os.getenv("OPENAI_BASE_URL")
+            os.environ["OPENAI_BASE_URL"] = "https://api.x.ai/v1"
+            try:
+                return litellm.completion(
+                    model=litellm_model,
+                    messages=list(messages),
+                    stream=False,
+                    api_key=os.getenv("XAI_API_KEY"),
+                    **kwargs,
+                )
+            finally:
+                if original_base_url is not None:
+                    os.environ["OPENAI_BASE_URL"] = original_base_url
+                elif "OPENAI_BASE_URL" in os.environ:
+                    del os.environ["OPENAI_BASE_URL"]
+
+        return litellm.completion(
+            model=litellm_model,
+            messages=list(messages),
+            stream=False,
+            **kwargs,
+        )
+
 
 # ---------------------------------------------------------------------------
 # Backend-for-frontend proxy
@@ -203,6 +241,64 @@ class multiaiproxy:
         self._provider_config = config
         self._default_model = default_model or os.getenv("DEFAULT_MODEL", DEFAULT_MODEL)
         self._timeout = timeout or REQUEST_TIMEOUT
+
+    @staticmethod
+    def _normalize_stream_chunk(chunk):
+        if chunk is None:
+            return None
+
+        payload = chunk
+        if hasattr(payload, "model_dump"):
+            payload = payload.model_dump(exclude_none=True)
+        elif hasattr(payload, "dict"):
+            payload = payload.dict(exclude_none=True)
+
+        if isinstance(payload, (bytes, bytearray)):
+            payload = payload.decode("utf-8", errors="replace")
+
+        if isinstance(payload, str):
+            text = payload.strip()
+            if not text or text == "[DONE]":
+                return None
+            if text.startswith("data:"):
+                text = text[5:].strip()
+                if text == "[DONE]":
+                    return None
+                try:
+                    payload = json.loads(text)
+                except json.JSONDecodeError:
+                    return {"choices": [{"delta": {"content": text}}]}
+            else:
+                return {"choices": [{"delta": {"content": text}}]}
+
+        if not isinstance(payload, dict):
+            return None
+
+        if payload.get("type") == "content.delta":
+            delta = payload.get("delta")
+            if isinstance(delta, dict):
+                text = delta.get("content") or delta.get("text") or ""
+            else:
+                text = delta or ""
+            if text:
+                return {"choices": [{"delta": {"content": text}}]}
+            return None
+
+        if "choices" not in payload:
+            if "delta" in payload:
+                delta = payload.get("delta")
+                if isinstance(delta, dict):
+                    text = delta.get("content") or delta.get("text") or ""
+                else:
+                    text = delta or ""
+                if text:
+                    return {"choices": [{"delta": {"content": text}}]}
+            elif "content" in payload:
+                text = payload.get("content")
+                if isinstance(text, str) and text:
+                    return {"choices": [{"delta": {"content": text}}]}
+
+        return payload
 
     @staticmethod
     def _load_config_from_env():
@@ -256,18 +352,43 @@ class multiaiproxy:
             )
 
         try:
+            yielded_any = False
             for chunk in self._provider.stream_completion(
                 model=selected_model,
                 messages=messages,
                 timeout=timeout,
                 **options,
             ):
-                if hasattr(chunk, "model_dump"):
-                    yield chunk.model_dump(exclude_none=True)
-                elif hasattr(chunk, "dict"):
-                    yield chunk.dict(exclude_none=True)
-                else:
-                    yield chunk
+                if DEBUG_STREAM:
+                    print(f"[multiproxy] raw chunk: {type(chunk)!r} {chunk!r}")
+                normalized = self._normalize_stream_chunk(chunk)
+                if DEBUG_STREAM:
+                    print(f"[multiproxy] normalized: {normalized!r}")
+                if normalized is not None:
+                    yielded_any = True
+                    yield normalized
+            if not yielded_any:
+                response = self._provider.complete(
+                    model=selected_model,
+                    messages=messages,
+                    timeout=timeout,
+                    **options,
+                )
+                payload = response
+                if hasattr(payload, "model_dump"):
+                    payload = payload.model_dump(exclude_none=True)
+                elif hasattr(payload, "dict"):
+                    payload = payload.dict(exclude_none=True)
+                text = ""
+                if isinstance(payload, dict):
+                    for choice in payload.get("choices") or []:
+                        message = (choice or {}).get("message") or {}
+                        if isinstance(message, dict):
+                            text = message.get("content") or ""
+                        if text:
+                            break
+                if text:
+                    yield {"choices": [{"delta": {"content": text}}]}
         except Exception as exc:  # pragma: no cover - provider errors
             yield {
                 "error": {

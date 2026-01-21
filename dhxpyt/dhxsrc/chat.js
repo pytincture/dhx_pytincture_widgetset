@@ -3630,9 +3630,12 @@ def _dhx_run_py_artifact(code_b64: str) -> str:
         constructor(target, options = {}) {
             super();
             this.options = options || {};
+            this._gpuWidgetId = options.gpuWidgetId || null;
+            this._gpuOptIn = !!options.gpu;
             injectStyles();
             this._initializeLayout(target);
             this._renderHost();
+            this._registerGpuPreference();
 
             this._pendingSetMessages = null;
             this._pendingAdds = [];
@@ -3653,6 +3656,21 @@ def _dhx_run_py_artifact(code_b64: str) -> str:
                 this._app = new TenzinChatApp(mount, this.options, this);
                 this._flushPendingOperations();
             });
+        }
+
+        _registerGpuPreference() {
+            if (!this._gpuOptIn) return;
+            const helper = globalThis.customdhx && globalThis.customdhx.webgpu;
+            if (!helper || !helper.enableWidget) return;
+            const widgetId = this._gpuWidgetId || this._layoutCellId || createUniqueId("chat-gpu");
+            this._gpuWidgetId = widgetId;
+            helper.enableWidget(widgetId, true);
+        }
+
+        isGpuReady() {
+            const helper = globalThis.customdhx && globalThis.customdhx.webgpu;
+            if (!helper || !helper.widgetEnabled) return false;
+            return helper.widgetEnabled(this._gpuWidgetId || this._layoutCellId);
         }
 
         _initializeLayout(target) {
