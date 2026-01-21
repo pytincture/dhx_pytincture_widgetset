@@ -96,7 +96,9 @@ class CardFlowConfig:
         toolbar_font_family: str = "",
         cardHeight: str = None,  # Height of collapsed cards
         stacked: bool = False,
-        defaultExpandedHeight: str = "300px"  # NEW: Default height for expanded cards
+        defaultExpandedHeight: str = "300px",  # NEW: Default height for expanded cards
+        gpu: bool = False,
+        gpu_widget_id: str = "",
     ):
         """
         Initializes the CardFlowConfig.
@@ -133,6 +135,8 @@ class CardFlowConfig:
         self.fontSize = fontSize
         self.toolbar_font_family = toolbar_font_family
         self.showOptions = showOptions
+        self.gpu = gpu
+        self.gpu_widget_id = gpu_widget_id
 
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -162,7 +166,9 @@ class CardFlowConfig:
             "toolbarFontFamily": self.toolbar_font_family,
             "showOptions": self.showOptions,
             # new parameter
-            "defaultExpandedHeight": self.defaultExpandedHeight
+            "defaultExpandedHeight": self.defaultExpandedHeight,
+            "gpu": self.gpu,
+            "gpuWidgetId": self.gpu_widget_id or None,
         }
         # Remove keys with None values
         return {k: v for k, v in config_dict.items() if v is not None}
