@@ -256,6 +256,26 @@ class Chat:
         return history
 
     @staticmethod
+    def _extract_content_text(content: Any) -> str:
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            parts = []
+            for item in content:
+                if isinstance(item, str):
+                    parts.append(item)
+                elif isinstance(item, dict):
+                    text = item.get("text")
+                    if isinstance(text, str):
+                        parts.append(text)
+                        continue
+                    text = item.get("content")
+                    if isinstance(text, str):
+                        parts.append(text)
+            return "".join(parts)
+        return ""
+
+    @staticmethod
     def extract_stream_text(chunk: Any) -> str:
         if chunk is None:
             return ""
@@ -293,6 +313,8 @@ class Chat:
                 choices = payload["chunk"].get("choices")
 
         if not choices:
+            if "content" in payload:
+                return Chat._extract_content_text(payload.get("content"))
             return ""
 
         for choice in choices:
@@ -304,6 +326,9 @@ class Chat:
             if isinstance(delta, dict):
                 text = delta.get("content")
                 if text:
+                    return Chat._extract_content_text(text)
+                text = delta.get("text")
+                if isinstance(text, str):
                     return text
         return ""
 

@@ -258,11 +258,58 @@ class chatdemo(MainWindow):
             except Exception as exc:  # pragma: no cover - diagnostics only
                 print(f"[chat_app] Unable to determine active model: {exc}")
 
+        def _extract_text(chunk):
+            if chunk is None:
+                return ""
+            if isinstance(chunk, str):
+                return chunk
+            payload = chunk
+            if hasattr(payload, "model_dump"):
+                payload = payload.model_dump(exclude_none=True)
+            elif hasattr(payload, "to_dict"):
+                payload = payload.to_dict()
+            if isinstance(payload, str):
+                return payload
+            if not isinstance(payload, dict):
+                return ""
+            if "error" in payload:
+                error = payload.get("error") or {}
+                return error.get("message") or ""
+            choices = payload.get("choices") or []
+            for choice in choices:
+                delta = (choice or {}).get("delta")
+                if isinstance(delta, dict):
+                    content = delta.get("content")
+                    if isinstance(content, str):
+                        return content
+                    if isinstance(content, list):
+                        parts = []
+                        for item in content:
+                            if isinstance(item, str):
+                                parts.append(item)
+                            elif isinstance(item, dict):
+                                text = item.get("text") or item.get("content")
+                                if isinstance(text, str):
+                                    parts.append(text)
+                        return "".join(parts)
+                    text = delta.get("text")
+                    if isinstance(text, str):
+                        return text
+                message = (choice or {}).get("message")
+                if isinstance(message, dict):
+                    content = message.get("content")
+                    if isinstance(content, str):
+                        return content
+            content = payload.get("content")
+            if isinstance(content, str):
+                return content
+            return ""
+
         stream = self._openai_proxy.chat_stream(
             context,
             model=selected_model or self._default_model,
         )
-        self._chat_widget.consume_stream(response_id, stream)
+        self._chat_widget.consume_stream(response_id, stream, parser=_extract_text)
 
 
 
