@@ -106,6 +106,12 @@ class Chat:
         """
         self._bind_event("copy", handler)
 
+    def on_cancel(self, handler: Callable[[Dict[str, Any]], Any]) -> None:
+        """
+        Fired when the user clicks the composer cancel button.
+        """
+        self._bind_event("cancel", handler)
+
     # ------------------------------------------------------------------
     # Data operations
     # ------------------------------------------------------------------
@@ -340,6 +346,7 @@ class Chat:
         parser: Optional[Callable[[Any], str]] = None,
         finish: bool = True,
         on_error: Optional[Callable[[Exception], None]] = None,
+        cancel_check: Optional[Callable[[], bool]] = None,
     ) -> None:
         tokenize = parser or self.extract_stream_text
 
@@ -361,6 +368,10 @@ class Chat:
             async def runner():
                 try:
                     async for chunk in stream:
+                        if cancel_check and cancel_check():
+                            if finish:
+                                self.finish_stream(response_id)
+                            return
                         text = tokenize(chunk)
                         if text:
                             self.append_stream(response_id, text)
@@ -380,6 +391,10 @@ class Chat:
 
         try:
             for chunk in iterator:
+                if cancel_check and cancel_check():
+                    if finish:
+                        self.finish_stream(response_id)
+                    return
                 text = tokenize(chunk)
                 if not text:
                     continue

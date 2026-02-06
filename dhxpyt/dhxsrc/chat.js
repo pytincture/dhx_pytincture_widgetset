@@ -592,6 +592,7 @@
                 demoResponse: DEFAULT_DEMO_RESPONSE,
                 storageKey: null,
                 enableArtifacts: true,
+                artifactPanelOpen: false,
                 autoAppendUserMessages: true,
                 inputPlaceholder: "Ask a question…",
                 sendButtonText: "Send",
@@ -646,6 +647,7 @@
             this._selectedModel = null;
             this._activePath = [];
             this._isModelMenuOpen = false;
+            this._activeStreamId = null;
 
             this.ids = {
                 container: createUniqueId("rag-container"),
@@ -685,6 +687,8 @@
             this._renderShell();
             this._cacheDom();
             this._applyLayoutMode();
+            this._setComposerMode("send");
+            this._setArtifactPanelVisibility(Boolean(this.options.artifactPanelOpen));
             this._bindEvents();
             this._initializeState();
         }
@@ -1039,7 +1043,7 @@
                                 </div>
                                 <button type="submit" id="${this.ids.sendButton}">
                                     <span class="material-icons">send</span>
-                                    ${this.options.sendButtonText || "Send"}
+                                    <span class="composer-label">${this.options.sendButtonText || "Send"}</span>
                                 </button>
                             </form>
                         </div>
@@ -1116,21 +1120,34 @@
             const onKeydown = (event) => {
                 if (event.key === "Enter" && !event.shiftKey) {
                     event.preventDefault();
-                    this.handleSubmit();
+                    if (this._activeStreamId) {
+                        this.cancelStream();
+                    } else {
+                        this.handleSubmit();
+                    }
                 } else if (event.key === "Enter" && event.shiftKey) {
                     window.setTimeout(() => this._adjustTextareaHeight(), 0);
                 }
             };
             const onFormSubmit = (event) => {
                 event.preventDefault();
-                this.handleSubmit();
+                if (this._activeStreamId) {
+                    this.cancelStream();
+                } else {
+                    this.handleSubmit();
+                }
             };
 
             const onChatContainerClick = (event) => {
                 const artifactBtn = event.target.closest(".artifact-icon");
                 if (artifactBtn) {
                     const artifactId = artifactBtn.getAttribute("data-artifact-id");
-                    this.showArtifact(artifactId);
+                    if (artifactId && artifactId.startsWith("building:")) {
+                        const messageId = artifactId.slice("building:".length);
+                        this.openBuildingArtifact(messageId);
+                    } else {
+                        this.showArtifact(artifactId);
+                    }
                     return;
                 }
                 const copyBtn = event.target.closest(".message-copy-btn");
@@ -1330,6 +1347,25 @@
             this._observeHostTheme();
         }
 
+        _setArtifactPanelVisibility(open) {
+            if (!this.options.enableArtifacts) {
+                return;
+            }
+            if (open) {
+                this.els.artifactPanel.classList.add("visible");
+                this.els.mainContent.classList.add("with-artifact");
+                if (this.artifactPanelWidth) {
+                    this.els.artifactPanel.style.width = this.artifactPanelWidth;
+                    this.els.mainContent.style.marginRight = this.artifactPanelWidth;
+                }
+            } else {
+                this.els.artifactPanel.classList.remove("visible");
+                this.els.artifactPanel.style.width = "";
+                this.els.mainContent.classList.remove("with-artifact");
+                this.els.mainContent.style.marginRight = "";
+            }
+        }
+
         _loadState() {
             try {
                 const storedChats = localStorage.getItem(this._storageKeys.chats);
@@ -1421,6 +1457,38 @@
             const nextHeight = clamp(scrollHeight, minHeight, maxHeight);
             textarea.style.height = `${nextHeight}px`;
             textarea.style.overflowY = scrollHeight > maxHeight ? "auto" : "hidden";
+        }
+
+        _setComposerMode(mode) {
+            if (!this.els || !this.els.sendButton) {
+                return;
+            }
+            const button = this.els.sendButton;
+            const iconEl = button.querySelector(".material-icons");
+            const labelEl = button.querySelector(".composer-label");
+            const sendLabel = this.options.sendButtonText || "Send";
+            const cancelLabel = "Cancel";
+            if (mode === "cancel") {
+                button.setAttribute("data-mode", "cancel");
+                button.classList.add("composer-cancel");
+                if (iconEl) {
+                    iconEl.textContent = "stop_circle";
+                }
+                if (labelEl) {
+                    labelEl.textContent = cancelLabel;
+                }
+                button.setAttribute("aria-label", cancelLabel);
+            } else {
+                button.setAttribute("data-mode", "send");
+                button.classList.remove("composer-cancel");
+                if (iconEl) {
+                    iconEl.textContent = "send";
+                }
+                if (labelEl) {
+                    labelEl.textContent = sendLabel;
+                }
+                button.setAttribute("aria-label", sendLabel);
+            }
         }
 
         _getModelConfigSource() {
@@ -2075,6 +2143,13 @@
                     const result = this._processStreamingText(displayText, { messageId: message.id });
                     displayText = result.processedText;
                     artifacts = result.artifacts;
+                    if (result.hasIncompleteArtifact && message.streaming) {
+                        message.meta = message.meta || {};
+                        if (!message.meta.artifactBuilding) {
+                            message.meta.artifactBuildingButton = true;
+                            message.meta.artifactBuildingButtonLabel = "Code...";
+                        }
+                    }
                     if (artifacts.length) {
                         const activeChat = this._getActiveChat();
                         if (activeChat) {
@@ -2111,16 +2186,28 @@
                 contentEl.innerHTML = "";
             }
 
+            if (message?.meta?.artifactBuildingButton || message?.meta?.artifactBuilding) {
+                const buildingLabel = message?.meta?.artifactBuildingButtonLabel || "Code...";
+                const buildingHtml = `\n<div class="artifact-icon is-building" data-artifact-id="building:${message.id}"><span class="material-icons">build</span><span>${buildingLabel}</span></div>\n`;
+                const needsBreak = Boolean((contentEl.innerHTML || "").trim());
+                contentEl.innerHTML = (contentEl.innerHTML || "") + (needsBreak ? "<br>" : "") + buildingHtml;
+            }
+
             const thinkingEl = element.querySelector(".message-thinking");
+            const isBuilding = Boolean(message?.meta?.artifactBuilding);
             if (thinkingEl) {
                 const labelEl = thinkingEl.querySelector(".thinking-label");
                 if (labelEl) {
-                    const customLabel = message?.meta?.thinkingLabel;
-                    labelEl.textContent = customLabel || "Thinking…";
+                    if (isBuilding) {
+                        labelEl.textContent = message?.meta?.artifactBuildingLabel || "Building…";
+                    } else {
+                        const customLabel = message?.meta?.thinkingLabel;
+                        labelEl.textContent = customLabel || "Thinking…";
+                    }
                 }
             }
             const hasRenderableContent = Boolean((displayText || "").trim());
-            const showThinking = message.role !== "user" && Boolean(message.streaming) && !hasRenderableContent;
+            const showThinking = message.role !== "user" && Boolean(message.streaming) && (!hasRenderableContent || isBuilding);
             element.classList.toggle("is-thinking", showThinking);
             if (thinkingEl) {
                 thinkingEl.setAttribute("aria-hidden", showThinking ? "false" : "true");
@@ -2572,6 +2659,8 @@
             this._messageMap.set(payload.id, { chatId: chat.id, element, message: payload });
             this._scrollToBottom();
             this.saveState();
+            this._activeStreamId = payload.id;
+            this._setComposerMode("cancel");
             return payload.id;
         }
 
@@ -2580,6 +2669,17 @@
             if (!record) return;
             record.message.content = (record.message.content || "") + (chunk || "");
             record.message.streaming = true;
+            if (this.options.enableArtifacts) {
+                record.message.meta = record.message.meta || {};
+                if (!record.message.meta.artifactBuilding && !record.message.meta.artifactBuildingButton) {
+                    const text = record.message.content || "";
+                    const hasPartialMarker = /:{4}artifact\b|:{4}artifact\{?|:{4}artifact\s|:{4}Artifact\b|:{4}Artifact\s/i.test(text);
+                    if (this.shouldRedirectToArtifact(text) || hasPartialMarker) {
+                        record.message.meta.artifactBuildingButton = true;
+                        record.message.meta.artifactBuildingButtonLabel = "Code...";
+                    }
+                }
+            }
             this._renderMessageContent(record.message, record.element);
             this._scrollToBottom();
             this._handleArtifactStreaming(record.message);
@@ -2601,6 +2701,10 @@
             this._renderMessageContent(record.message, record.element);
             this._handleArtifactStreaming(record.message, true);
             this.saveState();
+            if (this._activeStreamId === messageId) {
+                this._activeStreamId = null;
+                this._setComposerMode("send");
+            }
         }
 
         setAgent(agent) {
@@ -3228,6 +3332,23 @@
             this.saveState();
         }
 
+        cancelStream() {
+            const messageId = this._activeStreamId;
+            if (!messageId) {
+                return;
+            }
+            const record = this._messageMap.get(messageId);
+            if (record) {
+                record.message.meta = record.message.meta || {};
+                record.message.meta.cancelled = true;
+            }
+            this.finishStream(messageId);
+            this.host.emit("cancel", {
+                messageId,
+                chatId: this.activeChatId,
+            });
+        }
+
         async loadModels() {
             const presetStructure = this._normalizeModelData(this._getModelConfigSource());
             if (presetStructure) {
@@ -3294,6 +3415,30 @@
             }
             this.switchArtifactTab("preview");
             this.updateArtifactPreview();
+        }
+
+        openBuildingArtifact(messageId) {
+            if (!messageId) return;
+            const record = this._messageMap.get(messageId);
+            const meta = record && record.message ? record.message.meta || {} : {};
+            const initialContent = meta.artifactBuildingContent || "";
+            this.currentArtifact = {
+                id: `building:${messageId}`,
+                title: "Building Artifact...",
+                type: "text/plain",
+                content: initialContent,
+                messageId,
+            };
+            this.els.artifactTitle.textContent = "Building Artifact...";
+            this.els.artifactCodeContent.textContent = initialContent;
+            this.els.artifactCodeContent.className = "";
+            this.els.artifactPanel.classList.add("visible");
+            this.els.mainContent.classList.add("with-artifact");
+            if (this.artifactPanelWidth) {
+                this.els.artifactPanel.style.width = this.artifactPanelWidth;
+                this.els.mainContent.style.marginRight = this.artifactPanelWidth;
+            }
+            this.switchArtifactTab("code");
         }
 
         updateArtifactPreview() {
@@ -3435,7 +3580,7 @@ def _dhx_run_py_artifact(code_b64: str) -> str:
             return typeMap[type] || "markup";
         }
 
-        closeArtifactPanel() {
+        closeArtifactPanel(options = {}) {
             this.els.artifactPanel.classList.remove("visible");
             this.els.artifactPanel.style.width = "";
             this.els.mainContent.classList.remove("with-artifact");
@@ -3449,14 +3594,17 @@ def _dhx_run_py_artifact(code_b64: str) -> str:
                 this.els.artifactCodeContent.className = "";
             }
             this.currentArtifact = null;
-            this.streamContext = {
-                target: null,
-                messageId: null,
-                buffer: "",
-                isRedirecting: false,
-                completedMessageId: null,
-                messageArtifactCount: 0,
-            };
+            const resetStreamContext = options.resetStreamContext !== false;
+            if (resetStreamContext) {
+                this.streamContext = {
+                    target: null,
+                    messageId: null,
+                    buffer: "",
+                    isRedirecting: false,
+                    completedMessageId: null,
+                    messageArtifactCount: 0,
+                };
+            }
         }
 
         _handleArtifactStreaming(message, isFinal = false) {
@@ -3476,20 +3624,20 @@ def _dhx_run_py_artifact(code_b64: str) -> str:
                 this.streamContext.isRedirecting = true;
                 this.streamContext.messageId = message.id;
                 this.streamContext.buffer = text;
-                this.streamContext.target = this.els.artifactCodeContent;
                 this.streamContext.completedMessageId = null;
                 this.streamContext.messageArtifactCount = 0;
-                this.els.artifactPanel.classList.add("visible");
-                this.els.mainContent.classList.add("with-artifact");
-                if (this.artifactPanelWidth) {
-                    this.els.artifactPanel.style.width = this.artifactPanelWidth;
-                    this.els.mainContent.style.marginRight = this.artifactPanelWidth;
+                this.closeArtifactPanel({ resetStreamContext: false });
+                message.meta = message.meta || {};
+                message.meta.artifactBuildingButton = true;
+                message.meta.artifactBuildingButtonLabel = "Code...";
+                const record = this._messageMap.get(message.id);
+                if (record) {
+                    this._renderMessageContent(record.message, record.element);
                 }
-                this.els.artifactTitle.textContent = "Streaming Artifact...";
-                this.switchArtifactTab("code");
             }
             if (this.streamContext.isRedirecting) {
                 this.streamContext.buffer = text;
+                message.meta = message.meta || {};
                 const lower = text.toLowerCase();
                 const modernMatch = /::::artifact\{[^}]*\}/i.exec(text);
                 const legacyMatch = /::::Artifact\s+([^\n]+)([^\n]*)\n/i.exec(text);
@@ -3497,23 +3645,45 @@ def _dhx_run_py_artifact(code_b64: str) -> str:
                     const headerEnd = modernMatch.index + modernMatch[0].length;
                     const closeIndex = lower.indexOf("::::", headerEnd);
                     if (closeIndex !== -1) {
-                        const artifactContent = text.substring(headerEnd, closeIndex);
-                        this.streamContext.target.textContent = artifactContent;
                         this._finalizeStreamingArtifact(message, text);
                     } else {
                         const partial = text.substring(headerEnd);
-                        this.streamContext.target.textContent = partial;
+                        if (partial && partial.trim()) {
+                            const wasBuilding = Boolean(message.meta.artifactBuilding);
+                            message.meta.artifactBuilding = true;
+                            message.meta.artifactBuildingLabel = "Building…";
+                            message.meta.thinkingLabel = "Building…";
+                            message.meta.artifactBuildingContent = partial;
+                            if (!wasBuilding) {
+                                const record = this._messageMap.get(message.id);
+                                if (record) {
+                                    this._renderMessageContent(record.message, record.element);
+                                }
+                            }
+                            this._renderBuildingArtifactContent(message.id, partial);
+                        }
                     }
                 } else if (legacyMatch) {
                     const headerEnd = legacyMatch.index + legacyMatch[0].length;
                     const closeIndex = lower.indexOf("::::artifact", headerEnd);
                     if (closeIndex !== -1) {
-                        const artifactContent = text.substring(headerEnd, closeIndex);
-                        this.streamContext.target.textContent = artifactContent;
                         this._finalizeStreamingArtifact(message, text);
                     } else {
                         const partial = text.substring(headerEnd);
-                        this.streamContext.target.textContent = partial;
+                        if (partial && partial.trim()) {
+                            const wasBuilding = Boolean(message.meta.artifactBuilding);
+                            message.meta.artifactBuilding = true;
+                            message.meta.artifactBuildingLabel = "Building…";
+                            message.meta.thinkingLabel = "Building…";
+                            message.meta.artifactBuildingContent = partial;
+                            if (!wasBuilding) {
+                                const record = this._messageMap.get(message.id);
+                                if (record) {
+                                    this._renderMessageContent(record.message, record.element);
+                                }
+                            }
+                            this._renderBuildingArtifactContent(message.id, partial);
+                        }
                     }
                 }
             }
@@ -3521,6 +3691,22 @@ def _dhx_run_py_artifact(code_b64: str) -> str:
                 this.streamContext.isRedirecting = false;
                 this.streamContext.target = null;
             }
+        }
+
+        _renderBuildingArtifactContent(messageId, content) {
+            const record = this._messageMap.get(messageId);
+            if (record) {
+                record.message.meta = record.message.meta || {};
+                record.message.meta.artifactBuildingContent = content || "";
+            }
+            if (!this.currentArtifact || this.currentArtifact.messageId !== messageId) {
+                return;
+            }
+            if (!this.els.artifactPanel.classList.contains("visible")) {
+                return;
+            }
+            this.els.artifactTitle.textContent = "Building Artifact...";
+            this.els.artifactCodeContent.textContent = content || "";
         }
 
         _finalizeStreamingArtifact(message, text) {
@@ -3541,20 +3727,40 @@ def _dhx_run_py_artifact(code_b64: str) -> str:
             });
 
             const artifact = parsed.artifacts[parsed.artifacts.length - 1];
-            this.currentArtifact = Object.assign({}, artifact, { messageId: message.id });
-            this.els.artifactTitle.textContent = artifact.title;
-            this.els.artifactCodeContent.textContent = artifact.content;
-            const lang = this.getLanguageFromType(artifact.type);
-            this.els.artifactCodeContent.className = `language-${lang}`;
-            if (typeof Prism !== "undefined") {
-                try {
-                    Prism.highlightElement(this.els.artifactCodeContent);
-                } catch (error) {
-                    console.warn("[ChatWidget] Prism highlight failed", error);
+            message.meta = message.meta || {};
+            message.meta.artifactBuilding = false;
+            message.meta.artifactBuildingButton = false;
+            message.meta.artifactBuildingContent = null;
+            message.meta.artifactBuildingButtonLabel = null;
+            message.meta.artifactBuildingLabel = null;
+            if (message.meta.thinkingLabel === "Building…") {
+                message.meta.thinkingLabel = null;
+            }
+            const record = this._messageMap.get(message.id);
+            if (record) {
+                this._renderMessageContent(record.message, record.element);
+            }
+            const wasBuilding = Boolean(this.currentArtifact && typeof this.currentArtifact.id === "string" && this.currentArtifact.id.startsWith("building:"));
+            if (this.currentArtifact && this.currentArtifact.messageId === message.id) {
+                this.currentArtifact = Object.assign({}, artifact, { messageId: message.id });
+                this.els.artifactTitle.textContent = artifact.title;
+                this.els.artifactCodeContent.textContent = artifact.content;
+                const lang = this.getLanguageFromType(artifact.type);
+                this.els.artifactCodeContent.className = `language-${lang}`;
+                if (typeof Prism !== "undefined") {
+                    try {
+                        Prism.highlightElement(this.els.artifactCodeContent);
+                    } catch (error) {
+                        console.warn("[ChatWidget] Prism highlight failed", error);
+                    }
+                }
+                if (wasBuilding) {
+                    this.switchArtifactTab("code");
+                } else {
+                    this.switchArtifactTab("preview");
+                    this.updateArtifactPreview();
                 }
             }
-            this.switchArtifactTab("preview");
-            this.updateArtifactPreview();
             this.streamContext.completedMessageId = message.id;
             this.streamContext.buffer = text;
             this.streamContext.messageArtifactCount = parsed.artifacts.length;

@@ -80,6 +80,7 @@ class ChatConfig:
     theme: str = "auto"
     auto_append_user_messages: bool = True
     enable_artifacts: bool = True
+    artifact_panel_open: bool = False
     artifact_panel_width: Optional[int] = None
     max_messages: Optional[int] = None
     streaming_debounce_ms: int = 32
@@ -108,6 +109,7 @@ class ChatConfig:
             "theme": self.theme,
             "autoAppendUserMessages": self.auto_append_user_messages,
             "enableArtifacts": self.enable_artifacts,
+            "artifactPanelOpen": self.artifact_panel_open,
             "artifactPanelWidth": self.artifact_panel_width,
             "maxMessages": self.max_messages,
             "streamingDebounce": self.streaming_debounce_ms,

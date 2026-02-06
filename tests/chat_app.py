@@ -3,7 +3,7 @@
 import copy
 import os
 import sys
-from typing import Any, Optional
+from typing import Any, Optional, Set
 
 from dhxpyt.layout import LayoutConfig, CellConfig, MainWindow
 from dhxpyt.chat import (
@@ -104,6 +104,7 @@ class chatdemo(MainWindow):
         self._system_prompt = SYSTEM_PROMPT
         self._default_model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
         self._user_name = os.getenv("CHATDEMO_USER", "You")
+        self._cancelled_response_ids: Set[str] = set()
         self.load_ui()
 
     # ------------------------------------------------------------------
@@ -201,6 +202,7 @@ class chatdemo(MainWindow):
 
         self._chat_widget = self.add_chat("chat", chat_config)
         self._chat_widget.on_send(self._handle_send)
+        self._chat_widget.on_cancel(self._handle_cancel)
 
     # ------------------------------------------------------------------
     # Event handlers
@@ -225,6 +227,7 @@ class chatdemo(MainWindow):
         )
 
         response_id = self._chat_widget.start_stream(assistant_message)
+        self._cancelled_response_ids.discard(response_id)
 
         if not self._openai_proxy:
             warning = (
@@ -235,6 +238,14 @@ class chatdemo(MainWindow):
             return True
 
         self._call_bff_backend(prompt, response_id)
+        return True
+
+    def _handle_cancel(self, payload) -> None:
+        if not payload:
+            return True
+        message_id = payload.get("messageId")
+        if message_id:
+            self._cancelled_response_ids.add(message_id)
         return True
 
     def _call_bff_backend(self, prompt: str, response_id: str) -> None:
@@ -309,7 +320,19 @@ class chatdemo(MainWindow):
             context,
             model=selected_model or self._default_model,
         )
-        self._chat_widget.consume_stream(response_id, stream, parser=_extract_text)
+        try:
+            self._chat_widget.consume_stream(
+                response_id,
+                stream,
+                parser=_extract_text,
+                cancel_check=lambda: response_id in self._cancelled_response_ids,
+            )
+        except TypeError:
+            self._chat_widget.consume_stream(
+                response_id,
+                stream,
+                parser=_extract_text,
+            )
 
 
 
