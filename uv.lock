@@ -1,0 +1,36 @@
+version = 1
+revision = 2
+requires-python = ">=3.13"
+
+[[package]]
+name = "dhxpyt"
+version = "0.9.12"
+source = { editable = "." }
+dependencies = [
+    { name = "itsdangerous" },
+    { name = "pyodide-py" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "itsdangerous", specifier = ">=2.2.0" },
+    { name = "pyodide-py", specifier = "==0.29.3" },
+]
+
+[[package]]
+name = "itsdangerous"
+version = "2.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/9c/cb/8ac0172223afbccb63986cc25049b154ecfb5e85932587206f42317be31d/itsdangerous-2.2.0.tar.gz", hash = "sha256:e0050c0b7da1eea53ffaf149c0cfbb5c6e2e2b69c4bef22c81fa6eb73e5f6173", size = 54410, upload-time = "2024-04-16T21:28:15.614Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/04/96/92447566d16df59b2a776c0fb82dbc4d9e07cd95062562af01e408583fc4/itsdangerous-2.2.0-py3-none-any.whl", hash = "sha256:c6242fc49e35958c8b15141343aa660db5fc54d4f13a1db01a3f5891b98700ef", size = 16234, upload-time = "2024-04-16T21:28:14.499Z" },
+]
+
+[[package]]
+name = "pyodide-py"
+version = "0.29.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/3c/e2/35e934789449ef1d1534a2a195d0fa7795c857a24499e0dbbf557af74a83/pyodide_py-0.29.3.tar.gz", hash = "sha256:d553d60d95ba8ed3a368f2d1448c4283a3d752511f25d86b3cadfc79a58e4a07", size = 58740, upload-time = "2026-01-28T09:26:08.727Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1b/1a/9b312385c634a8ec3210be6790e3cf2593af5490675c5e27c4f908001da8/pyodide_py-0.29.3-py3-none-any.whl", hash = "sha256:0108040da4f072058e751c4ad35182cd54803c73258024c2b93012d199c18315", size = 66015, upload-time = "2026-01-28T09:26:07.392Z" },
+]
