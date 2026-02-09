@@ -3734,7 +3734,6 @@ def _dhx_run_py_artifact(code_b64: str) -> str:
             message.meta.artifactBuildingContent = null;
             message.meta.artifactBuildingButtonLabel = null;
             message.meta.artifactBuildingLabel = null;
-            // Mark artifact as finalized to prevent appendStream from re-setting the building flags
             message.meta.artifactFinalized = true;
             if (message.meta.thinkingLabel === "Building…") {
                 message.meta.thinkingLabel = null;
