@@ -2143,7 +2143,7 @@
                     const result = this._processStreamingText(displayText, { messageId: message.id });
                     displayText = result.processedText;
                     artifacts = result.artifacts;
-                    if (result.hasIncompleteArtifact && message.streaming) {
+                    if (result.hasIncompleteArtifact && (message.streaming || message.meta?.cancelled)) {
                         message.meta = message.meta || {};
                         if (!message.meta.artifactBuilding) {
                             message.meta.artifactBuildingButton = true;
@@ -2671,7 +2671,8 @@
             record.message.streaming = true;
             if (this.options.enableArtifacts) {
                 record.message.meta = record.message.meta || {};
-                if (!record.message.meta.artifactBuilding && !record.message.meta.artifactBuildingButton) {
+                // Don't set building flags if artifact has already been finalized
+                if (!record.message.meta.artifactBuilding && !record.message.meta.artifactBuildingButton && !record.message.meta.artifactFinalized) {
                     const text = record.message.content || "";
                     const hasPartialMarker = /:{4}artifact\b|:{4}artifact\{?|:{4}artifact\s|:{4}Artifact\b|:{4}Artifact\s/i.test(text);
                     if (this.shouldRedirectToArtifact(text) || hasPartialMarker) {
@@ -3733,6 +3734,7 @@ def _dhx_run_py_artifact(code_b64: str) -> str:
             message.meta.artifactBuildingContent = null;
             message.meta.artifactBuildingButtonLabel = null;
             message.meta.artifactBuildingLabel = null;
+            message.meta.artifactFinalized = true;
             if (message.meta.thinkingLabel === "Building…") {
                 message.meta.thinkingLabel = null;
             }
