@@ -3,6 +3,7 @@
 import copy
 import os
 import sys
+from datetime import datetime
 from typing import Any, Optional, Set
 
 from dhxpyt.layout import LayoutConfig, CellConfig, MainWindow
@@ -86,11 +87,30 @@ DEFAULT_PROVIDER_CONFIG = {
 SYSTEM_PROMPT = (
     "you can generate an html page. the way to create a viewable one is to wrap the html "
     "with this ::::Artifact Dashboard Snapshot | renderer=iframe | language=html\n"
-    ". then after ::::Artifact to close it. Only generate when I ask for you to generate a page or similar remark"
+    ". then after ::::Artifact to close it. Only generate when I ask for you to generate a page or similar remark\n"
+    "If tools are available, you must use them to answer questions they can answer "
+    "(date/time/timezone/echo/simple_math) and avoid claiming you lack access."
 )
 
 
+def chat_tool(*, name, description, parameters=None):
+    def decorator(func):
+        params = parameters or {"type": "object", "properties": {}, "additionalProperties": False}
+        func._chat_tool_def = {
+            "type": "function",
+            "function": {
+                "name": name,
+                "description": description,
+                "parameters": params,
+            },
+        }
+        return func
+
+    return decorator
+
+
 class chatdemo(MainWindow):
+    APP_TITLE = "Chat App"
     layout_config = LayoutConfig(
         type="line",
         rows=[CellConfig(id="chat", height="100%")],
@@ -203,10 +223,107 @@ class chatdemo(MainWindow):
         self._chat_widget = self.add_chat("chat", chat_config)
         self._chat_widget.on_send(self._handle_send)
         self._chat_widget.on_cancel(self._handle_cancel)
+        self._tools, self._tool_handlers = self._collect_tools()
+        if self._openai_proxy and hasattr(self._openai_proxy, "register_tools") and sys.platform != "emscripten":
+            try:
+                self._openai_proxy.register_tools(tool_handlers=self._tool_handlers)
+            except Exception as exc:  # pragma: no cover - diagnostics only
+                print(f"[chat_app] Tool registration failed: {exc}")
 
     # ------------------------------------------------------------------
     # Event handlers
     # ------------------------------------------------------------------
+
+    def _collect_tools(self):
+        tools = []
+        handlers = {}
+        for attr in dir(self):
+            candidate = getattr(self, attr, None)
+            tool_def = getattr(candidate, "_chat_tool_def", None)
+            if tool_def is None and hasattr(candidate, "__func__"):
+                tool_def = getattr(candidate.__func__, "_chat_tool_def", None)
+            if tool_def:
+                tools.append(tool_def)
+                handlers[tool_def["function"]["name"]] = candidate
+        tools.sort(key=lambda item: item["function"]["name"])
+        return tools, handlers
+
+    @chat_tool(
+        name="get_current_datetime",
+        description="Return the current local date and time on the server.",
+    )
+    def _tool_get_current_datetime(self, _args):
+        now = datetime.now().astimezone()
+        return {
+            "iso": now.isoformat(),
+            "date": now.strftime("%Y-%m-%d"),
+            "time": now.strftime("%H:%M:%S"),
+            "timezone": str(now.tzinfo),
+        }
+
+    @chat_tool(
+        name="get_current_date",
+        description="Return the current local date on the server.",
+    )
+    def _tool_get_current_date(self, _args):
+        now = datetime.now().astimezone()
+        return {"date": now.strftime("%Y-%m-%d")}
+
+    @chat_tool(
+        name="get_current_time",
+        description="Return the current local time on the server.",
+    )
+    def _tool_get_current_time(self, _args):
+        now = datetime.now().astimezone()
+        return {"time": now.strftime("%H:%M:%S")}
+
+    @chat_tool(
+        name="get_unix_timestamp",
+        description="Return the current Unix timestamp in seconds.",
+    )
+    def _tool_get_unix_timestamp(self, _args):
+        now = datetime.now().astimezone()
+        return {"timestamp": int(now.timestamp())}
+
+    @chat_tool(
+        name="get_timezone",
+        description="Return the server's local timezone name.",
+    )
+    def _tool_get_timezone(self, _args):
+        now = datetime.now().astimezone()
+        return {"timezone": str(now.tzinfo)}
+
+    @chat_tool(
+        name="echo",
+        description="Echo back a provided message.",
+        parameters={
+            "type": "object",
+            "properties": {"message": {"type": "string"}},
+            "required": ["message"],
+            "additionalProperties": False,
+        },
+    )
+    def _tool_echo(self, args):
+        return {"message": (args or {}).get("message", "")}
+
+    @chat_tool(
+        name="simple_math",
+        description="Evaluate a simple arithmetic expression with +, -, *, / and parentheses.",
+        parameters={
+            "type": "object",
+            "properties": {"expression": {"type": "string"}},
+            "required": ["expression"],
+            "additionalProperties": False,
+        },
+    )
+    def _tool_simple_math(self, args):
+        expr = str((args or {}).get("expression", ""))
+        try:
+            allowed = {"__builtins__": {}}
+            result = eval(expr, allowed, {})
+        except Exception as exc:
+            return {"error": str(exc)}
+        return {"result": result}
 
     def _handle_send(self, payload) -> None:
         """Stream responses from the backend for each submitted prompt."""
@@ -237,7 +354,8 @@ class chatdemo(MainWindow):
             self._chat_widget.finish_stream(response_id)
             return True
 
-        self._call_bff_backend(prompt, response_id)
+        artifact_console = (payload or {}).get("artifactConsole") or []
+        self._call_bff_backend(prompt, response_id, artifact_console)
         return True
 
     def _handle_cancel(self, payload) -> None:
@@ -248,7 +366,7 @@ class chatdemo(MainWindow):
             self._cancelled_response_ids.add(message_id)
         return True
 
-    def _call_bff_backend(self, prompt: str, response_id: str) -> None:
+    def _call_bff_backend(self, prompt: str, response_id: str, artifact_console) -> None:
         if not self._chat_widget or not self._openai_proxy:
             return
 
@@ -256,6 +374,24 @@ class chatdemo(MainWindow):
             system_prompt=self._system_prompt,
             exclude_ids={response_id},
         )
+        if artifact_console:
+            console_lines = []
+            for artifact in artifact_console:
+                artifact_id = artifact.get("artifactId") or "unknown"
+                console_lines.append(f"[Artifact {artifact_id}]")
+                for entry in artifact.get("entries", []) or []:
+                    level = entry.get("level") or "log"
+                    items = entry.get("items") or []
+                    text = " ".join(str(item) for item in items if item is not None)
+                    if text:
+                        console_lines.append(f"{level}: {text}")
+            if console_lines:
+                context.append(
+                    {
+                        "role": "system",
+                        "content": "Artifact console output:\n" + "\n".join(console_lines),
+                    }
+                )
         if not any(msg.get("role") == "user" and msg.get("content") == prompt for msg in context):
             context.append({"role": "user", "content": prompt})
 
@@ -319,6 +455,7 @@ class chatdemo(MainWindow):
         stream = self._openai_proxy.chat_stream(
             context,
             model=selected_model or self._default_model,
+            tools=self._tools,
         )
         try:
             self._chat_widget.consume_stream(
@@ -333,6 +470,9 @@ class chatdemo(MainWindow):
                 stream,
                 parser=_extract_text,
             )
+
+
+
 
 
 

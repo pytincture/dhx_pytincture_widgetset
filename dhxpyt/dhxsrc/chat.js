@@ -446,7 +446,7 @@
             .artifact-resize-handle { position: absolute; left: -4px; top: 0; bottom: 0; width: 8px; cursor: col-resize; }
             .artifact-header { padding: 18px 20px 12px; border-bottom: 1px solid rgba(148,163,184,0.22); display: flex; flex-direction: column; gap: 12px; }
             .artifact-title { font-size: 18px; font-weight: 600; }
-            .artifact-tabs { display: flex; gap: 8px; }
+            .artifact-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
             .artifact-tab { background: rgba(255,255,255,0.08); border: none; border-radius: 10px; padding: 8px 14px; color: inherit; cursor: pointer; font-size: 13px; }
             .artifact-tab.active { background: rgba(255,255,255,0.22); }
             .artifact-body { flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 14px 20px 20px; overflow: hidden; }
@@ -455,6 +455,17 @@
             .artifact-preview { flex: 1; display: none; border-radius: 12px; overflow: hidden; background: rgba(255,255,255,0.95); }
             .artifact-preview.visible { display: block; }
             .artifact-preview iframe { width: 100%; height: 100%; border: none; }
+            .artifact-console { flex: 1; display: none; background: rgba(15,23,42,0.85); border-radius: 12px; padding: 12px 14px; overflow: auto; font-family: "Fira Code", monospace; font-size: 12px; line-height: 1.5; white-space: pre-wrap; color: #e2e8f0; }
+            .artifact-console.visible { display: block; }
+            .artifact-console.is-warn { background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.35); }
+            .artifact-console.is-error { background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.35); }
+            .artifact-console .console-line { margin: 0 0 6px 0; }
+            .artifact-console .console-line:last-child { margin-bottom: 0; }
+            .artifact-console .console-tag { display: inline-block; margin-right: 8px; font-size: 11px; text-transform: uppercase; opacity: 0.65; }
+            .artifact-console .console-error { color: #fca5a5; }
+            .artifact-console .console-warn { color: #fde68a; }
+            .artifact-tab.is-warn { color: #fcd34d; }
+            .artifact-tab.is-error { color: #fca5a5; }
             .artifact-actions { padding: 0 20px 20px; display: flex; gap: 10px; }
             .artifact-actions button { flex: 1; border: none; border-radius: 10px; padding: 10px 12px; font-size: 13px; background: rgba(59,130,246,0.18); color: inherit; cursor: pointer; }
             .artifact-actions button:hover { background: rgba(59,130,246,0.28); }
@@ -648,6 +659,8 @@
             this._activePath = [];
             this._isModelMenuOpen = false;
             this._activeStreamId = null;
+            this._artifactConsole = new Map();
+            this._artifactConsoleOrder = [];
 
             this.ids = {
                 container: createUniqueId("rag-container"),
@@ -673,11 +686,13 @@
                 artifactCodeContent: createUniqueId("artifact-code-content"),
                 artifactPreview: createUniqueId("artifact-preview"),
                 artifactIframe: createUniqueId("artifact-iframe"),
+                artifactConsole: createUniqueId("artifact-console"),
                 artifactCopy: createUniqueId("artifact-copy"),
                 artifactDownload: createUniqueId("artifact-download"),
                 artifactClose: createUniqueId("artifact-close"),
                 artifactTabCode: createUniqueId("artifact-tab-code"),
                 artifactTabPreview: createUniqueId("artifact-tab-preview"),
+                artifactTabConsole: createUniqueId("artifact-tab-console"),
                 sidebarControls: createUniqueId("sidebar-controls"),
                 composerHelp: createUniqueId("composer-help"),
                 agentName: createUniqueId("agent-name"),
@@ -1055,6 +1070,7 @@
                             <div class="artifact-tabs">
                                 <button class="artifact-tab" id="${this.ids.artifactTabCode}" data-tab="code">Code</button>
                                 <button class="artifact-tab" id="${this.ids.artifactTabPreview}" data-tab="preview">Preview</button>
+                                <button class="artifact-tab" id="${this.ids.artifactTabConsole}" data-tab="console">Console</button>
                             </div>
                         </div>
                         <div class="artifact-body">
@@ -1062,6 +1078,7 @@
                             <div class="artifact-preview" id="${this.ids.artifactPreview}">
                                 <iframe id="${this.ids.artifactIframe}" sandbox="allow-scripts allow-same-origin"></iframe>
                             </div>
+                            <div class="artifact-console" id="${this.ids.artifactConsole}"></div>
                         </div>
                         <div class="artifact-actions">
                             <button id="${this.ids.artifactCopy}" data-action="artifact-copy">Copy</button>
@@ -1099,11 +1116,13 @@
                 artifactCodeContent: byId(this.ids.artifactCodeContent),
                 artifactPreview: byId(this.ids.artifactPreview),
                 artifactIframe: byId(this.ids.artifactIframe),
+                artifactConsole: byId(this.ids.artifactConsole),
                 artifactCopy: byId(this.ids.artifactCopy),
                 artifactDownload: byId(this.ids.artifactDownload),
                 artifactClose: byId(this.ids.artifactClose),
                 artifactTabCode: byId(this.ids.artifactTabCode),
                 artifactTabPreview: byId(this.ids.artifactTabPreview),
+                artifactTabConsole: byId(this.ids.artifactTabConsole),
                 composerHelp: byId(this.ids.composerHelp),
                 agentName: byId(this.ids.agentName),
                 agentSubtitle: byId(this.ids.agentSubtitle),
@@ -1272,6 +1291,9 @@
                 const tab = event.currentTarget.getAttribute("data-tab");
                 this.switchArtifactTab(tab);
             };
+            const onArtifactConsoleMessage = (event) => {
+                this._handleArtifactConsoleMessage(event);
+            };
 
             const onResizeMouseDown = (event) => {
                 this.isArtifactResizing = true;
@@ -1310,7 +1332,11 @@
             this.els.artifactClose.addEventListener("click", onArtifactClose);
             this.els.artifactTabCode.addEventListener("click", onArtifactTab);
             this.els.artifactTabPreview.addEventListener("click", onArtifactTab);
+            if (this.els.artifactTabConsole) {
+                this.els.artifactTabConsole.addEventListener("click", onArtifactTab);
+            }
             this.els.artifactResize.addEventListener("mousedown", onResizeMouseDown);
+            window.addEventListener("message", onArtifactConsoleMessage);
             window.addEventListener("resize", onInput);
 
             EVENT_HANDLERS.set(this, {
@@ -1332,6 +1358,7 @@
                 onArtifactDownload,
                 onArtifactClose,
                 onArtifactTab,
+                onArtifactConsoleMessage,
                 onResizeMouseDown,
             });
         }
@@ -1429,10 +1456,14 @@
                 this.els.artifactClose.removeEventListener("click", handlers.onArtifactClose);
                 this.els.artifactTabCode.removeEventListener("click", handlers.onArtifactTab);
                 this.els.artifactTabPreview.removeEventListener("click", handlers.onArtifactTab);
+                if (this.els.artifactTabConsole) {
+                    this.els.artifactTabConsole.removeEventListener("click", handlers.onArtifactTab);
+                }
                 this.els.artifactResize.removeEventListener("mousedown", handlers.onResizeMouseDown);
                 document.removeEventListener("mousemove", handlers.resizeHandler);
                 document.removeEventListener("mouseup", handlers.stopResizeHandler);
                 document.removeEventListener("click", handlers.onDocumentClick);
+                window.removeEventListener("message", handlers.onArtifactConsoleMessage);
                 window.removeEventListener("resize", handlers.onInput);
             }
             EVENT_HANDLERS.delete(this);
@@ -3325,12 +3356,46 @@
                 message: userMessage,
                 context: contextMessages,
                 chatId: activeChat.id,
+                artifactConsole: this._serializeArtifactConsole(),
             });
 
             if (!sendResult || !sendResult.handled) {
                 this.streamMockResponse();
             }
             this.saveState();
+        }
+
+        _serializeArtifactConsole() {
+            const entries = [];
+            const seen = new Set();
+            const order = Array.isArray(this._artifactConsoleOrder) ? this._artifactConsoleOrder : [];
+            order.forEach((artifactId) => {
+                if (seen.has(artifactId)) return;
+                seen.add(artifactId);
+                const items = this._artifactConsole.get(artifactId) || [];
+                if (!items.length) return;
+                entries.push({
+                    artifactId,
+                    entries: items.map((entry) => ({
+                        level: entry.level || "log",
+                        items: Array.isArray(entry.items) ? entry.items : [],
+                        ts: entry.ts || null,
+                    })),
+                });
+            });
+            this._artifactConsole.forEach((items, artifactId) => {
+                if (seen.has(artifactId)) return;
+                if (!items || !items.length) return;
+                entries.push({
+                    artifactId,
+                    entries: items.map((entry) => ({
+                        level: entry.level || "log",
+                        items: Array.isArray(entry.items) ? entry.items : [],
+                        ts: entry.ts || null,
+                    })),
+                });
+            });
+            return entries;
         }
 
         cancelStream() {
@@ -3447,7 +3512,8 @@
             const iframe = this.els.artifactIframe;
             const type = (this.currentArtifact.type || "").toLowerCase();
             if (type === "text/html") {
-                const blob = new Blob([this.currentArtifact.content], { type: "text/html" });
+                const rendered = this._injectArtifactConsoleBridge(this.currentArtifact.content, this.currentArtifact.id);
+                const blob = new Blob([rendered], { type: "text/html" });
                 iframe.src = URL.createObjectURL(blob);
                 return;
             }
@@ -3462,6 +3528,173 @@
                 return;
             }
             iframe.src = "data:text/html,<body style='padding:20px;font-family:monospace;'>Preview not available for this file type</body>";
+        }
+
+        _injectArtifactConsoleBridge(html, artifactId) {
+            const safeId = String(artifactId || "");
+            const payload = JSON.stringify({ __dhxArtifactConsole: true, artifactId: safeId, event: "boot" });
+            const bridge = `
+<script>
+(function(){
+  try {
+    var id = ${JSON.stringify(safeId)};
+    var parentWin = window.parent;
+    if (!parentWin || parentWin === window) return;
+    var send = function(level, args) {
+      try {
+        var items = Array.prototype.slice.call(args || []).map(function(item){
+          if (typeof item === "string") return item;
+          try { return JSON.stringify(item); } catch (e) { return String(item); }
+        });
+        parentWin.postMessage({ __dhxArtifactConsole: true, artifactId: id, level: level, items: items }, "*");
+      } catch (err) {}
+    };
+    ["log","info","warn","error"].forEach(function(level){
+      var original = console[level];
+      console[level] = function(){
+        try { send(level, arguments); } catch (e) {}
+        if (original) {
+          return original.apply(console, arguments);
+        }
+      };
+    });
+    var originalAlert = window.alert;
+    window.alert = function(message){
+      try { send("warn", ["Ignored call to alert()", message || ""]); } catch (e) {}
+      if (originalAlert) {
+        return originalAlert.apply(window, arguments);
+      }
+    };
+    var originalConfirm = window.confirm;
+    window.confirm = function(message){
+      try { send("warn", ["Ignored call to confirm()", message || ""]); } catch (e) {}
+      if (originalConfirm) {
+        return originalConfirm.apply(window, arguments);
+      }
+      return false;
+    };
+    var originalPrompt = window.prompt;
+    window.prompt = function(message, value){
+      try { send("warn", ["Ignored call to prompt()", message || ""]); } catch (e) {}
+      if (originalPrompt) {
+        return originalPrompt.apply(window, arguments);
+      }
+      return null;
+    };
+    var originalOpen = window.open;
+    window.open = function(){
+      try { send("warn", ["Blocked call to window.open()", (arguments && arguments[0]) || ""]); } catch (e) {}
+      if (originalOpen) {
+        return originalOpen.apply(window, arguments);
+      }
+      return null;
+    };
+    document.addEventListener("click", function(event){
+      try {
+        var anchor = event.target && event.target.closest ? event.target.closest("a[href]") : null;
+        if (!anchor) return;
+        var href = anchor.getAttribute("href") || "";
+        if (!href) return;
+        var protocol = href.split(":")[0].toLowerCase();
+        if (protocol && ["mailto","tel","sms","geo","intent"].indexOf(protocol) !== -1) {
+          send("warn", ["Blocked navigation to", href, "(sandboxed iframe)"]);
+        }
+        var target = (anchor.getAttribute("target") || "").toLowerCase();
+        if (target === "_blank") {
+          send("warn", ["Blocked popup to", href, "(sandboxed iframe)"]);
+        }
+      } catch (e) {}
+    }, true);
+    window.addEventListener("error", function(event){
+      try { send("error", [event.message || "Error", event.filename + ":" + event.lineno + ":" + event.colno]); } catch (e) {}
+    });
+    window.addEventListener("unhandledrejection", function(event){
+      try { send("error", [event.reason ? String(event.reason) : "Unhandled promise rejection"]); } catch (e) {}
+    });
+    parentWin.postMessage(${payload}, "*");
+  } catch (err) {}
+})();
+</script>`;
+            if (!html) return bridge;
+            if (/<\/body>/i.test(html)) {
+                return html.replace(/<\/body>/i, `${bridge}</body>`);
+            }
+            return `${html}${bridge}`;
+        }
+
+        _handleArtifactConsoleMessage(event) {
+            const data = event && event.data ? event.data : null;
+            if (!data || !data.__dhxArtifactConsole) return;
+            const artifactId = data.artifactId;
+            if (!artifactId) return;
+            if (data.event === "boot") {
+                const existing = this._artifactConsole.get(artifactId) || [];
+                if (!existing.length) {
+                    const entry = { ts: Date.now(), level: "info", items: ["Console connected. Waiting for logs..."] };
+                    this._artifactConsole.set(artifactId, [entry]);
+                }
+                if (this.currentArtifact && this.currentArtifact.id === artifactId) {
+                    this._renderArtifactConsole();
+                }
+                return;
+            }
+            const items = Array.isArray(data.items) ? data.items : [];
+            const entry = {
+                ts: Date.now(),
+                level: data.level || "log",
+                items,
+            };
+            const existing = this._artifactConsole.get(artifactId) || [];
+            existing.push(entry);
+            const capped = existing.length > 500 ? existing.slice(-500) : existing;
+            this._artifactConsole.set(artifactId, capped);
+            if (!this._artifactConsoleOrder.includes(artifactId)) {
+                this._artifactConsoleOrder.push(artifactId);
+            }
+            const level = (data.level || "log").toLowerCase();
+            if (console && typeof console[level] === "function") {
+                console[level](`[Artifact ${artifactId}]`, ...(items.length ? items : []));
+            }
+            if (this.currentArtifact && this.currentArtifact.id === artifactId) {
+                this._renderArtifactConsole();
+            }
+        }
+
+        _renderArtifactConsole() {
+            const panel = this.els.artifactConsole;
+            if (!panel || !this.currentArtifact) return;
+            const items = this._artifactConsole.get(this.currentArtifact.id) || [];
+            panel.classList.remove("is-warn", "is-error");
+            if (!items.length) {
+                panel.innerHTML = "<div class=\"console-line\"><span class=\"console-tag\">info</span>No console output yet.</div>";
+                return;
+            }
+            const consoleTab = this.els.artifactTabConsole;
+            if (consoleTab) {
+                consoleTab.classList.remove("is-warn", "is-error");
+            }
+            const lines = items.map((entry) => {
+                const level = (entry.level || "log").toLowerCase();
+                const tag = escapeHtml(level);
+                const content = escapeHtml((entry.items || []).join(" "));
+                const cls = level === "error" ? "console-error" : (level === "warn" ? "console-warn" : "");
+                return `<div class="console-line ${cls}"><span class="console-tag">${tag}</span>${content}</div>`;
+            });
+            panel.innerHTML = lines.join("");
+            const hasError = items.some((entry) => String(entry.level || "").toLowerCase() === "error");
+            const hasWarn = !hasError && items.some((entry) => String(entry.level || "").toLowerCase() === "warn");
+            if (hasError) {
+                panel.classList.add("is-error");
+                if (consoleTab) {
+                    consoleTab.classList.add("is-error");
+                }
+            } else if (hasWarn) {
+                panel.classList.add("is-warn");
+                if (consoleTab) {
+                    consoleTab.classList.add("is-warn");
+                }
+            }
+            panel.scrollTop = panel.scrollHeight;
         }
 
         _loadPythonArtifactPreview(source) {
@@ -3518,20 +3751,36 @@ def _dhx_run_py_artifact(code_b64: str) -> str:
         switchArtifactTab(tab) {
             const codeTab = this.els.artifactTabCode;
             const previewTab = this.els.artifactTabPreview;
+            const consoleTab = this.els.artifactTabConsole;
             const codePanel = this.els.artifactCode;
             const previewPanel = this.els.artifactPreview;
+            const consolePanel = this.els.artifactConsole;
+            if (!codeTab || !previewTab || !codePanel || !previewPanel) return;
+
+            const selected = tab || "preview";
             codeTab.classList.remove("active");
             previewTab.classList.remove("active");
             codePanel.classList.remove("visible");
             previewPanel.classList.remove("visible");
-            if (tab === "code") {
+            if (consoleTab && consolePanel) {
+                consoleTab.classList.remove("active");
+                consolePanel.classList.remove("visible");
+            }
+
+            if (selected === "code") {
                 codeTab.classList.add("active");
                 codePanel.classList.add("visible");
-            } else {
-                previewTab.classList.add("active");
-                previewPanel.classList.add("visible");
-                this.updateArtifactPreview();
+                return;
             }
+            if (selected === "console" && consoleTab && consolePanel) {
+                consoleTab.classList.add("active");
+                consolePanel.classList.add("visible");
+                this._renderArtifactConsole();
+                return;
+            }
+            previewTab.classList.add("active");
+            previewPanel.classList.add("visible");
+            this.updateArtifactPreview();
         }
 
         copyArtifactCode(event) {
@@ -3594,6 +3843,7 @@ def _dhx_run_py_artifact(code_b64: str) -> str:
                 this.els.artifactCodeContent.textContent = "";
                 this.els.artifactCodeContent.className = "";
             }
+            // Preserve console output across opens; don't clear here.
             this.currentArtifact = null;
             const resetStreamContext = options.resetStreamContext !== false;
             if (resetStreamContext) {

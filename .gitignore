@@ -24,3 +24,4 @@ node_modules/*
 node_modules/*.*
 package*.json
 tests/.env
+tests/dhxpyt-99.99.99-py3-none-any.whl
