@@ -14,6 +14,8 @@ function createUniqueId(prefix) {
             this._eventsBound = false;
             this._mountId = null;
             this._domReadyPromise = null;
+            this._gridResizeObserver = null;
+            this._windowResizeHandler = null;
 
             this._ids = this._generateIds();
 
@@ -202,6 +204,7 @@ function createUniqueId(prefix) {
                 autoFilter: true,
                 cardMinWidth: 260,
                 cardMinHeight: 160,
+                cardMaxHeight: null,
                 cardGap: 16,
                 cardIconSize: 44,
                 cardTemplate: "default",
@@ -264,6 +267,7 @@ function createUniqueId(prefix) {
             if (this._grid) {
                 const minWidth = this._normalizeCssSize(this.options.cardMinWidth);
                 const minHeight = this._normalizeCssSize(this.options.cardMinHeight);
+                const maxHeight = this._normalizeCssSize(this.options.cardMaxHeight);
                 const gap = this._normalizeCssSize(this.options.cardGap);
                 const iconSize = this._normalizeCssSize(this.options.cardIconSize);
 
@@ -277,6 +281,12 @@ function createUniqueId(prefix) {
                     this._grid.style.setProperty("--card-min-height", minHeight);
                 } else {
                     this._grid.style.removeProperty("--card-min-height");
+                }
+
+                if (maxHeight) {
+                    this._grid.style.setProperty("--card-max-height", maxHeight);
+                } else {
+                    this._grid.style.removeProperty("--card-max-height");
                 }
 
                 if (gap) {
@@ -297,6 +307,8 @@ function createUniqueId(prefix) {
                 } else {
                     this._grid.style.removeProperty("--card-grid-template");
                 }
+
+                this._setAutoCardMaxHeight(!maxHeight);
             }
 
             if (!this._eventsBound) {
@@ -318,6 +330,56 @@ function createUniqueId(prefix) {
             }
 
             return null;
+        }
+
+        _updateAutoCardMaxHeight() {
+            if (!this._grid) {
+                return;
+            }
+
+            const rect = this._grid.getBoundingClientRect();
+            const halfHeight = rect.height * 0.5;
+            if (!Number.isFinite(halfHeight) || halfHeight <= 0) {
+                return;
+            }
+
+            const minFloor = 180;
+            let computed = Math.max(halfHeight, minFloor);
+            if (typeof this.options.cardMinHeight === "number" && Number.isFinite(this.options.cardMinHeight)) {
+                computed = Math.max(computed, this.options.cardMinHeight);
+            }
+
+            this._grid.style.setProperty("--card-max-height", `${Math.round(computed)}px`);
+        }
+
+        _setAutoCardMaxHeight(enabled) {
+            if (!this._grid) {
+                return;
+            }
+
+            if (!enabled) {
+                if (this._gridResizeObserver) {
+                    this._gridResizeObserver.disconnect();
+                    this._gridResizeObserver = null;
+                }
+                if (this._windowResizeHandler) {
+                    window.removeEventListener("resize", this._windowResizeHandler);
+                    this._windowResizeHandler = null;
+                }
+                return;
+            }
+
+            this._updateAutoCardMaxHeight();
+
+            if (typeof ResizeObserver !== "undefined") {
+                if (!this._gridResizeObserver) {
+                    this._gridResizeObserver = new ResizeObserver(() => this._updateAutoCardMaxHeight());
+                    this._gridResizeObserver.observe(this._grid);
+                }
+            } else if (!this._windowResizeHandler) {
+                this._windowResizeHandler = () => this._updateAutoCardMaxHeight();
+                window.addEventListener("resize", this._windowResizeHandler);
+            }
         }
 
         _createTemplateContext(index, card) {
@@ -443,6 +505,7 @@ const css = `
     --shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
     --card-min-width: 260px;
     --card-min-height: 160px;
+    --card-max-height: none;
     --card-gap: 16px;
     --card-icon-size: 44px;
     --card-border-hover: #334155;
@@ -478,6 +541,7 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
     --shadow: 0 8px 24px rgba(0,0,0,.35);
     --card-min-width: 260px;
     --card-min-height: 160px;
+    --card-max-height: none;
     --card-gap: 16px;
     --card-icon-size: 44px;
     --card-grid-template: repeat(auto-fit, minmax(var(--card-min-width), 1fr));
@@ -577,6 +641,8 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
     box-shadow: var(--shadow);
     display: flex; flex-direction: column; gap: 14px;
     min-height: var(--card-min-height);
+    max-height: var(--card-max-height);
+    overflow: auto;
     transition: transform .15s ease, border-color .15s ease;
     cursor: pointer;
 }

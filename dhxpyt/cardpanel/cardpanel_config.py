@@ -56,6 +56,7 @@ class CardPanelConfig:
     view_button_text: Optional[str] = None
     card_min_width: Optional[Union[int, float, str]] = None
     card_min_height: Optional[Union[int, float, str]] = None
+    card_max_height: Optional[Union[int, float, str]] = None
     card_gap: Optional[Union[int, float, str]] = None
     card_columns: Optional[int] = None
     card_icon_size: Optional[Union[int, float, str]] = None
@@ -95,6 +96,8 @@ class CardPanelConfig:
             config_dict["cardMinWidth"] = self.card_min_width
         if self.card_min_height is not None:
             config_dict["cardMinHeight"] = self.card_min_height
+        if self.card_max_height is not None:
+            config_dict["cardMaxHeight"] = self.card_max_height
         if self.card_gap is not None:
             config_dict["cardGap"] = self.card_gap
         if self.card_columns is not None:
