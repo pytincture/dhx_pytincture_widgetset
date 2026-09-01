@@ -1,4 +1,30 @@
 (function () {
+    function escapeHtml(value) {
+        return String(value ?? "").replace(/[&<>"']/g, function (character) {
+            return {
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;"
+            }[character];
+        });
+    }
+
+    function safeCssSize(value, fallback) {
+        const candidate = String(value ?? "").trim();
+        return /^-?(?:\d+|\d*\.\d+)(?:px|rem|em|%|vh|vw)$/.test(candidate)
+            ? candidate
+            : fallback;
+    }
+
+    function safeFontFamily(value) {
+        const candidate = String(value ?? "").trim();
+        return candidate && /^[a-zA-Z0-9\s,'"._-]+$/.test(candidate)
+            ? candidate
+            : "Arial, sans-serif";
+    }
+
     // Helper function to parse time strings (e.g. "09:30 AM") into minutes from midnight
     function parseTime(str) {
         var match = str.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
@@ -44,8 +70,8 @@
             this.showSort = this.config.sortDisabled ? false : (this.config.showSort !== false);
             this.sortDisabled = this.config.sortDisabled || false;
             this.showDataHeaders = this.config.showDataHeaders !== false;
-            this.fontSize = this.config.fontSize || "12px";
-            this.toolbarFontFamily = this.config.toolbarFontFamily || "Arial, sans-serif";
+            this.fontSize = safeCssSize(this.config.fontSize, "12px");
+            this.toolbarFontFamily = safeFontFamily(this.config.toolbarFontFamily);
             this.showOptions = this.config.showOptions !== false;
             this.useGpu = !!this.config.gpu;
             this.gpuWidgetId = this.config.gpuWidgetId || null;
@@ -393,7 +419,7 @@
                 this.config.columns.forEach(col => {
                     if (col.type === "stretch" || !col.id) return;
                     const headerText = (typeof col.header === "string") ? col.header.replace(/:/g, "") : col.header;
-                    optionsHTML += `<option value="$${col.id}">$${headerText}</option>`;
+                    optionsHTML += `<option value="$${escapeHtml(col.id)}">$${escapeHtml(headerText)}</option>`;
                 });
             }
 
@@ -588,7 +614,7 @@
                         .then(toolbarElem => {
                             const dataCells = toolbarElem.querySelectorAll(".toolbar-cell:not(.hideable)");
                             dataCells.forEach(cell => {
-                                cell.style.fontSize = rowData._fontSize;
+                                cell.style.fontSize = safeCssSize(rowData._fontSize, this.fontSize);
                             });
                         })
                         .catch(error => {
@@ -711,7 +737,7 @@
                     stretchIndex = i;
                     continue;
                 }
-                const colWidth = col.width || "100px";
+                const colWidth = safeCssSize(col.width, "100px");
                 if (i < stretchIndex || stretchIndex === -1) {
                     leftColumns += colWidth + " ";
                 } else {
@@ -724,18 +750,19 @@
                 const col = columns[i];
                 if (col.type === "stretch") continue;
                 const hideableClass = cellIndex >= 2 ? " hideable" : "";
-                const colWidth = col.width || "100px";
+                const colWidth = safeCssSize(col.width, "100px");
                 if (this.showDataHeaders) {
                     headerCells += `<div class="toolbar-cell${hideableClass}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: ${colWidth}; font-weight: bold; padding-bottom: 2px; font-family: ${this.toolbarFontFamily};">
-                                      ${col.header}
+                                      ${escapeHtml(col.header)}
                                     </div>`;
                 }
                 let value = rowData[col.id] !== undefined ? rowData[col.id] : "";
                 if (col.dataType === "time" && col.applyFormat && col.dataFormat) {
                     value = formatTimeValue(value, col.dataFormat);
                 }
-                dataCells += `<div class="toolbar-cell${hideableClass}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: ${colWidth}; font-size: ${rowData._fontSize || this.fontSize}; font-family: ${this.toolbarFontFamily};">
-                                ${value}
+                const rowFontSize = safeCssSize(rowData._fontSize, this.fontSize);
+                dataCells += `<div class="toolbar-cell${hideableClass}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: ${colWidth}; font-size: ${rowFontSize}; font-family: ${this.toolbarFontFamily};">
+                                ${escapeHtml(value)}
                               </div>`;
                 cellIndex++;
             }
@@ -786,7 +813,7 @@
                 `;
             } else {
                 // Use grid layout for no stretch
-                const gridTemplateColumns = columns.map(col => col.width || "100px").join(" ");
+                const gridTemplateColumns = columns.map(col => safeCssSize(col.width, "100px")).join(" ");
                 if (this.showDataHeaders) {
                     htmlContent += `
                       <div style="display: grid; grid-template-columns: ${gridTemplateColumns}; gap: 10px; width: 100%;">

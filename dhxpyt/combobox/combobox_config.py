@@ -14,7 +14,7 @@ class ComboboxConfig:
                  filter: Callable[[Dict[str, Any], str], bool] = None,
                  helpMessage: str = None,
                  hiddenLabel: bool = False,
-                 htmlEnable: bool = True,
+                 htmlEnable: bool = False,
                  itemHeight: Union[int, str] = 32,
                  itemsCount: Union[bool, Callable[[int], str]] = False,
                  label: str = None,

@@ -5,6 +5,10 @@
 
     const DEFAULT_STORAGE_PREFIX = "customdhx:rag-chat";
     const EVENT_HANDLERS = new WeakMap();
+    const MAX_ARTIFACT_ID_CHARS = 128;
+    const MAX_ARTIFACT_TITLE_CHARS = 200;
+    const MAX_ARTIFACT_TYPE_CHARS = 100;
+    const MAX_ARTIFACT_CONTENT_CHARS = 1_000_000;
 
     function createUniqueId(prefix) {
         const idPrefix = prefix || "rag";
@@ -32,7 +36,7 @@
     }
 
     function escapeHtml(value) {
-        return (value ?? "").replace(/[&<>"']/g, (char) => {
+        return String(value ?? "").replace(/[&<>"']/g, (char) => {
             switch (char) {
                 case "&":
                     return "&amp;";
@@ -48,6 +52,24 @@
                     return char;
             }
         });
+    }
+
+    function boundedText(value, maxChars) {
+        return String(value ?? "").slice(0, maxChars);
+    }
+
+    function safeLinkHref(value) {
+        const raw = String(value ?? "").trim();
+        if (!raw) return "#";
+        try {
+            const parsed = new URL(raw, window.location.href);
+            if (!["http:", "https:", "mailto:"].includes(parsed.protocol)) {
+                return "#";
+            }
+            return parsed.href;
+        } catch (_err) {
+            return "#";
+        }
     }
 
     function encodeBase64Utf8(input) {
@@ -71,7 +93,7 @@
     function renderInlineMarkdown(text) {
         let html = escapeHtml(text);
         html = html.replace(/\[([^\]]+)\]\(([^\s)]+)(?:\s+"([^"]+)")?\)/g, (_match, label, href, title) => {
-            const safeHref = escapeHtml(href);
+            const safeHref = escapeHtml(safeLinkHref(href));
             const safeLabel = escapeHtml(label);
             const safeTitle = title ? ` title=\"${escapeHtml(title)}\"` : "";
             return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer"${safeTitle}>${safeLabel}</a>`;
@@ -166,29 +188,6 @@
         return blocks.join("");
     }
 
-    let pyodideReady = null;
-    function ensurePyodide() {
-        if (pyodideReady) {
-            return pyodideReady;
-        }
-        if (window.pyodide && typeof window.pyodide.runPython === "function") {
-            pyodideReady = Promise.resolve(window.pyodide);
-            return pyodideReady;
-        }
-        if (typeof loadPyodide !== "function") {
-            return Promise.reject(new Error("loadPyodide is not available on window."));
-        }
-        const indexURL = window.PYODIDE_BASE_URL || "https://cdn.jsdelivr.net/pyodide/v0.28.0/full/";
-        pyodideReady = loadPyodide({ indexURL }).then((pyodide) => {
-            window.pyodide = pyodide;
-            return pyodide;
-        }).catch((error) => {
-            pyodideReady = null;
-            throw error;
-        });
-        return pyodideReady;
-    }
-
     function basicMarkdown(input) {
         if (!input) return "";
         const fenceRegex = /```([\s\S]*?)```/g;
@@ -216,13 +215,8 @@
 
     function renderMarkdown(text) {
         if (!text) return "";
-        if (typeof marked !== "undefined" && typeof marked.parse === "function") {
-            try {
-                return marked.parse(text);
-            } catch (error) {
-                console.warn("[ChatWidget] markdown parse failed", error);
-            }
-        }
+        // The built-in renderer escapes input before adding its small markdown
+        // allowlist. Raw HTML from models is deliberately never trusted.
         return basicMarkdown(text);
     }
 
@@ -469,7 +463,7 @@
             .artifact-actions { padding: 0 20px 20px; display: flex; gap: 10px; }
             .artifact-actions button { flex: 1; border: none; border-radius: 10px; padding: 10px 12px; font-size: 13px; background: rgba(59,130,246,0.18); color: inherit; cursor: pointer; }
             .artifact-actions button:hover { background: rgba(59,130,246,0.28); }
-            .artifact-icon { display: inline-flex; align-items: center; gap: 6px; background: rgba(59,130,246,0.15); padding: 6px 10px; border-radius: 999px; font-size: 13px; cursor: pointer; margin: 6px 6px 0 0; }
+            .artifact-icon { display: inline-flex; align-items: center; gap: 6px; background: rgba(59,130,246,0.15); color: inherit; border: 0; font: inherit; padding: 6px 10px; border-radius: 999px; font-size: 13px; cursor: pointer; margin: 6px 6px 0 0; }
             .artifact-icon span.material-icons { font-size: 18px; }
             .rag-main.with-artifact { margin-right: 40%; }
             @media (max-width: 1200px) {
@@ -661,6 +655,7 @@
             this._activeStreamId = null;
             this._artifactConsole = new Map();
             this._artifactConsoleOrder = [];
+            this._artifactPreviewCapability = null;
 
             this.ids = {
                 container: createUniqueId("rag-container"),
@@ -1076,7 +1071,7 @@
                         <div class="artifact-body">
                             <pre class="artifact-code" id="${this.ids.artifactCode}"><code id="${this.ids.artifactCodeContent}"></code></pre>
                             <div class="artifact-preview" id="${this.ids.artifactPreview}">
-                                <iframe id="${this.ids.artifactIframe}" sandbox="allow-scripts allow-same-origin"></iframe>
+                                <iframe id="${this.ids.artifactIframe}" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe>
                             </div>
                             <div class="artifact-console" id="${this.ids.artifactConsole}"></div>
                         </div>
@@ -1991,6 +1986,7 @@
 
         _processStreamingText(text, context = {}) {
             const artifacts = [];
+            const artifactMarkers = [];
             let processedText = text;
             let hasCompleteArtifacts = false;
 
@@ -2007,11 +2003,13 @@
             const messageSeed = context.messageId || "";
 
             const ensureUniqueId = (proposedId, content, title) => {
-                const base = proposedId || `artifact-${fingerprint(`${messageSeed}::${title || ""}::${content || ""}`)}`;
+                const fallback = `artifact-${fingerprint(`${messageSeed}::${title || ""}::${content || ""}`)}`;
+                const base = boundedText(proposedId || fallback, MAX_ARTIFACT_ID_CHARS);
                 let id = base;
                 let counter = 1;
                 while (artifacts.some((item) => item.id === id)) {
-                    id = `${base}-${counter++}`;
+                    const suffix = `-${counter++}`;
+                    id = `${base.slice(0, MAX_ARTIFACT_ID_CHARS - suffix.length)}${suffix}`;
                 }
                 return id;
             };
@@ -2019,7 +2017,7 @@
             const normalizeParams = (input) => {
                 const params = {};
                 if (!input) return params;
-                const clean = input.replace(/\|/g, " ");
+                const clean = boundedText(input, 2048).replace(/\|/g, " ");
                 const regex = /(\w+)=(["'])([^"']*)\2|(\w+)=([^\s]+)/g;
                 let pair;
                 while ((pair = regex.exec(clean)) !== null) {
@@ -2074,11 +2072,27 @@
                 });
                 const languageMime = languageToMime(normalized.language);
                 const rendererMime = rendererToMime(normalized.renderer);
+                const artifactContent = boundedText(
+                    String(content || "").trim(),
+                    MAX_ARTIFACT_CONTENT_CHARS,
+                );
+                const requestedType = boundedText(
+                    normalized.type || languageMime || rendererMime || "text/plain",
+                    MAX_ARTIFACT_TYPE_CHARS,
+                ).toLowerCase();
+                const allowedTypes = new Set([
+                    "text/plain", "text/html", "text/markdown", "application/json",
+                    "image/svg+xml", "application/vnd.react", "application/vnd.mermaid",
+                    "text/x-python", "application/x-python", "application/python", "text/python",
+                ]);
                 const artifact = {
-                    id: ensureUniqueId(normalized.identifier, content, fallbackTitle),
-                    type: normalized.type || languageMime || rendererMime || "text/plain",
-                    title: normalized.title || fallbackTitle || "Untitled Artifact",
-                    content: (content || "").trim(),
+                    id: ensureUniqueId(normalized.identifier, artifactContent, fallbackTitle),
+                    type: allowedTypes.has(requestedType) ? requestedType : "text/plain",
+                    title: boundedText(
+                        normalized.title || fallbackTitle || "Untitled Artifact",
+                        MAX_ARTIFACT_TITLE_CHARS,
+                    ),
+                    content: artifactContent,
                 };
                 return artifact;
             };
@@ -2086,7 +2100,9 @@
             const injectIcon = (artifact) => {
                 hasCompleteArtifacts = true;
                 artifacts.push(artifact);
-                return `\n\n<div class="artifact-icon" data-artifact-id="${artifact.id}"><span class="material-icons">code</span><span>${artifact.title}</span></div>\n\n`;
+                const marker = `\uE000${createUniqueId("artifact-marker")}\uE001`;
+                artifactMarkers.push({ marker, artifact });
+                return `\n\n${marker}\n\n`;
             };
 
             const newPattern = /:{4}artifact\{([^}]*)\}([\s\S]*?)(?:\s*:{4})/gi;
@@ -2106,8 +2122,6 @@
                 return injectIcon(artifact);
             });
 
-            processedText = processedText.replace(/(<div class="artifact-icon"[^>]*>[\s\S]*?<\/div>)\s*:/g, "$1");
-
             const hasNewStart = /:{4}artifact\{[^}]*\}/i.test(text);
             const hasLegacyStart = /::::Artifact\s+[^\n]+/i.test(text);
             const hasIncompleteArtifact = (hasNewStart && !hasCompleteArtifacts) || (hasLegacyStart && !legacyMatched);
@@ -2122,7 +2136,13 @@
                 }
             }
 
-            return { processedText, artifacts, hasCompleteArtifacts, hasIncompleteArtifact };
+            return {
+                processedText,
+                artifacts,
+                artifactMarkers,
+                hasCompleteArtifacts,
+                hasIncompleteArtifact,
+            };
         }
 
         _formatTimestamp(value) {
@@ -2167,61 +2187,76 @@
             }
             let displayText = message.content || "";
             let artifacts = [];
+            let artifactMarkers = [];
             if (message.role !== "user" && this.options.enableArtifacts && displayText) {
-                if (displayText.includes("artifact-icon")) {
-                    // Already processed HTML
-                } else {
-                    const result = this._processStreamingText(displayText, { messageId: message.id });
-                    displayText = result.processedText;
-                    artifacts = result.artifacts;
-                    if (result.hasIncompleteArtifact && (message.streaming || message.meta?.cancelled)) {
-                        message.meta = message.meta || {};
-                        if (!message.meta.artifactBuilding) {
-                            message.meta.artifactBuildingButton = true;
-                            message.meta.artifactBuildingButtonLabel = "Code...";
-                        }
+                const result = this._processStreamingText(displayText, { messageId: message.id });
+                displayText = result.processedText;
+                artifacts = result.artifacts;
+                artifactMarkers = result.artifactMarkers;
+                if (result.hasIncompleteArtifact && (message.streaming || message.meta?.cancelled)) {
+                    message.meta = message.meta || {};
+                    if (!message.meta.artifactBuilding) {
+                        message.meta.artifactBuildingButton = true;
+                        message.meta.artifactBuildingButtonLabel = "Code...";
                     }
-                    if (artifacts.length) {
-                        const activeChat = this._getActiveChat();
-                        if (activeChat) {
-                            activeChat.artifacts = activeChat.artifacts || [];
-                            artifacts.forEach((artifact) => {
-                                const existing = activeChat.artifacts.find((item) => item.id === artifact.id);
-                                if (!existing) {
-                                    activeChat.artifacts.push(artifact);
-                                    this._artifactMap.set(artifact.id, Object.assign({ chatId: activeChat.id, messageId: message.id }, artifact));
-                                }
-                            });
-                        }
+                }
+                if (artifacts.length) {
+                    const activeChat = this._getActiveChat();
+                    if (activeChat) {
+                        activeChat.artifacts = activeChat.artifacts || [];
+                        artifacts.forEach((artifact) => {
+                            const existing = activeChat.artifacts.find((item) => item.id === artifact.id);
+                            if (!existing) {
+                                activeChat.artifacts.push(artifact);
+                                this._artifactMap.set(artifact.id, Object.assign({ chatId: activeChat.id, messageId: message.id }, artifact));
+                            }
+                        });
                     }
                 }
             }
-            if (displayText.includes("artifact-icon")) {
-                const parts = displayText.split(/(<div class="artifact-icon"[^>]*>[\s\S]*?<\/div>)/);
-                const renderedParts = parts.map((segment) => {
-                    if (!segment) return "";
-                    if (segment.includes("artifact-icon")) {
-                        return segment;
-                    }
-                    if (!segment.trim()) {
-                        return "";
-                    }
-                    const rendered = renderMarkdown(segment);
-                    return rendered || escapeHtml(segment).replace(/\n/g, "<br>");
-                });
-                contentEl.innerHTML = renderedParts.join("") || displayText;
-            } else if (displayText.trim()) {
-                const html = renderMarkdown(displayText);
-                contentEl.innerHTML = html || displayText.replace(/\n/g, "<br>");
-            } else {
-                contentEl.innerHTML = "";
-            }
+            contentEl.replaceChildren();
+            const appendMarkdown = (text) => {
+                if (!text || !text.trim()) return;
+                const template = document.createElement("template");
+                template.innerHTML = renderMarkdown(text);
+                contentEl.appendChild(template.content.cloneNode(true));
+            };
+            const appendArtifactButton = (artifact, building = false) => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = `artifact-icon${building ? " is-building" : ""}`;
+                button.setAttribute("data-artifact-id", artifact.id);
+                const icon = document.createElement("span");
+                icon.className = "material-icons";
+                icon.textContent = building ? "build" : "code";
+                const title = document.createElement("span");
+                title.textContent = artifact.title;
+                button.appendChild(icon);
+                button.appendChild(title);
+                contentEl.appendChild(button);
+            };
+
+            let cursor = 0;
+            artifactMarkers.forEach(({ marker, artifact }) => {
+                const markerIndex = displayText.indexOf(marker, cursor);
+                if (markerIndex < 0) return;
+                appendMarkdown(displayText.slice(cursor, markerIndex));
+                appendArtifactButton(artifact);
+                cursor = markerIndex + marker.length;
+            });
+            appendMarkdown(displayText.slice(cursor));
 
             if (message?.meta?.artifactBuildingButton || message?.meta?.artifactBuilding) {
-                const buildingLabel = message?.meta?.artifactBuildingButtonLabel || "Code...";
-                const buildingHtml = `\n<div class="artifact-icon is-building" data-artifact-id="building:${message.id}"><span class="material-icons">build</span><span>${buildingLabel}</span></div>\n`;
-                const needsBreak = Boolean((contentEl.innerHTML || "").trim());
-                contentEl.innerHTML = (contentEl.innerHTML || "") + (needsBreak ? "<br>" : "") + buildingHtml;
+                if (contentEl.hasChildNodes()) {
+                    contentEl.appendChild(document.createElement("br"));
+                }
+                appendArtifactButton({
+                    id: boundedText(`building:${message.id}`, MAX_ARTIFACT_ID_CHARS),
+                    title: boundedText(
+                        message?.meta?.artifactBuildingButtonLabel || "Code...",
+                        MAX_ARTIFACT_TITLE_CHARS,
+                    ),
+                }, true);
             }
 
             const thinkingEl = element.querySelector(".message-thinking");
@@ -3480,7 +3515,6 @@
                 this.els.mainContent.style.marginRight = this.artifactPanelWidth;
             }
             this.switchArtifactTab("preview");
-            this.updateArtifactPreview();
         }
 
         openBuildingArtifact(messageId) {
@@ -3511,122 +3545,101 @@
             if (!this.currentArtifact) return;
             const iframe = this.els.artifactIframe;
             const type = (this.currentArtifact.type || "").toLowerCase();
+            this._artifactPreviewCapability = createUniqueId("artifact-capability");
             if (type === "text/html") {
-                const rendered = this._injectArtifactConsoleBridge(this.currentArtifact.content, this.currentArtifact.id);
-                const blob = new Blob([rendered], { type: "text/html" });
-                iframe.src = URL.createObjectURL(blob);
+                iframe.srcdoc = this._injectArtifactConsoleBridge(
+                    this.currentArtifact.content,
+                    this.currentArtifact.id,
+                    this._artifactPreviewCapability,
+                );
                 return;
             }
             if (type === "image/svg+xml") {
-                const svgContent = `<!DOCTYPE html><html><body style=\"margin:0;padding:20px;display:flex;justify-content:center;align-items:center;min-height:100vh;\">${this.currentArtifact.content}</body></html>`;
-                const blob = new Blob([svgContent], { type: "text/html" });
-                iframe.src = URL.createObjectURL(blob);
+                const encoded = encodeBase64Utf8(this.currentArtifact.content || "");
+                iframe.srcdoc = this._buildPassiveArtifactDocument(
+                    `<img alt="SVG artifact preview" src="data:image/svg+xml;base64,${escapeHtml(encoded)}">`,
+                );
                 return;
             }
             if (type === "text/x-python" || type === "application/x-python" || type === "application/python" || type === "text/python") {
                 this._loadPythonArtifactPreview(this.currentArtifact.content);
                 return;
             }
-            iframe.src = "data:text/html,<body style='padding:20px;font-family:monospace;'>Preview not available for this file type</body>";
+            iframe.srcdoc = this._buildPassiveArtifactDocument(
+                "<p>Preview not available for this file type.</p>",
+            );
         }
 
-        _injectArtifactConsoleBridge(html, artifactId) {
-            const safeId = String(artifactId || "");
-            const payload = JSON.stringify({ __dhxArtifactConsole: true, artifactId: safeId, event: "boot" });
-            const bridge = `
-<script>
+        _buildPassiveArtifactDocument(body) {
+            return `<!DOCTYPE html><html><head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data: blob:; media-src data: blob:; script-src 'none'; connect-src 'none'; frame-src 'none'; worker-src 'none'; form-action 'none'; base-uri 'none'">
+<style>body{box-sizing:border-box;margin:0;padding:20px;font:14px/1.5 Inter,Arial,sans-serif;color:#0f172a;background:#fff}img{display:block;max-width:100%;max-height:calc(100vh - 40px);margin:auto}pre{white-space:pre-wrap;word-break:break-word}</style>
+</head><body>${body}</body></html>`;
+        }
+
+        _injectArtifactConsoleBridge(html, artifactId, capability) {
+            const safeId = boundedText(artifactId, MAX_ARTIFACT_ID_CHARS);
+            const safeCapability = boundedText(capability, 128);
+            const parser = new DOMParser();
+            const documentNode = parser.parseFromString(String(html || ""), "text/html");
+            documentNode.querySelectorAll("base, meta[http-equiv='refresh' i]").forEach((node) => node.remove());
+            const csp = documentNode.createElement("meta");
+            csp.setAttribute("http-equiv", "Content-Security-Policy");
+            csp.setAttribute(
+                "content",
+                "default-src 'none'; style-src 'unsafe-inline'; img-src data: blob:; media-src data: blob:; script-src 'unsafe-inline'; connect-src 'none'; frame-src 'none'; worker-src 'none'; form-action 'none'; base-uri 'none'",
+            );
+            documentNode.head.prepend(csp);
+
+            const bridge = documentNode.createElement("script");
+            bridge.textContent = `
 (function(){
   try {
     var id = ${JSON.stringify(safeId)};
+    var capability = ${JSON.stringify(safeCapability)};
     var parentWin = window.parent;
     if (!parentWin || parentWin === window) return;
     var send = function(level, args) {
       try {
-        var items = Array.prototype.slice.call(args || []).map(function(item){
-          if (typeof item === "string") return item;
-          try { return JSON.stringify(item); } catch (e) { return String(item); }
+        var items = Array.prototype.slice.call(args || [], 0, 20).map(function(item){
+          if (typeof item === "string") return item.slice(0, 500);
+          try { return JSON.stringify(item).slice(0, 500); } catch (e) { return String(item).slice(0, 500); }
         });
-        parentWin.postMessage({ __dhxArtifactConsole: true, artifactId: id, level: level, items: items }, "*");
+        parentWin.postMessage({ __dhxArtifactConsole: true, capability: capability, artifactId: id, level: level, items: items }, "*");
       } catch (err) {}
     };
     ["log","info","warn","error"].forEach(function(level){
       var original = console[level];
       console[level] = function(){
         try { send(level, arguments); } catch (e) {}
-        if (original) {
-          return original.apply(console, arguments);
-        }
+        if (original) return original.apply(console, arguments);
       };
     });
-    var originalAlert = window.alert;
-    window.alert = function(message){
-      try { send("warn", ["Ignored call to alert()", message || ""]); } catch (e) {}
-      if (originalAlert) {
-        return originalAlert.apply(window, arguments);
-      }
-    };
-    var originalConfirm = window.confirm;
-    window.confirm = function(message){
-      try { send("warn", ["Ignored call to confirm()", message || ""]); } catch (e) {}
-      if (originalConfirm) {
-        return originalConfirm.apply(window, arguments);
-      }
-      return false;
-    };
-    var originalPrompt = window.prompt;
-    window.prompt = function(message, value){
-      try { send("warn", ["Ignored call to prompt()", message || ""]); } catch (e) {}
-      if (originalPrompt) {
-        return originalPrompt.apply(window, arguments);
-      }
-      return null;
-    };
-    var originalOpen = window.open;
-    window.open = function(){
-      try { send("warn", ["Blocked call to window.open()", (arguments && arguments[0]) || ""]); } catch (e) {}
-      if (originalOpen) {
-        return originalOpen.apply(window, arguments);
-      }
-      return null;
-    };
-    document.addEventListener("click", function(event){
-      try {
-        var anchor = event.target && event.target.closest ? event.target.closest("a[href]") : null;
-        if (!anchor) return;
-        var href = anchor.getAttribute("href") || "";
-        if (!href) return;
-        var protocol = href.split(":")[0].toLowerCase();
-        if (protocol && ["mailto","tel","sms","geo","intent"].indexOf(protocol) !== -1) {
-          send("warn", ["Blocked navigation to", href, "(sandboxed iframe)"]);
-        }
-        var target = (anchor.getAttribute("target") || "").toLowerCase();
-        if (target === "_blank") {
-          send("warn", ["Blocked popup to", href, "(sandboxed iframe)"]);
-        }
-      } catch (e) {}
-    }, true);
+    window.alert = function(message){ send("warn", ["Blocked alert()", message || ""]); };
+    window.confirm = function(message){ send("warn", ["Blocked confirm()", message || ""]); return false; };
+    window.prompt = function(message){ send("warn", ["Blocked prompt()", message || ""]); return null; };
+    window.open = function(){ send("warn", ["Blocked window.open()"]); return null; };
     window.addEventListener("error", function(event){
-      try { send("error", [event.message || "Error", event.filename + ":" + event.lineno + ":" + event.colno]); } catch (e) {}
+      send("error", [event.message || "Error"]);
     });
     window.addEventListener("unhandledrejection", function(event){
-      try { send("error", [event.reason ? String(event.reason) : "Unhandled promise rejection"]); } catch (e) {}
+      send("error", [event.reason ? String(event.reason) : "Unhandled promise rejection"]);
     });
-    parentWin.postMessage(${payload}, "*");
+    parentWin.postMessage({ __dhxArtifactConsole: true, capability: capability, artifactId: id, event: "boot" }, "*");
   } catch (err) {}
-})();
-</script>`;
-            if (!html) return bridge;
-            if (/<\/body>/i.test(html)) {
-                return html.replace(/<\/body>/i, `${bridge}</body>`);
-            }
-            return `${html}${bridge}`;
+})();`;
+            documentNode.body.appendChild(bridge);
+            return `<!DOCTYPE html>${documentNode.documentElement.outerHTML}`;
         }
 
         _handleArtifactConsoleMessage(event) {
             const data = event && event.data ? event.data : null;
             if (!data || !data.__dhxArtifactConsole) return;
-            const artifactId = data.artifactId;
-            if (!artifactId) return;
+            const iframeWindow = this.els.artifactIframe && this.els.artifactIframe.contentWindow;
+            if (!iframeWindow || event.source !== iframeWindow || event.origin !== "null") return;
+            if (!this._artifactPreviewCapability || data.capability !== this._artifactPreviewCapability) return;
+            const artifactId = boundedText(data.artifactId, MAX_ARTIFACT_ID_CHARS);
+            if (!artifactId || !this.currentArtifact || artifactId !== this.currentArtifact.id) return;
             if (data.event === "boot") {
                 const existing = this._artifactConsole.get(artifactId) || [];
                 if (!existing.length) {
@@ -3638,20 +3651,25 @@
                 }
                 return;
             }
-            const items = Array.isArray(data.items) ? data.items : [];
+            const allowedLevels = new Set(["log", "info", "warn", "error"]);
+            const level = allowedLevels.has(String(data.level).toLowerCase())
+                ? String(data.level).toLowerCase()
+                : "log";
+            const items = Array.isArray(data.items)
+                ? data.items.slice(0, 20).map((item) => boundedText(item, 500))
+                : [];
             const entry = {
                 ts: Date.now(),
-                level: data.level || "log",
+                level,
                 items,
             };
             const existing = this._artifactConsole.get(artifactId) || [];
             existing.push(entry);
-            const capped = existing.length > 500 ? existing.slice(-500) : existing;
+            const capped = existing.length > 200 ? existing.slice(-200) : existing;
             this._artifactConsole.set(artifactId, capped);
             if (!this._artifactConsoleOrder.includes(artifactId)) {
                 this._artifactConsoleOrder.push(artifactId);
             }
-            const level = (data.level || "log").toLowerCase();
             if (console && typeof console[level] === "function") {
                 console[level](`[Artifact ${artifactId}]`, ...(items.length ? items : []));
             }
@@ -3699,53 +3717,9 @@
 
         _loadPythonArtifactPreview(source) {
             const iframe = this.els.artifactIframe;
-            const baseHtmlStart = `<!DOCTYPE html><html><head><style>
-                body{background:#0f172a;color:#e2e8f0;font-family:Inter, sans-serif;margin:0;padding:24px;}
-                h3{margin-top:0;margin-bottom:12px;}
-                pre{background:rgba(15,23,42,0.65);padding:16px;border-radius:8px;white-space:pre-wrap;word-break:break-word;font-size:14px;color:#f1f5f9;}
-            </style></head><body>`;
-            const baseHtmlEnd = "</body></html>";
-
-            const showHtml = (body) => {
-                const blob = new Blob([baseHtmlStart + body + baseHtmlEnd], { type: "text/html" });
-                iframe.src = URL.createObjectURL(blob);
-            };
-
-            showHtml("<h3>Python Execution Output</h3><pre>Running...</pre>");
-
-            const encodedSource = encodeBase64Utf8(source || "");
-
-            ensurePyodide().then((pyodide) => {
-                try {
-                    if (!pyodide.__dhxHelperInstalled) {
-                        pyodide.runPython(`
-import base64, io, sys, textwrap
-
-def _dhx_run_py_artifact(code_b64: str) -> str:
-    code = base64.b64decode(code_b64).decode("utf-8")
-    buffer = io.StringIO()
-    old_stdout = sys.stdout
-    sys.stdout = buffer
-    try:
-        exec(textwrap.dedent(code), {})
-    finally:
-        sys.stdout = old_stdout
-    return buffer.getvalue()
-                        `);
-                        pyodide.__dhxHelperInstalled = true;
-                    }
-                    const renderedResult = pyodide.runPython(`_dhx_run_py_artifact("${encodedSource}")`);
-                    const withoutAnsi = (renderedResult || "").replace(/\u001b\[[0-9;]*[A-Za-z]/g, "");
-                    const normalized = withoutAnsi.replace(/\r/g, "\n");
-                    const hasVisible = /[\S]/.test(normalized);
-                    const displayResult = hasVisible ? normalized : (withoutAnsi.length ? normalized : "(no output)");
-                    showHtml(`<h3>Python Execution Output</h3><pre>${escapeHtml(String(displayResult))}</pre>`);
-                } catch (executionError) {
-                    showHtml(`<h3>Python Execution Output</h3><pre style="color:#fca5a5;">${escapeHtml(String(executionError))}</pre>`);
-                }
-            }).catch((error) => {
-                showHtml(`<h3>Python Execution Output</h3><pre style="color:#fca5a5;">${escapeHtml(String(error))}</pre>`);
-            });
+            iframe.srcdoc = this._buildPassiveArtifactDocument(
+                `<h3>Python preview disabled</h3><p>Model-supplied Python is shown as code and is not executed.</p><pre>${escapeHtml(boundedText(source, MAX_ARTIFACT_CONTENT_CHARS))}</pre>`,
+            );
         }
 
         switchArtifactTab(tab) {
@@ -4010,7 +3984,6 @@ def _dhx_run_py_artifact(code_b64: str) -> str:
                     this.switchArtifactTab("code");
                 } else {
                     this.switchArtifactTab("preview");
-                    this.updateArtifactPreview();
                 }
             }
             this.streamContext.completedMessageId = message.id;

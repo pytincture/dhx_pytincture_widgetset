@@ -1,1 +1,2 @@
 recursive-include dhxpyt/dhxsrc/ *
+global-exclude .DS_Store

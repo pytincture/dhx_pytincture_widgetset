@@ -20,8 +20,9 @@ dist/*.whl
 dhxpyt.egg-info/*
 dhxpyt.egg-info/*.*
 env/*
-node_modules/*
-node_modules/*.*
+node_modules/
 package*.json
+test-results/
+playwright-report/
 tests/.env
 tests/dhxpyt-99.99.99-py3-none-any.whl

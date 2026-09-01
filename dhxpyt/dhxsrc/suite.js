@@ -19,6 +19,44 @@ if (window.dhx){ window.dhx_legacy = dhx; delete window.dhx; }(function webpackU
 	else
 		root["dhx"] = factory();
 })(window, function() {
+var dhxpytSanitizeHtml = function (value) {
+    var template = document.createElement("template");
+    var allowedTags = {
+        A: true, B: true, BR: true, CODE: true, DIV: true, EM: true, I: true,
+        LI: true, OL: true, P: true, PRE: true, S: true, SMALL: true, SPAN: true,
+        STRONG: true, SUB: true, SUP: true, U: true, UL: true
+    };
+    var allowedAttributes = { "class": true, title: true, role: true };
+    template.innerHTML = String(value == null ? "" : value);
+    Array.prototype.slice.call(template.content.querySelectorAll("*")).forEach(function (element) {
+        if (!allowedTags[element.tagName]) {
+            element.replaceWith(document.createTextNode(element.textContent || ""));
+            return;
+        }
+        Array.prototype.slice.call(element.attributes).forEach(function (attribute) {
+            var name = attribute.name.toLowerCase();
+            var allowed = allowedAttributes[name] || name.indexOf("aria-") === 0 || name.indexOf("data-") === 0;
+            if (element.tagName === "A" && name === "href") {
+                try {
+                    var parsed = new URL(attribute.value, window.location.href);
+                    if (["http:", "https:", "mailto:"].indexOf(parsed.protocol) !== -1) {
+                        element.setAttribute("href", parsed.href);
+                        element.setAttribute("target", "_blank");
+                        element.setAttribute("rel", "noopener noreferrer");
+                        return;
+                    }
+                }
+                catch (_error) { }
+                element.removeAttribute(attribute.name);
+                return;
+            }
+            if (!allowed || name.indexOf("on") === 0 || name === "style") {
+                element.removeAttribute(attribute.name);
+            }
+        });
+    });
+    return template.innerHTML;
+};
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -4855,7 +4893,7 @@ function getCells(conf) {
                     // content can be a domvm node or a string
                     if (typeof content === "string") {
                         content = (0, main_1.isHtmlEnable)(conf, col)
-                            ? (0, dom_1.el)("div.dhx_grid-cell__content", __assign({ ".innerHTML": content }, getEditBtnAriaAttrs()))
+                            ? (0, dom_1.el)("div.dhx_grid-cell__content", __assign({ ".innerHTML": dhxpytSanitizeHtml(content) }, getEditBtnAriaAttrs()))
                             : content;
                     }
                     var css = "".concat((col.$cellCss && col.$cellCss[row.id]) || "", " dhx_").concat(col.type, "-cell").replace(/\s+/g, " ");
@@ -4968,7 +5006,7 @@ function getSpans(config, mode) {
         content =
             typeof content === "string"
                 ? (0, dom_1.el)("div.dhx_span-cell-content", {
-                    ".innerHTML": htmlEnable ? content : null,
+                    ".innerHTML": htmlEnable ? dhxpytSanitizeHtml(content) : null,
                 }, htmlEnable ? null : content)
                 : content;
         var top_1 = void 0;
@@ -10757,7 +10795,7 @@ function showTooltip(node, text, position, css, force, margin, htmlEnable) {
     if (margin === void 0) { margin = 8; }
     var rects = node.getBoundingClientRect();
     if (htmlEnable) {
-        tooltipText.innerHTML = text;
+        tooltipText.innerHTML = dhxpytSanitizeHtml(text);
     }
     else {
         tooltipText.textContent = text;
@@ -13059,7 +13097,7 @@ var List = /** @class */ (function (_super) {
             }, _key: item.id }), this.getItemAriaAttrs(this, item)), { tabindex: focus ? 0 : -1 });
         if (html) {
             if (html === item.html || this.config.htmlEnable) {
-                node[".innerHTML"] = html;
+                node[".innerHTML"] = dhxpytSanitizeHtml(html);
                 return (0, dom_1.el)("li", node);
             }
             else {
@@ -13072,7 +13110,7 @@ var List = /** @class */ (function (_super) {
         else {
             var value = item.text || item.value;
             if (this.config.htmlEnable) {
-                node[".innerHTML"] = value;
+                node[".innerHTML"] = dhxpytSanitizeHtml(value);
             }
             else
                 node.class += " dhx_list-item--text";
@@ -13713,7 +13751,7 @@ function getCustomContentCell(cell, column, config, rowName, css, rowIndex, isHT
                 ? (0, dom_1.el)("div", {
                     class: "dhx_grid-footer-cell-text",
                     role: "presentation",
-                    ".innerHTML": isHTMLEnable ? contentBody : null,
+                    ".innerHTML": isHTMLEnable ? dhxpytSanitizeHtml(contentBody) : null,
                 }, isHTMLEnable ? null : contentBody)
                 : content),
     ]);
@@ -13861,7 +13899,7 @@ function getRows(config, rowsConfig) {
                 (0, dom_1.el)("div.dhx_grid-header-cell-text", {
                     role: "presentation",
                 }, [
-                    (0, dom_1.el)("span", __assign(__assign({ class: cellCss }, getInnerCellAriaAttrs(rowName, cell.text)), { ".innerHTML": isHTMLEnable ? cell.text : null }), isHTMLEnable ? null : cell.text),
+                    (0, dom_1.el)("span", __assign(__assign({ class: cellCss }, getInnerCellAriaAttrs(rowName, cell.text)), { ".innerHTML": isHTMLEnable ? dhxpytSanitizeHtml(cell.text) : null }), isHTMLEnable ? null : cell.text),
                     resizable || null,
                 ]),
                 sortIconVisible && (0, dom_1.el)("div", { class: sortIconCss, "aria-hidden": "true" }),
@@ -13978,7 +14016,7 @@ function getFixedSpans(config, rowsConfig, mode) {
                 cellCss += " dhx_grid-header-cell-text_content-auto-height";
             var spanElement = (0, dom_1.el)("span", {
                 class: cellCss,
-                ".innerHTML": isHTMLEnable ? nCell.text : null,
+                ".innerHTML": isHTMLEnable ? dhxpytSanitizeHtml(nCell.text) : null,
             }, isHTMLEnable ? null : nCell.text);
             return nCell.colspan || nCell.rowspan
                 ? (0, dom_1.el)(".dhx_span-cell", __assign({ style: {

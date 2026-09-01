@@ -5,6 +5,86 @@ function createUniqueId(prefix) {
 (function () {
     globalThis.customdhx = globalThis.customdhx || {};
 
+    const SAFE_HTML_TAGS = new Set([
+        "A", "B", "BR", "CODE", "DIV", "EM", "I", "LI", "OL", "P", "PRE",
+        "S", "SMALL", "SPAN", "STRONG", "SUB", "SUP", "U", "UL"
+    ]);
+    const SAFE_HTML_ATTRIBUTES = new Set(["class", "title", "role"]);
+
+    function sanitizeUrl(value) {
+        const candidate = String(value || "").trim();
+        if (!candidate) return null;
+        try {
+            const parsed = new URL(candidate, window.location.href);
+            return ["http:", "https:", "mailto:"].includes(parsed.protocol) ? parsed.href : null;
+        } catch (_error) {
+            return null;
+        }
+    }
+
+    function sanitizeHtmlFragment(value) {
+        const template = document.createElement("template");
+        template.innerHTML = String(value ?? "");
+        Array.from(template.content.querySelectorAll("*")).forEach((element) => {
+            if (!SAFE_HTML_TAGS.has(element.tagName)) {
+                element.replaceWith(document.createTextNode(element.textContent || ""));
+                return;
+            }
+            Array.from(element.attributes).forEach((attribute) => {
+                const name = attribute.name.toLowerCase();
+                const allowed = SAFE_HTML_ATTRIBUTES.has(name)
+                    || name.startsWith("aria-")
+                    || name.startsWith("data-")
+                    || (element.tagName === "A" && name === "href");
+                if (!allowed || name.startsWith("on") || name === "style") {
+                    element.removeAttribute(attribute.name);
+                }
+            });
+            if (element.tagName === "A") {
+                const href = sanitizeUrl(element.getAttribute("href"));
+                if (href) {
+                    element.setAttribute("href", href);
+                    element.setAttribute("target", "_blank");
+                    element.setAttribute("rel", "noopener noreferrer");
+                } else {
+                    element.removeAttribute("href");
+                }
+            }
+        });
+        return template.content.cloneNode(true);
+    }
+
+    function appendSanitizedHtml(target, value) {
+        target.appendChild(sanitizeHtmlFragment(value));
+    }
+
+    function safeDescriptorTag(value) {
+        const candidate = String(value || "div").toUpperCase();
+        return SAFE_HTML_TAGS.has(candidate) ? candidate.toLowerCase() : "div";
+    }
+
+    function setSafeDescriptorAttribute(element, name, value) {
+        const normalized = String(name || "").toLowerCase();
+        if (normalized.startsWith("on") || normalized === "style") return;
+        if (normalized === "href" && element.tagName === "A") {
+            const href = sanitizeUrl(value);
+            if (href) {
+                element.setAttribute("href", href);
+                element.setAttribute("target", "_blank");
+                element.setAttribute("rel", "noopener noreferrer");
+            }
+            return;
+        }
+        if (
+            SAFE_HTML_ATTRIBUTES.has(normalized)
+            || normalized === "type"
+            || normalized.startsWith("aria-")
+            || normalized.startsWith("data-")
+        ) {
+            element.setAttribute(normalized, String(value));
+        }
+    }
+
     class CardPanel {
         constructor(target, options = {}) {
             this._events = {};
@@ -811,9 +891,9 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
                     if (!html) {
                         return document.createTextNode("");
                     }
-                    const temp = document.createElement("div");
-                    temp.innerHTML = html;
-                    return temp.firstElementChild || document.createTextNode("");
+                    const wrapper = document.createElement("div");
+                    appendSanitizedHtml(wrapper, html);
+                    return wrapper.firstElementChild || wrapper;
                 }
 
                 if (Array.isArray(nodeDescriptor)) {
@@ -831,7 +911,7 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
                     return document.createTextNode(String(nodeDescriptor));
                 }
 
-                const tag = nodeDescriptor.tag || "div";
+                const tag = safeDescriptorTag(nodeDescriptor.tag);
                 const element = document.createElement(tag);
 
                 const classValues =
@@ -853,7 +933,7 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
                     Object.entries(nodeDescriptor.attrs).forEach(([attr, rawValue]) => {
                         const resolved = interpolate(rawValue, card, context);
                         if (resolved !== undefined) {
-                            element.setAttribute(attr, resolved);
+                            setSafeDescriptorAttribute(element, attr, resolved);
                         }
                     });
                 }
@@ -870,7 +950,7 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
                 if (nodeDescriptor.text !== undefined) {
                     element.textContent = interpolate(nodeDescriptor.text, card, context);
                 } else if (nodeDescriptor.html !== undefined) {
-                    element.innerHTML = interpolate(nodeDescriptor.html, card, context);
+                    appendSanitizedHtml(element, interpolate(nodeDescriptor.html, card, context));
                 }
 
                 if (Array.isArray(nodeDescriptor.children)) {
@@ -896,9 +976,9 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
                     return wrapper;
                 }
                 if (typeof built === "string") {
-                    const temp = document.createElement("div");
-                    temp.innerHTML = built.trim();
-                    return temp.firstElementChild || document.createElement("div");
+                    const wrapper = document.createElement("div");
+                    appendSanitizedHtml(wrapper, built.trim());
+                    return wrapper.firstElementChild || wrapper;
                 }
                 return built;
             };
@@ -923,9 +1003,9 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
                 }
 
                 if (typeof rendered === "string") {
-                    const temp = document.createElement("div");
-                    temp.innerHTML = rendered.trim();
-                    rendered = temp.firstElementChild;
+                    const wrapper = document.createElement("div");
+                    appendSanitizedHtml(wrapper, rendered.trim());
+                    rendered = wrapper.firstElementChild || wrapper;
                 }
 
                 if (!(rendered instanceof HTMLElement)) {
@@ -1018,10 +1098,14 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
             const head = document.createElement("div");
             head.className = "card-head";
 
-            if (card.icon) {
+            if (card.icon || card.iconHtml) {
                 const icon = document.createElement("div");
                 icon.className = "card-icon";
-                icon.innerHTML = card.icon;
+                if (card.iconHtml) {
+                    appendSanitizedHtml(icon, card.iconHtml);
+                } else {
+                    icon.textContent = card.icon;
+                }
                 head.appendChild(icon);
             }
 
@@ -1055,7 +1139,7 @@ html[data-dhx-theme="dark"] .cardpanel-layout {
             if (card.contentHtml) {
                 const content = document.createElement("div");
                 content.className = "card-content";
-                content.innerHTML = card.contentHtml;
+                appendSanitizedHtml(content, card.contentHtml);
                 cardDiv.appendChild(content);
             }
 

@@ -1771,7 +1771,7 @@ FILE: ./listbox/listbox_config.py
 
 CLASS: ListboxConfig (line 5)
 ---------------------------
-  METHOD: __init__(self, data=None, css=None, dragCopy=False, dragMode=None, editable=False, eventHandlers=None, height='auto', htmlEnable=True, itemHeight=37, keyNavigation=True, multiselection=False, selection=True, template=None, virtual=False) (line 9)
+  METHOD: __init__(self, data=None, css=None, dragCopy=False, dragMode=None, editable=False, eventHandlers=None, height='auto', htmlEnable=False, itemHeight=37, keyNavigation=True, multiselection=False, selection=True, template=None, virtual=False) (line 9)
   METHOD: to_dict(self) (line 57)
 
 
@@ -2050,7 +2050,7 @@ FILE: ./combobox/combobox_config.py
 
 CLASS: ComboboxConfig (line 5)
 ----------------------------
-  METHOD: __init__(self, css=None, data=None, disabled=False, eventHandlers=None, filter=None, helpMessage=None, hiddenLabel=False, htmlEnable=True, itemHeight=32, itemsCount=False, label=None, labelPosition='top', labelWidth='auto', listHeight=224, multiselection=False, newOptions=False, placeholder=None, readOnly=False, selectAllButton=False, template=None, value=None, virtual=False) (line 9)
+  METHOD: __init__(self, css=None, data=None, disabled=False, eventHandlers=None, filter=None, helpMessage=None, hiddenLabel=False, htmlEnable=False, itemHeight=32, itemsCount=False, label=None, labelPosition='top', labelWidth='auto', listHeight=224, multiselection=False, newOptions=False, placeholder=None, readOnly=False, selectAllButton=False, template=None, value=None, virtual=False) (line 9)
   METHOD: to_dict(self) (line 79)
 
 
@@ -2501,7 +2501,7 @@ FILE: ./grid/grid_config.py
 
 CLASS: GridColumnConfig (line 4)
 ------------------------------
-  METHOD: __init__(self, id, header, type=None, width=None, align=None, adjust=False, hidden=False, sortable=True, resizable=True, tooltip=True, css=None, htmlEnable=True, editable=False, filter=None, format=None, template=None, editorType=None, options=None, gravity=None) (line 8)
+  METHOD: __init__(self, id, header, type=None, width=None, align=None, adjust=False, hidden=False, sortable=True, resizable=True, tooltip=True, css=None, htmlEnable=False, editable=False, filter=None, format=None, template=None, editorType=None, options=None, gravity=None) (line 8)
   METHOD: to_dict(self) (line 70)
 
 CLASS: GridConfig (line 95)
@@ -2513,6 +2513,5 @@ CLASS: GridConfig (line 95)
 
 FILE: ./grid/__init__.py
 ========================
-
 
 
