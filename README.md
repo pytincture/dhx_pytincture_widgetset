@@ -28,6 +28,16 @@ rather than executed. This may change applications that previously depended on a
 SVG, in-page network calls, same-origin access, or automatic execution of model-supplied
 Python.
 
+Chat histories are bounded to 100 messages per chat and 20 chats by default.
+Content persistence is off unless an existing explicit `storage_key` is used
+or `persistence="local"` / `"session"` is selected. Persisted history omits
+tool payloads, metadata, artifacts, and preview-console output and is capped at
+2 MiB by default. Set `persistence=False` to remove earlier history under an
+explicit storage key. Artifact preview logs are source/capability bound and
+bounded, and they are excluded from send/model event payloads unless
+`include_artifact_console_in_send=True` is deliberately configured; included
+logs are marked untrusted.
+
 ## Installation
 ### Prerequisites
 - Python 3.13+

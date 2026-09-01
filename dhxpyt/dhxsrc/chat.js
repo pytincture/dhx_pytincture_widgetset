@@ -9,6 +9,18 @@
     const MAX_ARTIFACT_TITLE_CHARS = 200;
     const MAX_ARTIFACT_TYPE_CHARS = 100;
     const MAX_ARTIFACT_CONTENT_CHARS = 1_000_000;
+    const MAX_CHAT_ID_CHARS = 128;
+    const MAX_MESSAGE_ID_CHARS = 128;
+    const MAX_MESSAGE_NAME_CHARS = 200;
+    const MAX_MESSAGE_META_CHARS = 20_000;
+    const MAX_TOOL_EVENTS = 50;
+    const MAX_TOOL_FIELD_CHARS = 20_000;
+    const MAX_ARTIFACT_CONSOLE_ARTIFACTS = 20;
+    const MAX_ARTIFACT_CONSOLE_ENTRIES = 100;
+    const DEFAULT_MAX_MESSAGES = 100;
+    const DEFAULT_MAX_CHATS = 20;
+    const DEFAULT_MAX_MESSAGE_CHARS = 200_000;
+    const DEFAULT_MAX_STORAGE_BYTES = 2 * 1024 * 1024;
 
     function createUniqueId(prefix) {
         const idPrefix = prefix || "rag";
@@ -56,6 +68,33 @@
 
     function boundedText(value, maxChars) {
         return String(value ?? "").slice(0, maxChars);
+    }
+
+    function boundedInteger(value, fallback, min, max) {
+        const parsed = Number(value);
+        if (!Number.isFinite(parsed)) return fallback;
+        return Math.max(min, Math.min(max, Math.floor(parsed)));
+    }
+
+    function boundedJsonValue(value, maxChars) {
+        if (value == null) return value;
+        try {
+            const encoded = JSON.stringify(value);
+            if (encoded.length <= maxChars) {
+                return JSON.parse(encoded);
+            }
+            return { truncated: true };
+        } catch (_err) {
+            return boundedText(value, maxChars);
+        }
+    }
+
+    function utf8ByteLength(value) {
+        const text = String(value ?? "");
+        if (typeof TextEncoder !== "undefined") {
+            return new TextEncoder().encode(text).length;
+        }
+        return unescape(encodeURIComponent(text)).length;
     }
 
     function safeLinkHref(value) {
@@ -601,7 +640,38 @@
                 autoAppendUserMessages: true,
                 inputPlaceholder: "Ask a question…",
                 sendButtonText: "Send",
+                maxMessages: DEFAULT_MAX_MESSAGES,
+                maxChats: DEFAULT_MAX_CHATS,
+                maxMessageChars: DEFAULT_MAX_MESSAGE_CHARS,
+                maxStorageBytes: DEFAULT_MAX_STORAGE_BYTES,
+                persistence: undefined,
+                includeArtifactConsoleInSend: false,
             }, options || {});
+
+            this.options.maxMessages = boundedInteger(
+                this.options.maxMessages,
+                DEFAULT_MAX_MESSAGES,
+                1,
+                1000,
+            );
+            this.options.maxChats = boundedInteger(
+                this.options.maxChats,
+                DEFAULT_MAX_CHATS,
+                1,
+                100,
+            );
+            this.options.maxMessageChars = boundedInteger(
+                this.options.maxMessageChars,
+                DEFAULT_MAX_MESSAGE_CHARS,
+                1000,
+                1_000_000,
+            );
+            this.options.maxStorageBytes = boundedInteger(
+                this.options.maxStorageBytes,
+                DEFAULT_MAX_STORAGE_BYTES,
+                16 * 1024,
+                10 * 1024 * 1024,
+            );
 
             this._ui = this._normalizeUiConfig(this.options.ui);
             this._layout = this._normalizeLayout(this.options.layout);
@@ -612,6 +682,13 @@
             this._userDisplayName = this._resolveUserName(this.options.user);
 
             this._storagePrefix = this.options.storageKey || `${DEFAULT_STORAGE_PREFIX}:${createUniqueId("instance")}`;
+            this._persistenceMode = this._normalizePersistenceMode(
+                this.options.persistence,
+                Boolean(this.options.storageKey),
+            );
+            this._chatStorage = this._persistenceMode === "local"
+                ? window.localStorage
+                : (this._persistenceMode === "session" ? window.sessionStorage : null);
             this._storageKeys = {
                 chats: `${this._storagePrefix}:chats`,
                 activeChatId: `${this._storagePrefix}:active`,
@@ -706,6 +783,18 @@
         // -----------------------------------------------------------------
         // Initialization helpers
         // -----------------------------------------------------------------
+
+        _normalizePersistenceMode(value, hasExplicitStorageKey) {
+            if (value === true) return "local";
+            if (value === false) return "none";
+            const normalized = String(value ?? "").trim().toLowerCase();
+            if (["none", "off", "disabled"].includes(normalized)) return "none";
+            if (["session", "sessionstorage"].includes(normalized)) return "session";
+            if (["local", "localstorage"].includes(normalized)) return "local";
+            // A pre-existing explicit storageKey already expresses an intent
+            // to persist and keeps that documented behavior compatible.
+            return hasExplicitStorageKey ? "local" : "none";
+        }
 
         _normalizeUiConfig(config) {
             const asObject = (value) => (value && typeof value === "object" && !Array.isArray(value) ? value : {});
@@ -1389,37 +1478,105 @@
         }
 
         _loadState() {
+            if (!this._chatStorage) return;
             try {
-                const storedChats = localStorage.getItem(this._storageKeys.chats);
-                const storedActive = localStorage.getItem(this._storageKeys.activeChatId);
+                const storedChats = this._chatStorage.getItem(this._storageKeys.chats);
+                const storedActive = this._chatStorage.getItem(this._storageKeys.activeChatId);
                 if (storedChats) {
+                    if (utf8ByteLength(storedChats) > this.options.maxStorageBytes) {
+                        this._chatStorage.removeItem(this._storageKeys.chats);
+                        this._chatStorage.removeItem(this._storageKeys.activeChatId);
+                        return;
+                    }
                     const parsed = JSON.parse(storedChats);
                     if (Array.isArray(parsed)) {
-                        this.chats = parsed;
+                        this.chats = parsed.slice(-this.options.maxChats).map((chat) => ({
+                            id: boundedText(chat && chat.id, MAX_CHAT_ID_CHARS) || createUniqueId("chat"),
+                            title: boundedText(chat && chat.title, MAX_MESSAGE_NAME_CHARS) || "Chat",
+                            model: boundedText(chat && chat.model, MAX_MESSAGE_NAME_CHARS) || null,
+                            badge: boundedInteger(chat && chat.badge, 0, 0, 999),
+                            messages: Array.isArray(chat && chat.messages)
+                                ? chat.messages.slice(-this.options.maxMessages)
+                                : [],
+                            artifacts: [],
+                        }));
                     }
                 }
                 if (storedActive) {
-                    this.activeChatId = storedActive;
+                    this.activeChatId = boundedText(storedActive, MAX_CHAT_ID_CHARS);
                 }
             } catch (error) {
                 console.warn("[ChatWidget] Failed to load state", error);
             }
         }
 
+        _persistableMessage(message) {
+            return {
+                id: boundedText(message && message.id, MAX_MESSAGE_ID_CHARS),
+                role: boundedText(message && message.role, 32),
+                content: boundedText(message && message.content, this.options.maxMessageChars),
+                name: boundedText(message && message.name, MAX_MESSAGE_NAME_CHARS),
+                timestamp: boundedText(message && message.timestamp, 64),
+            };
+        }
+
+        _buildPersistencePayload() {
+            const selected = [];
+            let remaining = Math.max(0, this.options.maxStorageBytes - 2);
+            const candidates = this.chats.slice(-this.options.maxChats).reverse();
+            for (const chat of candidates) {
+                const persisted = {
+                    id: boundedText(chat.id, MAX_CHAT_ID_CHARS),
+                    title: boundedText(chat.title, MAX_MESSAGE_NAME_CHARS),
+                    model: boundedText(chat.model, MAX_MESSAGE_NAME_CHARS),
+                    badge: boundedInteger(chat.badge, 0, 0, 999),
+                    messages: [],
+                };
+                const baseSize = utf8ByteLength(JSON.stringify(persisted)) + 2;
+                if (baseSize > remaining) continue;
+                remaining -= baseSize;
+                const messages = (chat.messages || []).slice(-this.options.maxMessages).reverse();
+                for (const message of messages) {
+                    const safeMessage = this._persistableMessage(message);
+                    const messageSize = utf8ByteLength(JSON.stringify(safeMessage)) + 1;
+                    if (messageSize > remaining) continue;
+                    persisted.messages.unshift(safeMessage);
+                    remaining -= messageSize;
+                }
+                selected.unshift(persisted);
+            }
+            return selected;
+        }
+
         saveState() {
             try {
-                localStorage.setItem(this._storageKeys.chats, JSON.stringify(this.chats));
-                if (this.activeChatId) {
-                localStorage.setItem(this._storageKeys.activeChatId, this.activeChatId);
+                if (this._chatStorage) {
+                    const payload = JSON.stringify(this._buildPersistencePayload());
+                    if (utf8ByteLength(payload) <= this.options.maxStorageBytes) {
+                        this._chatStorage.setItem(this._storageKeys.chats, payload);
+                        if (this.activeChatId) {
+                            this._chatStorage.setItem(
+                                this._storageKeys.activeChatId,
+                                boundedText(this.activeChatId, MAX_CHAT_ID_CHARS),
+                            );
+                        }
+                    }
+                } else if (this.options.storageKey) {
+                    // Explicitly disabling persistence also clears earlier
+                    // plaintext history stored under the same application key.
+                    [window.localStorage, window.sessionStorage].forEach((storage) => {
+                        storage.removeItem(this._storageKeys.chats);
+                        storage.removeItem(this._storageKeys.activeChatId);
+                    });
+                }
+                localStorage.setItem(this._storageKeys.artifactPanelWidth, this.artifactPanelWidth);
+                localStorage.setItem(this._storageKeys.sidebarCollapsed, String(this.sidebarCollapsed));
+                localStorage.setItem(this._storageKeys.isDarkMode, String(this.isDarkMode));
+                this._persistedDarkMode = this.isDarkMode;
+            } catch (error) {
+                console.warn("[ChatWidget] Failed to save state", error);
             }
-            localStorage.setItem(this._storageKeys.artifactPanelWidth, this.artifactPanelWidth);
-            localStorage.setItem(this._storageKeys.sidebarCollapsed, String(this.sidebarCollapsed));
-            localStorage.setItem(this._storageKeys.isDarkMode, String(this.isDarkMode));
-            this._persistedDarkMode = this.isDarkMode;
-        } catch (error) {
-            console.warn("[ChatWidget] Failed to save state", error);
         }
-    }
 
         destroy() {
             const handlers = EVENT_HANDLERS.get(this);
@@ -2633,6 +2790,32 @@
             return this._getActiveChat();
         }
 
+        _enforceChatLimit() {
+            if (this.chats.length <= this.options.maxChats) return;
+            const removed = this.chats.splice(0, this.chats.length - this.options.maxChats);
+            const removedIds = new Set(removed.map((chat) => chat.id));
+            this._messageMap.forEach((record, messageId) => {
+                if (removedIds.has(record.chatId)) this._messageMap.delete(messageId);
+            });
+            this._artifactMap.forEach((artifact, artifactId) => {
+                if (removedIds.has(artifact.chatId)) this._artifactMap.delete(artifactId);
+            });
+        }
+
+        _enforceMessageLimit(chat) {
+            if (!chat || chat.messages.length <= this.options.maxMessages) return false;
+            const removed = chat.messages.splice(0, chat.messages.length - this.options.maxMessages);
+            const removedIds = new Set(removed.map((message) => message.id));
+            removedIds.forEach((messageId) => this._messageMap.delete(messageId));
+            this._artifactMap.forEach((artifact, artifactId) => {
+                if (artifact.chatId === chat.id && removedIds.has(artifact.messageId)) {
+                    this._artifactMap.delete(artifactId);
+                }
+            });
+            chat.artifacts = (chat.artifacts || []).filter((artifact) => this._artifactMap.has(artifact.id));
+            return true;
+        }
+
         _generateChatTitle() {
             return `Chat ${formatTime(new Date())}`;
         }
@@ -2644,7 +2827,9 @@
         setMessages(messages) {
             const chat = this._ensureActiveChat();
             if (!chat) return;
-            chat.messages = Array.from(messages || []).map((msg) => this._normalizeMessage(msg));
+            chat.messages = Array.from(messages || [])
+                .slice(-this.options.maxMessages)
+                .map((msg) => this._normalizeMessage(msg));
             chat.artifacts = [];
             chat.messages.forEach((msg) => {
                 if (msg.content && msg.role !== "user") {
@@ -2664,12 +2849,16 @@
             if (!chat) return null;
             const normalized = this._normalizeMessage(message);
             chat.messages.push(normalized);
+            const pruned = this._enforceMessageLimit(chat);
             const selectedModel = this._getSelectedModel();
             chat.model = selectedModel || chat.model || "default";
             const element = this._createMessageElement(normalized);
             this._renderMessageContent(normalized, element);
             this.els.chatContainer.appendChild(element);
             this._messageMap.set(normalized.id, { chatId: chat.id, element, message: normalized });
+            if (pruned) {
+                this._renderMessages();
+            }
             this._scrollToBottom();
             this.saveState();
             return normalized.id;
@@ -2716,6 +2905,7 @@
             const chat = this._ensureActiveChat();
             if (!chat) return payload.id;
             chat.messages.push(payload);
+            const pruned = this._enforceMessageLimit(chat);
             const selectedModel = this._getSelectedModel();
             chat.model = selectedModel || chat.model || "default";
             const element = this._createMessageElement(payload);
@@ -2723,6 +2913,9 @@
             this._renderMessageContent(payload, element);
             this.els.chatContainer.appendChild(element);
             this._messageMap.set(payload.id, { chatId: chat.id, element, message: payload });
+            if (pruned) {
+                this._renderMessages();
+            }
             this._scrollToBottom();
             this.saveState();
             this._activeStreamId = payload.id;
@@ -2733,7 +2926,10 @@
         appendStream(messageId, chunk) {
             const record = this._messageMap.get(messageId);
             if (!record) return;
-            record.message.content = (record.message.content || "") + (chunk || "");
+            record.message.content = boundedText(
+                (record.message.content || "") + (chunk || ""),
+                this.options.maxMessageChars,
+            );
             record.message.streaming = true;
             if (this.options.enableArtifacts) {
                 record.message.meta = record.message.meta || {};
@@ -2757,7 +2953,10 @@
             const record = this._messageMap.get(messageId);
             if (!record) return;
             if (finalChunk) {
-                record.message.content = (record.message.content || "") + finalChunk;
+                record.message.content = boundedText(
+                    (record.message.content || "") + finalChunk,
+                    this.options.maxMessageChars,
+                );
             }
             record.message.streaming = false;
             record.element.classList.remove("streaming");
@@ -2963,7 +3162,8 @@
         }
 
         _normalizeToolEvents(rawTools) {
-            const list = Array.isArray(rawTools) ? rawTools : rawTools ? [rawTools] : [];
+            const list = (Array.isArray(rawTools) ? rawTools : rawTools ? [rawTools] : [])
+                .slice(0, MAX_TOOL_EVENTS);
             if (!list.length) {
                 return [];
             }
@@ -2994,8 +3194,8 @@
             if (typeof entry === "string") {
                 return {
                     id: createUniqueId(`tool-${index}`),
-                    name: entry,
-                    label: entry,
+                    name: boundedText(entry, MAX_MESSAGE_NAME_CHARS),
+                    label: boundedText(entry, MAX_MESSAGE_NAME_CHARS),
                     status: "running",
                     streaming: true,
                 };
@@ -3005,7 +3205,7 @@
                     id: createUniqueId(`tool-${index}`),
                     name: `Tool ${index + 1}`,
                     label: `Tool ${index + 1}`,
-                    output: this._flattenToolContent(entry),
+                    output: boundedText(this._flattenToolContent(entry), MAX_TOOL_FIELD_CHARS),
                     status: "succeeded",
                     streaming: false,
                 };
@@ -3038,16 +3238,16 @@
                 output = this._flattenToolContent(entry.content);
             }
             return {
-                id,
-                name,
-                label,
-                status: statusRaw || (output !== undefined ? "succeeded" : "running"),
-                input,
-                output,
-                error: entry.error || null,
-                meta: entry.meta ? Object.assign({}, entry.meta) : undefined,
-                startedAt: entry.startedAt || entry.startTime || (entry.meta && entry.meta.startedAt) || null,
-                finishedAt: entry.finishedAt || entry.endTime || (entry.meta && entry.meta.finishedAt) || null,
+                id: boundedText(id, MAX_MESSAGE_ID_CHARS),
+                name: boundedText(name, MAX_MESSAGE_NAME_CHARS),
+                label: boundedText(label, MAX_MESSAGE_NAME_CHARS),
+                status: boundedText(statusRaw || (output !== undefined ? "succeeded" : "running"), 32),
+                input: boundedJsonValue(input, MAX_TOOL_FIELD_CHARS),
+                output: boundedJsonValue(output, MAX_TOOL_FIELD_CHARS),
+                error: boundedJsonValue(entry.error || null, MAX_TOOL_FIELD_CHARS),
+                meta: entry.meta ? boundedJsonValue(entry.meta, MAX_TOOL_FIELD_CHARS) : undefined,
+                startedAt: boundedText(entry.startedAt || entry.startTime || (entry.meta && entry.meta.startedAt) || "", 64) || null,
+                finishedAt: boundedText(entry.finishedAt || entry.endTime || (entry.meta && entry.meta.finishedAt) || "", 64) || null,
                 latencyMs: entry.latencyMs || entry.durationMs || null,
                 streaming: entry.streaming ?? (!statusRaw || statusRaw === "running"),
             };
@@ -3097,14 +3297,20 @@
         }
 
         _normalizeMessage(message) {
-            const id = message.id || createUniqueId("message");
-            const meta = Object.assign({}, message.meta || {});
+            message = message && typeof message === "object"
+                ? message
+                : { content: message == null ? "" : String(message) };
+            const id = boundedText(message.id || createUniqueId("message"), MAX_MESSAGE_ID_CHARS);
+            const boundedMeta = boundedJsonValue(message.meta || {}, MAX_MESSAGE_META_CHARS);
+            const meta = boundedMeta && typeof boundedMeta === "object" && !Array.isArray(boundedMeta)
+                ? boundedMeta
+                : {};
             const existingTimestamp = message.timestamp || meta.timestamp;
             const resolvedTimestamp = existingTimestamp || new Date().toISOString();
             if (!meta.timestamp) {
                 meta.timestamp = resolvedTimestamp;
             }
-            const role = (message.role || "assistant").toLowerCase();
+            const role = boundedText((message.role || "assistant").toLowerCase(), 32);
             const toolAccumulator = [];
             const contentInfo = this._normalizeMessageContent(message.content, toolAccumulator);
             const extraTools = this._extractToolCollections(message);
@@ -3125,25 +3331,29 @@
                     resolvedName = (this.options.agent && this.options.agent.name) || "Assistant";
                 }
             }
-            const resolvedAvatar = message.avatar || this._getAvatarForRole(role);
+            const resolvedAvatar = boundedText(message.avatar || this._getAvatarForRole(role), 2048) || null;
             return {
                 id,
                 role,
-                content: contentInfo.text || "",
-                name: resolvedName,
+                content: boundedText(contentInfo.text || "", this.options.maxMessageChars),
+                name: boundedText(resolvedName, MAX_MESSAGE_NAME_CHARS),
                 avatar: resolvedAvatar,
-                timestamp: resolvedTimestamp,
+                timestamp: boundedText(resolvedTimestamp, 64),
                 streaming: Boolean(message.streaming),
                 meta,
                 tools,
-                segments: Array.isArray(contentInfo.rawSegments) ? contentInfo.rawSegments : null,
+                segments: Array.isArray(contentInfo.rawSegments)
+                    ? boundedJsonValue(contentInfo.rawSegments, MAX_MESSAGE_META_CHARS)
+                    : null,
             };
         }
 
         initChats() {
             if (!this.chats.length) {
                 const chatId = createUniqueId("chat");
-                const initialMessages = Array.isArray(this.options.messages) ? this.options.messages.map((msg) => this._normalizeMessage(msg)) : [];
+                const initialMessages = Array.isArray(this.options.messages)
+                    ? this.options.messages.slice(-this.options.maxMessages).map((msg) => this._normalizeMessage(msg))
+                    : [];
                 this.chats.push({
                     id: chatId,
                     title: this._generateChatTitle(),
@@ -3156,7 +3366,9 @@
                 this.activeChatId = this.chats[0].id;
             }
             this.chats.forEach((chat) => {
-                chat.messages = (chat.messages || []).map((msg) => this._normalizeMessage(msg));
+                chat.messages = (chat.messages || [])
+                    .slice(-this.options.maxMessages)
+                    .map((msg) => this._normalizeMessage(msg));
                 chat.artifacts = chat.artifacts || [];
                 if (chat.badge && Number(chat.badge) > 0) {
                     chat.badge = Math.min(999, Math.max(1, Number(chat.badge)));
@@ -3202,6 +3414,7 @@
             };
             this.chats.push(newChat);
             this.activeChatId = newId;
+            this._enforceChatLimit();
             this._renderChatList();
             this._renderMessages();
             this.saveState();
@@ -3357,7 +3570,10 @@
         }
 
         handleSubmit() {
-            const query = this.els.queryInput.value.trim();
+            const query = boundedText(
+                this.els.queryInput.value.trim(),
+                this.options.maxMessageChars,
+            );
             if (!query) return;
             const activeChat = this._ensureActiveChat();
             if (!activeChat) return;
@@ -3385,14 +3601,18 @@
             this._adjustTextareaHeight();
 
             const contextMessages = this.getMessages(activeChat.id);
-            const sendResult = this.host.emit("send", {
+            const sendPayload = {
                 id: createUniqueId("prompt"),
                 text: query,
                 message: userMessage,
                 context: contextMessages,
                 chatId: activeChat.id,
-                artifactConsole: this._serializeArtifactConsole(),
-            });
+            };
+            if (this.options.includeArtifactConsoleInSend === true) {
+                sendPayload.artifactConsole = this._serializeArtifactConsole();
+                sendPayload.artifactConsoleUntrusted = true;
+            }
+            const sendResult = this.host.emit("send", sendPayload);
 
             if (!sendResult || !sendResult.handled) {
                 this.streamMockResponse();
@@ -3403,7 +3623,9 @@
         _serializeArtifactConsole() {
             const entries = [];
             const seen = new Set();
-            const order = Array.isArray(this._artifactConsoleOrder) ? this._artifactConsoleOrder : [];
+            const order = Array.isArray(this._artifactConsoleOrder)
+                ? this._artifactConsoleOrder.slice(-MAX_ARTIFACT_CONSOLE_ARTIFACTS)
+                : [];
             order.forEach((artifactId) => {
                 if (seen.has(artifactId)) return;
                 seen.add(artifactId);
@@ -3411,21 +3633,26 @@
                 if (!items.length) return;
                 entries.push({
                     artifactId,
-                    entries: items.map((entry) => ({
+                    entries: items.slice(-MAX_ARTIFACT_CONSOLE_ENTRIES).map((entry) => ({
                         level: entry.level || "log",
-                        items: Array.isArray(entry.items) ? entry.items : [],
+                        items: Array.isArray(entry.items)
+                            ? entry.items.slice(0, 20).map((item) => boundedText(item, 500))
+                            : [],
                         ts: entry.ts || null,
                     })),
                 });
             });
             this._artifactConsole.forEach((items, artifactId) => {
+                if (entries.length >= MAX_ARTIFACT_CONSOLE_ARTIFACTS) return;
                 if (seen.has(artifactId)) return;
                 if (!items || !items.length) return;
                 entries.push({
                     artifactId,
-                    entries: items.map((entry) => ({
+                    entries: items.slice(-MAX_ARTIFACT_CONSOLE_ENTRIES).map((entry) => ({
                         level: entry.level || "log",
-                        items: Array.isArray(entry.items) ? entry.items : [],
+                        items: Array.isArray(entry.items)
+                            ? entry.items.slice(0, 20).map((item) => boundedText(item, 500))
+                            : [],
                         ts: entry.ts || null,
                     })),
                 });
@@ -3646,6 +3873,15 @@
                     const entry = { ts: Date.now(), level: "info", items: ["Console connected. Waiting for logs..."] };
                     this._artifactConsole.set(artifactId, [entry]);
                 }
+                if (!this._artifactConsoleOrder.includes(artifactId)) {
+                    this._artifactConsoleOrder.push(artifactId);
+                }
+                while (this._artifactConsoleOrder.length > MAX_ARTIFACT_CONSOLE_ARTIFACTS) {
+                    const removedArtifactId = this._artifactConsoleOrder.shift();
+                    if (removedArtifactId && removedArtifactId !== artifactId) {
+                        this._artifactConsole.delete(removedArtifactId);
+                    }
+                }
                 if (this.currentArtifact && this.currentArtifact.id === artifactId) {
                     this._renderArtifactConsole();
                 }
@@ -3665,10 +3901,18 @@
             };
             const existing = this._artifactConsole.get(artifactId) || [];
             existing.push(entry);
-            const capped = existing.length > 200 ? existing.slice(-200) : existing;
+            const capped = existing.length > MAX_ARTIFACT_CONSOLE_ENTRIES
+                ? existing.slice(-MAX_ARTIFACT_CONSOLE_ENTRIES)
+                : existing;
             this._artifactConsole.set(artifactId, capped);
             if (!this._artifactConsoleOrder.includes(artifactId)) {
                 this._artifactConsoleOrder.push(artifactId);
+            }
+            while (this._artifactConsoleOrder.length > MAX_ARTIFACT_CONSOLE_ARTIFACTS) {
+                const removedArtifactId = this._artifactConsoleOrder.shift();
+                if (removedArtifactId && removedArtifactId !== artifactId) {
+                    this._artifactConsole.delete(removedArtifactId);
+                }
             }
             if (console && typeof console[level] === "function") {
                 console[level](`[Artifact ${artifactId}]`, ...(items.length ? items : []));

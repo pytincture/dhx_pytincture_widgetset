@@ -41,6 +41,40 @@ class BrowserContentSecurityContractTests(unittest.TestCase):
         self.assertIn("event.origin !== \"null\"", source)
         self.assertIn("connect-src 'none'", source)
 
+    def test_chat_history_and_preview_diagnostics_are_bounded_and_opt_in(self):
+        source = (ROOT / "dhxpyt/dhxsrc/chat.js").read_text(encoding="utf-8")
+        self.assertIn("DEFAULT_MAX_MESSAGES = 100", source)
+        self.assertIn("MAX_ARTIFACT_CONSOLE_ENTRIES = 100", source)
+        self.assertIn("includeArtifactConsoleInSend: false", source)
+        self.assertIn('this._persistenceMode === "local"', source)
+        self.assertIn('this._persistenceMode === "session"', source)
+        self.assertIn("this.options.maxStorageBytes", source)
+
+        config_module = ast.parse(
+            (ROOT / "dhxpyt/chat/chat_config.py").read_text(encoding="utf-8")
+        )
+        chat_config = next(
+            node for node in config_module.body
+            if isinstance(node, ast.ClassDef) and node.name == "ChatConfig"
+        )
+        wanted = {
+            "max_messages",
+            "persistence",
+            "include_artifact_console_in_send",
+        }
+        defaults = {}
+        for node in chat_config.body:
+            if (
+                isinstance(node, ast.AnnAssign)
+                and isinstance(node.target, ast.Name)
+                and node.target.id in wanted
+                and node.value is not None
+            ):
+                defaults[node.target.id] = ast.literal_eval(node.value)
+        self.assertEqual(defaults["max_messages"], 100)
+        self.assertIsNone(defaults["persistence"])
+        self.assertIs(defaults["include_artifact_console_in_send"], False)
+
     def test_data_driven_html_paths_apply_the_sanitizer(self):
         suite = (ROOT / "dhxpyt/dhxsrc/suite.js").read_text(encoding="utf-8")
         cardpanel = (ROOT / "dhxpyt/dhxsrc/cardpanel.js").read_text(encoding="utf-8")

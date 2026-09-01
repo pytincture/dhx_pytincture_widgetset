@@ -82,7 +82,12 @@ class ChatConfig:
     enable_artifacts: bool = True
     artifact_panel_open: bool = False
     artifact_panel_width: Optional[int] = None
-    max_messages: Optional[int] = None
+    max_messages: int = 100
+    max_chats: int = 20
+    max_message_chars: int = 200_000
+    max_storage_bytes: int = 2 * 1024 * 1024
+    persistence: Optional[Union[str, bool]] = None
+    include_artifact_console_in_send: bool = False
     streaming_debounce_ms: int = 32
     id_prefix: Optional[str] = None
     demo_response: Optional[str] = None
@@ -112,6 +117,11 @@ class ChatConfig:
             "artifactPanelOpen": self.artifact_panel_open,
             "artifactPanelWidth": self.artifact_panel_width,
             "maxMessages": self.max_messages,
+            "maxChats": self.max_chats,
+            "maxMessageChars": self.max_message_chars,
+            "maxStorageBytes": self.max_storage_bytes,
+            "persistence": self.persistence,
+            "includeArtifactConsoleInSend": self.include_artifact_console_in_send,
             "streamingDebounce": self.streaming_debounce_ms,
             "idPrefix": self.id_prefix,
             "demoResponse": self.demo_response,
