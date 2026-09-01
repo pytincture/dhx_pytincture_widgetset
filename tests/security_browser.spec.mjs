@@ -73,3 +73,92 @@ test("assistant messages, artifacts, and data widgets preserve the browser trust
   ))).toBe(false);
   expect(pageErrors).toEqual([]);
 });
+
+test("chat retention, fields, console data, and model context stay bounded", async ({ page }) => {
+  await page.goto("/tests/security_browser.html");
+  const result = await page.evaluate(async () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.boundedChat = new customdhx.ChatWidget("#root", {
+      persistence: false,
+      maxMessages: 3,
+      maxMessageChars: 1000,
+      includeArtifactConsoleInSend: false,
+    });
+    await window.boundedChat._readyPromise;
+    for (let index = 0; index < 6; index += 1) {
+      window.boundedChat.addMessage({
+        role: "assistant",
+        content: "x".repeat(2000),
+        tools: Array.from({ length: 60 }, (_, toolIndex) => ({
+          id: `tool-${toolIndex}`,
+          output: "y".repeat(30000),
+        })),
+      });
+    }
+    const app = window.boundedChat._app;
+    for (let artifactIndex = 0; artifactIndex < 25; artifactIndex += 1) {
+      const id = `artifact-${artifactIndex}`;
+      app._artifactConsoleOrder.push(id);
+      app._artifactConsole.set(id, Array.from({ length: 150 }, () => ({
+        level: "log",
+        items: ["z".repeat(1000)],
+      })));
+    }
+    let sendPayload = null;
+    window.boundedChat.on("send", (payload) => {
+      sendPayload = payload;
+      return true;
+    });
+    app.els.queryInput.value = "question";
+    app.handleSubmit();
+    const messages = window.boundedChat.getMessages();
+    const serializedConsole = app._serializeArtifactConsole();
+    const contentStorageKey = app._storageKeys.chats;
+
+    const persistedRoot = document.createElement("div");
+    persistedRoot.id = "persisted-root";
+    persistedRoot.style.cssText = "width:1000px;height:700px";
+    document.body.appendChild(persistedRoot);
+    window.persistedChat = new customdhx.ChatWidget("#persisted-root", {
+      storageKey: "bounded-security-chat",
+      persistence: "local",
+      maxMessages: 100,
+      maxStorageBytes: 16384,
+    });
+    await window.persistedChat._readyPromise;
+    for (let index = 0; index < 40; index += 1) {
+      window.persistedChat.addMessage({
+        role: "assistant",
+        content: `message-${index}-${"p".repeat(1000)}`,
+        tools: [{ output: "secret-tool-output" }],
+        meta: { secret: "secret-meta" },
+      });
+    }
+    const persistedApp = window.persistedChat._app;
+    const stored = localStorage.getItem(persistedApp._storageKeys.chats) || "";
+    return {
+      messageCount: messages.length,
+      maxContent: Math.max(...messages.map((message) => message.content.length)),
+      maxTools: Math.max(...messages.map((message) => message.tools.length)),
+      consoleArtifacts: serializedConsole.length,
+      maxConsoleEntries: Math.max(...serializedConsole.map((entry) => entry.entries.length)),
+      consoleItemLength: serializedConsole[0].entries[0].items[0].length,
+      consoleSent: Object.prototype.hasOwnProperty.call(sendPayload || {}, "artifactConsole"),
+      disabledPersistenceStored: localStorage.getItem(contentStorageKey),
+      storedBytes: new TextEncoder().encode(stored).length,
+      storedContainsToolOrMeta: stored.includes("secret-tool-output") || stored.includes("secret-meta"),
+    };
+  });
+
+  expect(result.messageCount).toBe(3);
+  expect(result.maxContent).toBeLessThanOrEqual(1000);
+  expect(result.maxTools).toBeLessThanOrEqual(50);
+  expect(result.consoleArtifacts).toBeLessThanOrEqual(20);
+  expect(result.maxConsoleEntries).toBeLessThanOrEqual(100);
+  expect(result.consoleItemLength).toBeLessThanOrEqual(500);
+  expect(result.consoleSent).toBe(false);
+  expect(result.disabledPersistenceStored).toBeNull();
+  expect(result.storedBytes).toBeLessThanOrEqual(16384);
+  expect(result.storedContainsToolOrMeta).toBe(false);
+});
