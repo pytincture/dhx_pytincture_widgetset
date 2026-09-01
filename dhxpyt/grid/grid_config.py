@@ -17,7 +17,7 @@ class GridColumnConfig:
                  resizable: bool = True,
                  tooltip: Union[bool, Dict[str, Any]] = True,
                  css: str = None,
-                 htmlEnable: bool = True,
+                 htmlEnable: bool = False,
                  editable: bool = False,
                  filter: Dict[str, Any] = None,
                  format: str = None,
@@ -265,4 +265,3 @@ class GridConfig:
             config_dict['rowCss'] = self.rowCss  # This may require further adaptation
 
         return config_dict
-

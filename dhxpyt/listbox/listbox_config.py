@@ -14,7 +14,7 @@ class ListboxConfig:
                  editable: bool = False,
                  eventHandlers: Dict[str, Dict[str, Callable]] = None,
                  height: Union[int, str] = "auto",
-                 htmlEnable: bool = True,
+                 htmlEnable: bool = False,
                  itemHeight: Union[int, str] = 37,
                  keyNavigation: Union[bool, Callable[[], bool]] = True,
                  multiselection: Union[bool, str] = False,

@@ -11,6 +11,23 @@ The **DHX PyTincture Widgetset** is a Python-based library that integrates the [
 - **Event-Driven**: Support for event handling to create responsive and interactive user experiences.
 - **AI Chat Widget**: Stream Markdown-rendered assistant responses, surface artifacts in a live preview pane, and react to dark/light theme changes without leaving Python.
 
+## Browser content safety
+
+Widget data is text by default. `htmlEnable=True`, CardPanel `contentHtml` / `iconHtml`,
+and HTML-returning CardPanel templates are explicit rich-content paths; their output is
+sanitized to a small formatting allowlist before it reaches the DOM. Grid, Listbox, and
+Combobox `htmlEnable` now default to `False`. Applications that previously relied on
+event attributes, scripts, inline styles, SVG, images, or other active markup inside
+those values must replace that markup with trusted application code and DOM event
+handlers.
+
+Chat assistant Markdown never accepts raw HTML. HTML artifacts run only inside an
+opaque-origin sandbox with network, forms, popups, workers, and parent DOM access
+blocked. SVG artifacts are passive images, and Python artifacts are displayed as code
+rather than executed. This may change applications that previously depended on active
+SVG, in-page network calls, same-origin access, or automatic execution of model-supplied
+Python.
+
 ## Installation
 ### Prerequisites
 - Python 3.13+
