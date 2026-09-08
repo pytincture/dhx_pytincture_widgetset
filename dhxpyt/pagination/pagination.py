@@ -21,12 +21,32 @@ class Pagination:
         if config is None:
             raise ValueError("PaginationConfig is required for initializing Pagination widget.")
         config_dict = config.to_dict()
-        # Assuming that `config.data` is a DHTMLX DataCollection instance
-        # We need to handle data initialization appropriately
-        # For now, we will pass the data collection directly
+
+        # `data` is a live DHTMLX DataCollection (another widget's `.data`), not
+        # JSON. Serialising the config as a whole raised TypeError on it, so the
+        # scalar options are serialised and the collection is attached to the
+        # resulting JS object by reference.
+        data_collection = config_dict.pop("data", None)
+        if data_collection is None:
+            raise ValueError(
+                "PaginationConfig.data is required: pass the DataCollection of "
+                "the widget being paged, e.g. grid.grid.data"
+            )
+        options = js.JSON.parse(json.dumps(config_dict))
+        options.data = data_collection
+
+        # The bundled DHTMLX Suite build has no Pagination widget -- the name
+        # appears nowhere in dhxsrc -- so report that directly instead of
+        # failing with a bare AttributeError from the js proxy.
+        if not hasattr(js.dhx, "Pagination"):
+            raise RuntimeError(
+                "dhx.Pagination is not available in the bundled DHTMLX Suite "
+                "build, so this widget cannot be created. Page server-side and "
+                "drive the paging from a Toolbar or Grid instead."
+            )
 
         # Create the Pagination instance
-        self.pagination = js.dhx.Pagination.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
+        self.pagination = js.dhx.Pagination.new(widget_parent, options)
 
     """ Pagination API Functions """
 

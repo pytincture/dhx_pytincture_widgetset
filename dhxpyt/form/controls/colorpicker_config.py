@@ -1,4 +1,4 @@
-from typing import Union, Dict, Any, Callable
+from typing import Union, Dict, Any, Callable, List
 
 from pyodide.ffi import create_proxy
 
@@ -20,7 +20,7 @@ class ColorpickerConfig:
                  required: bool = False,
                  validation: Callable[[Any], bool] = None,
                  width: Union[str, int] = "content",
-                 customColors: bool = False,
+                 customColors: List[str] = None,
                  grayShades: bool = True,
                  icon: str = None,
                  mode: str = "palette",
@@ -49,7 +49,10 @@ class ColorpickerConfig:
         :param required: (Optional) Whether the control is required.
         :param validation: (Optional) The validation function.
         :param width: (Optional) The width of the control.
-        :param customColors: (Optional) Shows a section with custom colors.
+        :param customColors: (Optional) A list of custom colour hex strings shown
+            at the bottom of the palette. dhx treats this as an array (it calls
+            .includes/.indexOf/.splice on it) and defaults it to []; passing a
+            bool made those calls fail with 'colors.includes is not a function'.
         :param grayShades: (Optional) Displays gray shades in the palette.
         :param icon: (Optional) The CSS class name of an icon.
         :param mode: (Optional) The mode of the control ("palette", "picker").

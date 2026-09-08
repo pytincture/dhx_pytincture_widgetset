@@ -21,6 +21,7 @@ class Grid:
         if config is None:
             config = GridConfig()
         config_dict = config.to_dict()
+        self._event_proxies: Dict[str, List[Any]] = {}
         self.grid = js.dhx.Grid.new(widget_parent, js.JSON.parse(json.dumps(config_dict)))
 
     """ Grid API Functions """
@@ -136,47 +137,72 @@ class Grid:
 
     """ Grid Event Handlers """
 
+    def _bind(self, event_name: str, handler: Callable) -> Any:
+        """Registers a handler and retains its proxy so destroy() can free it.
+
+        `create_proxy` objects are owned by Python; dropping the reference
+        without destroying it leaks the handler across navigation, which is
+        what `destroy()` exists to prevent.
+        """
+        event_proxy = create_proxy(handler)
+        self._event_proxies.setdefault(event_name, []).append(event_proxy)
+        self.grid.events.on(event_name, event_proxy)
+        return event_proxy
+
+    def destroy(self) -> None:
+        """Destroys the grid and releases every retained event proxy."""
+        try:
+            if hasattr(self.grid, "destructor"):
+                self.grid.destructor()
+        finally:
+            for proxies in self._event_proxies.values():
+                for proxy in proxies:
+                    try:
+                        proxy.destroy()
+                    except Exception:
+                        pass
+            self._event_proxies.clear()
+
     def add_event_handler(self, event_name: str, handler: Callable) -> None:
         """Adds an event handler for the specified event."""
-        event_proxy = create_proxy(handler)
-        self.grid.events.on(event_name, event_proxy)
+        self._bind(event_name, handler)
 
     # Example event: afterEditEnd
     def on_after_edit_end(self, handler: Callable[[Any, Dict[str, Any], Dict[str, Any]], None]) -> None:
         """Fires after editing of a cell is ended."""
         def event_handler(value, row, column):
             handler(value, row.to_py(), column.to_py())
-        self.grid.events.on('afterEditEnd', create_proxy(event_handler))
+        self._bind('afterEditEnd', event_handler)
 
     def on_cell_click(self, handler: Callable[[Dict[str, Any], Dict[str, Any], Any], None]) -> None:
         """Fires when a cell is clicked."""
         def event_handler(row, column, event):
             handler(row.to_py(), column.to_py(), event)
-        self.grid.events.on('cellClick', create_proxy(event_handler))
+        self._bind('cellClick', event_handler)
 
     def on_cell_dbl_click(self, handler: Callable[[Dict[str, Any], Dict[str, Any], Any], None]) -> None:
         """Fires when a cell is double-clicked."""
         def event_handler(row, column, event):
             handler(row.to_py(), column.to_py(), event)
-        self.grid.events.on('cellDblClick', create_proxy(event_handler))
+        self._bind('cellDblClick', event_handler)
 
     def on_cell_mouse_down(self, handler: Callable[[Dict[str, Any], Dict[str, Any], Any], None]) -> None:
         """Fires before releasing the left mouse button when clicking on a grid cell."""
         def event_handler(row, column, event):
             handler(row.to_py(), column.to_py(), event)
-        self.grid.events.on('cellMouseDown', create_proxy(event_handler))
+        self._bind('cellMouseDown', event_handler)
 
     def on_cell_mouse_over(self, handler: Callable[[Dict[str, Any], Dict[str, Any], Any], None]) -> None:
         """Fires on moving the mouse pointer over a grid cell."""
         def event_handler(row, column, event):
             handler(row.to_py(), column.to_py(), event)
-        self.grid.events.on('cellMouseOver', create_proxy(event_handler))
+        self._bind('cellMouseOver', event_handler)
 
     def on_cell_right_click(self, handler: Callable[[Dict[str, Any], Dict[str, Any], Any], None]) -> None:
         """Fires on right click on a grid cell."""
         def event_handler(row, column, event):
             handler(row.to_py(), column.to_py(), event)
-        self.grid.events.on('cellRightClick', create_proxy(event_handler))
+        self._bind('cellRightClick', event_handler)
 
     """ Grid Drag-and-Drop Event Handlers """
 
@@ -184,74 +210,74 @@ class Grid:
         """Fires before dragging a row starts."""
         def event_handler(data, event):
             handler(data.to_py(), event)
-        self.grid.events.on('beforeRowDrag', create_proxy(event_handler))
+        self._bind('beforeRowDrag', event_handler)
 
     def on_after_row_drag(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
         """Fires after dragging a row finishes."""
         def event_handler(data, event):
             handler(data.to_py(), event)
-        self.grid.events.on('afterRowDrag', create_proxy(event_handler))
+        self._bind('afterRowDrag', event_handler)
 
     def on_before_column_drag(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
         """Fires before dragging a column starts."""
         def event_handler(data, event):
             handler(data.to_py(), event)
-        self.grid.events.on('beforeColumnDrag', create_proxy(event_handler))
+        self._bind('beforeColumnDrag', event_handler)
 
     def on_after_column_drag(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
         """Fires after dragging a column finishes."""
         def event_handler(data, event):
             handler(data.to_py(), event)
-        self.grid.events.on('afterColumnDrag', create_proxy(event_handler))
+        self._bind('afterColumnDrag', event_handler)
 
     def on_row_drop(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
         """Fires when a row is dropped."""
         def event_handler(data, event):
             handler(data.to_py(), event)
-        self.grid.events.on('afterRowDrop', create_proxy(event_handler))
+        self._bind('afterRowDrop', event_handler)
 
     def on_column_drop(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
         """Fires when a column is dropped."""
         def event_handler(data, event):
             handler(data.to_py(), event)
-        self.grid.events.on('afterColumnDrop', create_proxy(event_handler))
+        self._bind('afterColumnDrop', event_handler)
 
     # Dragging callbacks
     def on_drag_row_in(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
         """Fires when a row is dragged over a potential target."""
         def event_handler(data, event):
             handler(data.to_py(), event)
-        self.grid.events.on('dragRowIn', create_proxy(event_handler))
+        self._bind('dragRowIn', event_handler)
 
     def on_drag_row_out(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
         """Fires when a row is dragged out of a potential target."""
         def event_handler(data, event):
             handler(data.to_py(), event)
-        self.grid.events.on('dragRowOut', create_proxy(event_handler))
+        self._bind('dragRowOut', event_handler)
 
     def on_drag_column_in(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
         """Fires when a column is dragged over a potential target."""
         def event_handler(data, event):
             handler(data.to_py(), event)
-        self.grid.events.on('dragColumnIn', create_proxy(event_handler))
+        self._bind('dragColumnIn', event_handler)
 
     def on_drag_column_out(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
         """Fires when a column is dragged out of a potential target."""
         def event_handler(data, event):
             handler(data.to_py(), event)
-        self.grid.events.on('dragColumnOut', create_proxy(event_handler))
+        self._bind('dragColumnOut', event_handler)
 
     def on_drag_row_start(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
         """Fires when the dragging of a row starts."""
         def event_handler(data, event):
             handler(data.to_py(), event)
-        self.grid.events.on('dragRowStart', create_proxy(event_handler))
+        self._bind('dragRowStart', event_handler)
 
     def on_drag_column_start(self, handler: Callable[[Dict[str, Any], Dict[str, Any]], None]) -> None:
         """Fires when the dragging of a column starts."""
         def event_handler(data, event):
             handler(data.to_py(), event)
-        self.grid.events.on('dragColumnStart', create_proxy(event_handler))
+        self._bind('dragColumnStart', event_handler)
 
     # Similarly, other events can be added following the documentation provided.
 

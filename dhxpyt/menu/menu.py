@@ -60,8 +60,17 @@ class Menu:
         self.menu.show(ids)
     
     def show_at(self, elem: Union[str, Any], show_at: str = "bottom") -> None:
-        """Shows a context menu."""
-        self.menu.showAt(elem, show_at)
+        """Not available on Menu -- use ContextMenu instead.
+
+        dhx defines `showAt` only on `ContextMenu.prototype`, so calling this
+        on a `Menu` reached the underlying widget and failed with an opaque
+        JavaScript error. It raises here instead, to say what to use.
+        """
+        raise TypeError(
+            "Menu.show_at() is not supported: dhx defines showAt only on "
+            "ContextMenu. Use dhxpyt.menu.ContextMenu for a menu shown at a "
+            "cursor or element."
+        )
     
     def unselect(self, id: Union[str, int] = None) -> None:
         """Unselects a selected Menu item."""

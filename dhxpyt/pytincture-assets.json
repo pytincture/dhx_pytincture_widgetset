@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "package": "dhxpyt",
+  "version": "0.9.19",
+  "assets": [
+    {
+      "path": "dhxpyt/dhxsrc/suite.css",
+      "type": "css",
+      "sha256": "bbfb8928fce1a99acf5a6f610c99625eea8b31e0f62b4cb5b31b6ccb684a1719"
+    },
+    {
+      "path": "dhxpyt/dhxsrc/fonts/inter.css",
+      "type": "css",
+      "sha256": "868d674eb57814ea39415af15132b4077ccdc081b1c8e15cf31e652e12bf3cc9"
+    },
+    {
+      "path": "dhxpyt/dhxsrc/dhx_custom.css",
+      "type": "css",
+      "sha256": "43091047578499088323dc062805c71327c273c2840512b7700f9ed10c9c6a61"
+    },
+    {
+      "path": "dhxpyt/dhxsrc/suite.js",
+      "type": "javascript",
+      "sha256": "e4d99a233660aae3afeb62d2aba546269bf5fe59ed4489481848ac0de53f9d2c"
+    },
+    {
+      "path": "dhxpyt/dhxsrc/cardflow.js",
+      "type": "javascript",
+      "sha256": "a589ff5e7adb642b70c06b018f06789bff8da4c41520915830dd4c7aefc8658b"
+    },
+    {
+      "path": "dhxpyt/dhxsrc/cardpanel.js",
+      "type": "javascript",
+      "sha256": "25e1befe91f86b1de5f738b934f6887c094b1c35d1a634a58c3cdb98c0e41715"
+    },
+    {
+      "path": "dhxpyt/dhxsrc/chat.js",
+      "type": "javascript",
+      "sha256": "fa7420e2955db78d62317fa566209fefbf90eba042894bff6841754f32223c10"
+    },
+    {
+      "path": "dhxpyt/dhxsrc/kanban.css",
+      "type": "css",
+      "sha256": "155a5ea4b5589b1fa0c2b51ea7c9007e8939b1484d037f7ea04eaea9a03d1abb"
+    },
+    {
+      "path": "dhxpyt/dhxsrc/kanban.js",
+      "type": "javascript",
+      "sha256": "186950aa79b1a09525b78c808a6a62e4cfc052e1de6afe834eab64cbb94b9acb"
+    },
+    {
+      "path": "dhxpyt/dhxsrc/kanban_board.js",
+      "type": "javascript",
+      "sha256": "053a4d55b2c43171ce41b4888b0a89f123afbfe49ef5adbf540491b156626c55"
+    },
+    {
+      "path": "dhxpyt/dhxsrc/ragwidget.js",
+      "type": "javascript",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "dhxpyt/dhxsrc/theme.js",
+      "type": "javascript",
+      "sha256": "1afd7bb65f81d3fc1e474edc81d3f6c23ffa2caa5feb2220153616137f117634"
+    },
+    {
+      "path": "dhxpyt/dhxsrc/webgpu.js",
+      "type": "javascript",
+      "sha256": "f4825014ced0cb326995fa4ad9ecc6cccb6efa947ad8e6bf5b26a4e9c7759e89"
+    }
+  ]
+}
