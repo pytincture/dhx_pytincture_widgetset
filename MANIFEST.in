@@ -1,2 +1,3 @@
+include dhxpyt/pytincture-assets.json
 recursive-include dhxpyt/dhxsrc/ *
 global-exclude .DS_Store

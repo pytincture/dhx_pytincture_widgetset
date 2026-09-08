@@ -26,6 +26,9 @@ from ..kanban import Kanban, KanbanConfig
 from ..cardflow import CardFlow, CardFlowConfig
 from ..cardpanel import CardPanel, CardPanelConfig
 from ..chat import Chat, ChatConfig
+from ..colorpicker import Colorpicker, ColorpickerConfig
+from ..combobox import Combobox, ComboboxConfig
+from ..slider import Slider, SliderConfig
 
 
 TLayout = TypeVar("TLayout", bound="Layout")
@@ -198,6 +201,25 @@ class Layout(object, metaclass=LoadUICaller):
         self.attach(id, tree_widget.tree)
         return tree_widget
         
+
+    def add_colorpicker(self, id: str, colorpicker_config: ColorpickerConfig = None) -> Colorpicker:
+        """Adds a Colorpicker widget into a Layout cell."""
+        colorpicker_widget = Colorpicker(config=colorpicker_config)
+        self.attach(id, colorpicker_widget.colorpicker)
+        return colorpicker_widget
+
+    def add_combobox(self, id: str, combobox_config: ComboboxConfig = None) -> Combobox:
+        """Adds a Combobox widget into a Layout cell."""
+        combobox_widget = Combobox(config=combobox_config)
+        self.attach(id, combobox_widget.combobox)
+        return combobox_widget
+
+    def add_slider(self, id: str, slider_config: SliderConfig = None) -> Slider:
+        """Adds a Slider widget into a Layout cell."""
+        slider_widget = Slider(config=slider_config or SliderConfig())
+        self.attach(id, slider_widget.slider)
+        return slider_widget
+
     """ Layout API Functions """
 
     def destructor(self) -> None:
